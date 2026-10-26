@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#070b16">
+<title>Gravity</title>
+<!-- Versão web (iPhone: Safari → Compartilhar → Adicionar à Tela de Início) -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Gravity">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div id="splash"></div>
+<div class="backdrop"></div>
+<div id="app"></div>
+<nav class="nav">
+  <button data-tab="home"><svg class="i" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h5v-6h4v6h5V9.5"/></svg>Semana</button>
+  <button data-tab="plans"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Planos</button>
+  <button data-train class="emblem-btn"><span class="core"></span><span>Treinar</span></button>
+  <button data-tab="library"><svg class="i" viewBox="0 0 24 24"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg>Exercícios</button>
+  <button data-tab="progress"><svg class="i" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Progresso</button>
+</nav>
+<div class="sheet-wrap"><div class="sheet-bg"></div><div class="sheet"></div></div>
+<script src="js/library.js"></script>
+<script src="js/library-extra.js"></script>
+<script src="js/techniques.js"></script>
+<script src="js/store.js"></script>
+<script src="js/analytics.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/logo.js"></script>
+<script src="js/tools.js"></script>
+<script src="js/screens-train.js"></script>
+<script src="js/screens-manage.js"></script>
+<script src="js/anatomy.js"></script>
+<script src="js/anatomy-real.js"></script>
+<script src="js/screens-extra.js"></script>
+<script src="js/goals.js"></script>
+<script src="js/screens-goals.js"></script>
+<script src="js/profile.js"></script>
+<script src="js/voice.js"></script>
+<script src="js/live.js"></script>
+<script src="js/splash.js"></script>
+<script src="js/theme.js"></script>
+<script>
+  Store.load();
+  Theme.apply();
+  document.body.classList.toggle('color-photos', !!Store.state.settings.colorPhotos);
+  UI.R.roots = { home: Screens.Home, plans: Screens.Plans, library: Screens.Library, progress: Screens.Progress };
+  UI.bind();
+  Voice.push();
+  UI.Rest.init();
+  Live.init();
+  UI.switchTab('home', true);
+  Splash.show();
+  setTimeout(Screens.syncNative, 1500);
+  // Ao voltar para o app, atualiza a tela (o dia pode ter mudado).
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) { UI.Rest.sync(); Live.pull(); UI.refresh(); } });
+  // Versão web: funciona sem internet (service worker) e, no iPhone fora da tela de início, ensina a instalar.
+  if (!window.Android && 'serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {});
+  if (!window.Android && /iPhone|iPad|iPod/.test(navigator.userAgent) && !navigator.standalone) setTimeout(function () { UI.installHint && UI.installHint(); }, 6500);
+  window.appPause = function () { Store.save(true); Screens.syncNative(); Live.tick(); };
+</script>
+</body>
+</html>
