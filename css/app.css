@@ -733,6 +733,50 @@ body.live-out .rest-pill { visibility: hidden !important; pointer-events: none !
 .deload-card b { display: block; color: var(--gold-2); font-weight: 600; }
 .deload-card small { display: block; color: var(--text-2); font-size: 12.5px; margin-top: 2px; }
 
+/* ---------- resumo do mês (v0.25) ---------- */
+.month-nav { display: flex; align-items: center; justify-content: space-between; }
+.month-nav b { font-family: var(--display); font-weight: 400; font-size: 22px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold-2); }
+.mcal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; }
+.mcal span { font-size: 12px; height: 30px; line-height: 30px; border-radius: 50%; color: var(--text-3); }
+.mcal span.h { height: auto; line-height: 1.4; font-size: 10px; letter-spacing: 1px; color: var(--text-3); }
+.mcal span.on { background: var(--gold-grad); color: var(--lime-ink); font-weight: 700; }
+.month-btn { width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; margin-top: 14px; color: var(--gold); }
+.month-btn b { display: block; color: var(--gold-2); font-weight: 600; }
+.month-btn small { display: block; color: var(--text-2); font-size: 12px; }
+
+/* ---------- comparar fotos (v0.25) ---------- */
+.cmp { position: relative; width: 100%; aspect-ratio: 3 / 4; border-radius: 16px; overflow: hidden; background: #000; touch-action: none; user-select: none; }
+.cmp img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+.cmp-line { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--gold-2); box-shadow: 0 0 10px rgba(var(--acc-rgb), 0.8); }
+.cmp-line span { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(8, 8, 10, 0.75); border: 1.5px solid var(--gold-2); color: var(--gold-2); }
+.cmp-line span svg { width: 12px; height: 12px; margin: 0 -2px; }
+.cmp em { position: absolute; bottom: 10px; font-style: normal; font-size: 11px; padding: 4px 8px; border-radius: 10px; background: rgba(8, 8, 10, 0.7); color: #eee8da; }
+.cmp em.l { left: 10px; } .cmp em.r { right: 10px; }
+
+/* ---------- porcentagens do 1RM (v0.25) ---------- */
+.pct-card { margin-top: 12px; }
+.pct-schemes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
+.pct-schemes > div { border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; }
+.pct-schemes small { display: block; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--text-3); }
+.pct-schemes b { font-family: var(--display); font-size: 18px; font-weight: 400; color: var(--gold-2); }
+.pct-schemes span { display: block; font-size: 12px; color: var(--text-2); }
+.pct-grid { display: grid; grid-template-columns: 60px 1fr auto; row-gap: 6px; font-size: 13px; }
+.pct-grid .h { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--text-3); }
+.pct-grid .p { color: var(--gold); font-weight: 600; }
+.pct-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.pct-chips button { display: flex; flex-direction: column; align-items: center; min-width: 56px; padding: 6px 8px; border-radius: 12px; border: 1px solid var(--line); font-size: 12px; color: var(--text-2); }
+.pct-chips button b { color: var(--gold-2); font-size: 11px; }
+.pct-chips button:active { border-color: var(--gold); }
+
+/* ---------- dor ou incômodo (v0.25) ---------- */
+.chip-pick { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip-pick button { padding: 8px 12px; border-radius: 16px; border: 1px solid var(--line); font-size: 12.5px; color: var(--text-2); }
+.chip-pick button.on { border-color: var(--gold); color: var(--gold-2); background: rgba(var(--acc-rgb), 0.1); }
+.late-txt { color: var(--red); }
+
+/* ---------- cancelar treino (v0.25) ---------- */
+.discard-link { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 14px; font-size: 12.5px; color: var(--red); opacity: 0.85; }
+
 /* ---------- nível de poder (v0.24) ---------- */
 .pw-card { padding: 16px; }
 .pw-num { font-family: var(--display); font-size: 40px; line-height: 1.05; color: var(--gold-2); letter-spacing: 1px; margin-top: 4px; text-shadow: 0 0 18px rgba(var(--acc-rgb), 0.35); }

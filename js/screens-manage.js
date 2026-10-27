@@ -142,8 +142,10 @@
           ${hist.length ? `<div class="tiles"><div class="card tile"><div class="v num pr">${nf(best)}<small>kg</small></div><div class="l">Recorde</div></div><div class="card tile"><div class="v num">${nf(best1, 0)}<small>kg</small></div><div class="l">1RM estimado</div></div><div class="card tile"><div class="v num">${hist.length}</div><div class="l">Sessões</div></div></div>
           <div class="card" style="margin-top:12px"><div class="seg" style="margin-bottom:12px"><button class="${metric === 'maxKg' ? 'on' : ''}" data-a="metric" data-m="maxKg">Carga máx.</button><button class="${metric === 'e1rm' ? 'on' : ''}" data-a="metric" data-m="e1rm">1RM est.</button><button class="${metric === 'volume' ? 'on' : ''}" data-a="metric" data-m="volume">Volume</button></div>${lineChart(pts, { color: 'var(--lime)' })}</div>
           <div class="card" style="margin-top:12px"><div class="caps" style="margin-bottom:8px">Recordes</div>${Screens.recordsTable(Analytics.bestOf(exId))}</div>
+          ${Tools.pctTable(exId)}
           <div class="card" style="margin-top:12px"><div class="small muted">Última vez · ${shortDate(last.date)}</div><div style="margin-top:6px;font-weight:600" class="num">${last.sets.map((x) => nf(x.kg) + ' kg × ' + x.reps).join('  ·  ')}</div></div>`
           : '<div class="card small muted">Você ainda não registrou este exercício. Os gráficos aparecem depois do primeiro treino.</div>'}
+          ${(() => { const pl = Store.painsFor(exId).slice(-6).reverse(); return pl.length ? `<div class="section-title"><h2>Dores registradas</h2><span class="small muted">${Store.painsFor(exId).length}</span></div><div class="card">${pl.map((p) => `<div class="kv"><span>${p.date.split('-').reverse().slice(0, 2).join('/')} · ${esc(p.where)}</span><span class="small ${p.lvl === 2 ? 'late-txt' : 'muted'}">${Store.PAIN_LEVELS[p.lvl]}${p.note ? ' · ' + esc(p.note) : ''}</span></div>`).join('')}</div>` : ''; })()}
           ${ex.img && ex.img.length && !ex.custom ? '<div class="tiny faint" style="margin-top:18px">Imagens: Free Exercise DB (domínio público).</div>' : ''}</div>`;
       },
       actions: {
@@ -566,7 +568,16 @@
             <div class="card tile"><div class="ic" style="color:var(--amber)">${icon('flame', 'sm')}</div><div class="v num">${streak}<small>sem</small></div><div class="l">Semanas completas seguidas</div></div>
             <div class="card tile"><div class="ic" style="color:var(--blue)">${icon('weight', 'sm')}</div><div class="v num">${volume(totalVol)}</div><div class="l">Volume levantado</div></div>
             <div class="card tile"><div class="ic" style="color:var(--violet)">${icon('clock', 'sm')}</div><div class="v num">${avgMin}<small>min</small></div><div class="l">Duração média · ${totalSets} séries</div></div></div>
+          <button class="card month-btn press" data-a="month">${icon('calendar', 'sm')}<span class="grow"><b>Resumo de ${Analytics.MONTHS_PT[new Date().getMonth()].toLowerCase()}</b><small>Treinos, recordes, músculos e imagem para compartilhar</small></span>${icon('next', 'sm')}</button>
           <div class="section-title"><h2>Força</h2><span class="small muted">o nível de poder de verdade</span></div>${Screens.strengthCard(true)}
+          ${(() => {
+            const since = new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);
+            const pl = (S().pain || []).filter((p) => p.date >= since);
+            if (!pl.length) return '';
+            const by = {};
+            pl.forEach((p) => { const k = p.where; by[k] = by[k] || { n: 0, ex: new Set() }; by[k].n++; by[k].ex.add(Store.exercise(p.exId).nome); });
+            return `<div class="section-title"><h2>Dores · 30 dias</h2><span class="small muted">${pl.length} ${pl.length === 1 ? 'registro' : 'registros'}</span></div><div class="card">${Object.keys(by).sort((a, b) => by[b].n - by[a].n).map((k) => `<div class="kv"><span><b>${esc(k)}</b> · ${by[k].n}×</span><span class="small muted ellipsis" style="max-width:60%">${esc([...by[k].ex].join(', '))}</span></div>`).join('')}</div>`;
+          })()}
           <div class="section-title"><h2>Constância</h2><span class="small muted">treinos completos por semana</span></div>
           <div class="card">${barChart(perWeek, { color: 'var(--lime)' })}<div class="legend"><span><i style="background:var(--lime)"></i>Completos</span><span><i style="background:rgba(var(--fg-rgb),.1)"></i>Planejados</span></div></div>
           <div class="section-title"><h2>Evolução de força</h2>${gain ? `<span class="chip ${gain > 0 ? 'done' : 'late'}">${gain > 0 ? '+' : ''}${gain}%</span>` : ''}</div>
@@ -592,6 +603,7 @@
         demo: () => { if (!Store.activePlan()) { toast('Escolha um plano primeiro, em Planos'); return; } Store.seedDemo(); refresh(); toast('Dados de exemplo criados. Remova em Configurações.'); },
         muscles: () => push(progSection(0)),
         pwWeight: () => Screens.measureSheet(() => refresh()),
+        month: () => push(Screens.MonthSummary()),
         records: () => push(progSection(1)),
         body: () => push(progSection(2)),
         tests: () => push(progSection(3)),
@@ -670,6 +682,7 @@
           ${sw('Lembrar de treinar', 'Notificação nos dias do plano', 'reminder')}
           ${st().reminder ? `<div class="switch-row"><div class="grow">Horário</div><input class="input" type="time" style="width:130px;height:44px" data-ch="rtime" value="${esc(st().reminderTime)}"></div>` : ''}</div>
         <div class="section-title"><h2>Seus dados</h2></div><div class="card" style="padding:4px 16px">
+          ${sw('Backup automático semanal', window.Android ? 'Salva toda semana em Downloads/Gravity (guarda os 4 últimos)' + (st().lastBackup ? ' · último: ' + new Date(st().lastBackup).toLocaleDateString('pt-BR') : '') : 'Lembra toda semana de salvar o backup' + (st().lastBackup ? ' · último: ' + new Date(st().lastBackup).toLocaleDateString('pt-BR') : ''), 'autoBackup')}
           <button class="menu-item" data-a="export"><span class="ic">${icon('download', 'sm')}</span><span class="grow">Fazer backup<div class="small muted">Envie para o Drive, WhatsApp ou e-mail</div></span></button>
           <button class="menu-item" data-a="import"><span class="ic">${icon('upload', 'sm')}</span><span class="grow">Restaurar backup<div class="small muted">Substitui os dados atuais</div></span></button>
           <button class="menu-item" data-a="demo"><span class="ic">${icon('sparkle', 'sm')}</span><span class="grow">${S().sessions.some((s) => s.demo) ? 'Remover dados de exemplo' : 'Criar dados de exemplo'}<div class="small muted">Para ver os gráficos funcionando</div></span></button>
@@ -696,7 +709,7 @@
         avatar: () => Profile.sheet(UI.refresh),
         ws: (ds) => { st().weekStart = Number(ds.v); Store.save(); refresh(); UI.savedFlash(); },
         rtime: (ds, el) => { if (el.value) { st().reminderTime = el.value; Store.save(); Screens.syncNative(); toast('Lembrete às ' + el.value); } },
-        export: () => Native.share('Backup Gravity', Store.exportBackup(), 'gravity-backup.json'),
+        export: () => { Native.share('Backup Gravity', Store.exportBackup(), 'gravity-backup-' + Store.iso(Store.today()) + '.json'); Store.backupDone(); refresh(); },
         import: () => pickFile('.json,application/json,text/plain', false, (text) => {
           confirmSheet('Restaurar backup?', 'Todos os dados atuais serão substituídos pelos do arquivo.', 'Restaurar', () => {
             try { Store.importBackup(text); toast('Backup restaurado'); UI.switchTab('home', true); } catch (err) { toast(err.message || 'Arquivo inválido'); }

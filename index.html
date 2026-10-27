@@ -58,12 +58,13 @@
   UI.switchTab('home', true);
   Splash.show();
   setTimeout(Screens.syncNative, 1500);
+  setTimeout(Store.autoBackup, 4000);
   // Ao voltar para o app, atualiza a tela (o dia pode ter mudado).
   document.addEventListener('visibilitychange', function () { if (!document.hidden) { UI.Rest.sync(); Live.pull(); UI.refresh(); } });
   // Versão web: funciona sem internet (service worker) e, no iPhone fora da tela de início, ensina a instalar.
   if (!window.Android && 'serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {});
   if (!window.Android && /iPhone|iPad|iPod/.test(navigator.userAgent) && !navigator.standalone) setTimeout(function () { UI.installHint && UI.installHint(); }, 6500);
-  window.appPause = function () { Store.save(true); Screens.syncNative(); Live.tick(); };
+  window.appPause = function () { Store.save(true); Store.autoBackup(); Screens.syncNative(); Live.tick(); };
 </script>
 </body>
 </html>

@@ -132,7 +132,7 @@
   // Instalação nova começa zerada: sem plano e sem histórico (os modelos ficam em Planos → Modelos prontos).
   // Quem atualiza o app mantém tudo, porque load() só chama fresh() quando não há dados salvos.
   function fresh() {
-    const settings = { name: '', restDefault: 60, restStep: 15, incKg: 2, weekStart: 1, sound: true, vibrate: true, suggest: true, colorPhotos: false, splash: true, bar: 20, askRir: true, reminder: false, reminderTime: '18:00', checkin: true, voiceDone: false };
+    const settings = { name: '', restDefault: 60, restStep: 15, incKg: 2, weekStart: 1, sound: true, vibrate: true, suggest: true, colorPhotos: false, splash: true, bar: 20, askRir: true, reminder: false, reminderTime: '18:00', checkin: true, voiceDone: false, autoBackup: true };
     return { v: 1, settings, customExercises: [], exMeta: {}, plans: [], activePlanId: null, sessions: [], activeSessionId: null };
   }
 
@@ -329,6 +329,35 @@
     });
     s.sets = s.sets.filter((x) => keep.includes(x));
   }
+
+  // ---------- dor ou incômodo ----------
+  // Registro por exercício (S.pain). Se repetir em 2 dos últimos 3 treinos do exercício (ou 2 vezes
+  // em 30 dias), a execução avisa e sugere alternativas. "Ignorar" vale até a próxima dor registrada.
+  const PAIN_SPOTS = ['Ombro', 'Cotovelo', 'Punho', 'Pescoço', 'Costas', 'Lombar', 'Quadril', 'Joelho', 'Tornozelo', 'Outro'];
+  const PAIN_LEVELS = ['Leve', 'Moderada', 'Forte'];
+  function addPain(e) {
+    S.pain = S.pain || [];
+    const p = Object.assign({ id: uid('p'), date: iso(today()), at: Date.now() }, e);
+    S.pain.push(p); save(true);
+    return p;
+  }
+  const painsFor = (exId) => (S.pain || []).filter((p) => p.exId === exId);
+  function painAlert(exId, currentSessionId) {
+    const list = painsFor(exId);
+    if (list.length < 2) return null;
+    const last3 = exerciseHistory(exId).slice(-3).map((h) => h.session.id).concat(currentSessionId || []);
+    const since = iso(addDays(today(), -30));
+    const recent = list.filter((p) => last3.includes(p.sessionId) || p.date >= since);
+    if (recent.length < 2) return null;
+    const last = recent[recent.length - 1];
+    const sn = (S.settings.painSnooze || {})[exId];
+    if (sn && sn >= last.at) return null;
+    const count = {};
+    recent.forEach((p) => { count[p.where] = (count[p.where] || 0) + 1; });
+    const where = Object.keys(count).sort((a, b) => count[b] - count[a])[0];
+    return { n: recent.length, where, last, strong: recent.some((p) => p.lvl === 2) };
+  }
+  function snoozePain(exId) { S.settings.painSnooze = Object.assign({}, S.settings.painSnooze, { [exId]: Date.now() }); save(); }
 
   // ---------- exercícios unilaterais ----------
   // Lado direito e esquerdo contados separados (x.repsR / x.repsL); x.reps guarda o menor dos dois
@@ -648,6 +677,26 @@
   }
 
   function exportBackup() { return JSON.stringify(S); }
+  // Backup semanal. Android: grava sozinho em Downloads/Gravity. Navegador (iPhone): só avisa
+  // (backupDue) para a tela inicial lembrar. Fotos de progresso não entram no backup.
+  const WEEK = 7 * 864e5;
+  const hasData = () => S.sessions.some((s) => !s.demo) || S.plans.length > 0;
+  function backupDue() {
+    const st = S.settings;
+    if (st.autoBackup === false || !hasData()) return false;
+    if (st.backupSnooze && Date.now() < st.backupSnooze) return false;
+    return Date.now() - (st.lastBackup || 0) >= WEEK;
+  }
+  function autoBackup() {
+    const A = window.Android;
+    if (!A || !A.saveBackup || !backupDue()) return '';
+    let where = '';
+    try { where = A.saveBackup('gravity-backup-' + iso(today()) + '.json', exportBackup()); } catch (e) { /* tenta na próxima */ }
+    if (where) { S.settings.lastBackup = Date.now(); S.settings.lastBackupWhere = where; save(true); }
+    return where;
+  }
+  function backupDone() { S.settings.lastBackup = Date.now(); S.settings.backupSnooze = null; save(true); }
+  function snoozeBackup() { S.settings.backupSnooze = Date.now() + 2 * 864e5; save(true); }
   function importBackup(text) {
     const data = JSON.parse(text);
     if (!data || data.v !== 1 || !Array.isArray(data.plans)) throw new Error('Arquivo de backup inválido.');
@@ -682,7 +731,7 @@
   function clearDemo() { S.sessions = S.sessions.filter((s) => !s.demo); save(true); }
 
   window.Store = {
-    load, save, get state() { return S; }, uid, sessionNeed, quickPlan, applyQuick, restFor, isUni, sideR, sideL, setSides, checkinLevel, applyCheckin, lightSession, isCardio, isBodyweight, bodyWeight, loadOf, repRange, rangeMode, applyRange, deloadActive, deloadProposal, startDeload, endDeload, snoozeDeload, stallOf, snoozeStall, stalledExercises, DELOAD,
+    load, save, get state() { return S; }, uid, PAIN_SPOTS, PAIN_LEVELS, addPain, painsFor, painAlert, snoozePain, sessionNeed, quickPlan, applyQuick, restFor, isUni, sideR, sideL, setSides, checkinLevel, applyCheckin, lightSession, isCardio, isBodyweight, bodyWeight, loadOf, repRange, rangeMode, applyRange, deloadActive, deloadProposal, startDeload, endDeload, snoozeDeload, stallOf, snoozeStall, stalledExercises, DELOAD,
     WEEKDAYS, WEEKDAYS_LONG, GROUPS, TEMPLATES, DAY,
     iso, parseISO, today, addDays, weekStartOf, weekRange, weeksBack,
     allExercises, exercise, findExerciseByName, videoUrl,
@@ -690,6 +739,6 @@
     itemProgress, sessionProgress, workoutStatus,
     startSession, session, toggleSet, addSet, finishSession, swapExercise, exOf, addWarmups, MEASURES, addBody, photos, addPhoto, deletePhoto, deleteSession, lastSetsFor, repsTarget,
     e1rm, sessionVolume, sessionDuration, exerciseHistory, loadSuggestion, sessionRecords,
-    importPlanCSV, exportPlanCSV, exportBackup, importBackup, reset, seedDemo, clearDemo,
+    importPlanCSV, exportPlanCSV, exportBackup, backupDue, autoBackup, backupDone, snoozeBackup, importBackup, reset, seedDemo, clearDemo,
   };
 })();

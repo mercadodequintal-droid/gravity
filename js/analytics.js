@@ -244,6 +244,29 @@
     return out;
   }
 
+  // ====================== RESUMO DO MÊS ======================
+  // y = ano, m = mês (0–11). Treinos com pelo menos uma série feita.
+  const MONTHS_PT = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+  function month(y, m) {
+    const pad = (n) => String(n).padStart(2, '0');
+    const from = `${y}-${pad(m + 1)}-01`, last = new Date(y, m + 1, 0).getDate(), to = `${y}-${pad(m + 1)}-${pad(last)}`;
+    const ss = S().sessions.filter((s) => s.date >= from && s.date <= to && s.sets.some((x) => x.done)).sort((a, b) => a.start - b.start);
+    const vol = ss.reduce((a, s) => a + Store.sessionVolume(s), 0);
+    const mins = ss.reduce((a, s) => a + (s.end ? Store.sessionDuration(s) : 0), 0);
+    const sets = ss.reduce((a, s) => a + s.sets.filter((x) => x.done && !x.warm).length, 0);
+    const days = [...new Set(ss.map((s) => Number(s.date.slice(8))))];
+    // Recordes: maior carga do exercício superada no mês (o melhor de cada exercício).
+    const rec = {};
+    ss.forEach((s) => Store.sessionRecords(s).forEach((r) => { if (!rec[r.exId] || r.kg > rec[r.exId].kg) rec[r.exId] = { exId: r.exId, kg: r.kg, prev: rec[r.exId] ? rec[r.exId].prev : r.prev }; }));
+    const records = Object.values(rec).sort((a, b) => (b.kg - b.prev) / b.prev - (a.kg - a.prev) / a.prev);
+    const reg = setsByRegion(from, to);
+    const muscles = REGIONS.map((g) => ({ id: g.id, nome: g.nome, sets: Math.round(reg[g.id] * 2) / 2 })).sort((a, b) => b.sets - a.sets);
+    // Semanas do mês com treino (contando semanas que começam no mês).
+    const weeks = new Set(ss.map((s) => Store.weekRange(Store.parseISO(s.date)).startISO)).size;
+    const totalWeeks = Math.ceil((last + new Date(y, m, 1).getDay()) / 7);
+    return { y, m, nome: MONTHS_PT[m], from, to, sessions: ss, count: ss.length, vol, mins, sets, days, last, records, muscles, weeks, totalWeeks };
+  }
+
   // ====================== NÍVEL DE FORÇA ("nível de poder" de verdade) ======================
   // 1RM estimado dividido pelo peso do corpo, comparado com faixas de referência por sexo
   // (aproximação das tabelas de força mais usadas). Cada levantamento vira um índice de 0 a 5
@@ -280,5 +303,5 @@
     return { bw, sex, lifts, idx, power, level: idx == null ? null : idx < 1 ? 'Abaixo de iniciante' : LEVELS[Math.max(0, Math.min(4, Math.floor(idx) - 1))], count: have.length };
   }
 
-  window.Analytics = { strength, STR_LEVELS: LEVELS, REGIONS, musclesOf, setsByRegion, volumeStatus, recovery, bestOf, newRecord, allRecords, recordCount, MEDALS, earned, newMedals, calendar, plates, warmup, REPS };
+  window.Analytics = { month, MONTHS_PT, strength, STR_LEVELS: LEVELS, REGIONS, musclesOf, setsByRegion, volumeStatus, recovery, bestOf, newRecord, allRecords, recordCount, MEDALS, earned, newMedals, calendar, plates, warmup, REPS };
 })();

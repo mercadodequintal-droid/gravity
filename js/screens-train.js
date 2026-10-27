@@ -142,12 +142,15 @@
           <div class="card tile"><div class="ic">${icon('layers', 'sm')}</div><div class="v num">${setsW}</div><div class="l">Séries</div></div>
           <div class="card tile"><div class="ic">${icon('clock', 'sm')}</div><div class="v num">${mins}<small>min</small></div><div class="l">Tempo</div></div></div>`;
 
+        // Backup da semana (navegador/iPhone; no Android é automático).
+        const backupCard = !window.Android && Store.backupDue() ? `<div class="card deload-card appear"><div class="row" style="align-items:flex-start"><span class="dl-ic">${icon('download', 'sm')}</span><div class="grow"><b>Backup da semana</b><small>Seus treinos ficam só neste celular. Salve uma cópia (Arquivos, WhatsApp ou e-mail) para não perder nada.</small></div></div>
+          <div class="btn-row" style="margin-top:12px"><button class="btn ghost sm" data-a="bkLater">Depois</button><button class="btn lime sm" data-a="bkNow">Fazer backup</button></div></div>` : '';
         // Semana leve: proposta ou em andamento.
         const dl = Store.deloadActive(), dp = !dl && Store.deloadProposal();
         const deloadCard = dl ? `<div class="card deload-card appear"><div class="row"><span class="dl-ic">${icon('sparkle', 'sm')}</span><div class="grow"><b>Semana leve em andamento</b><small>Até ${dl.end.split('-').reverse().slice(0, 2).join('/')} · menos séries e 10% menos carga</small></div><button class="small muted" data-a="deloadEnd">Encerrar</button></div></div>`
           : dp ? `<div class="card deload-card appear"><div class="row" style="align-items:flex-start"><span class="dl-ic">${icon('sparkle', 'sm')}</span><div class="grow"><b>Hora de uma semana leve?</b><small>${dp.hard ? 'Muitas séries no limite nas últimas 2 semanas' : dp.weeks + ' semanas seguidas de treino'}. Uma semana com ~60% das séries e 10% menos carga ajuda o corpo a recuperar e voltar mais forte.</small></div></div>
             <div class="btn-row" style="margin-top:12px"><button class="btn ghost sm" data-a="deloadNo">Agora não</button><button class="btn lime sm" data-a="deloadYes">Fazer semana leve</button></div></div>` : '';
-        return head + `<div class="content">${who}${overall}${deloadCard}${quoteCard}${sched}${Screens.muscleCard()}${Screens.strengthCard()}${streakCard}${mission}
+        return head + `<div class="content">${who}${overall}${backupCard}${deloadCard}${quoteCard}${sched}${Screens.muscleCard()}${Screens.strengthCard()}${streakCard}${mission}
           <div class="section-title"><h2>Esta semana</h2><button class="link" data-a="progress">Ver evolução</button></div>${tiles}</div>`;
       },
       actions: {
@@ -159,6 +162,8 @@
         avatar: () => Profile.sheet(UI.refresh),
         editPlan: () => push(Screens.PlanEditor(Store.activePlan().id)),
         pwOpen: () => UI.switchTab('progress'),
+        bkNow: () => { Native.share('Backup Gravity', Store.exportBackup(), 'gravity-backup-' + Store.iso(Store.today()) + '.json'); Store.backupDone(); UI.refresh(); },
+        bkLater: () => { Store.snoozeBackup(); toast('Lembro de novo em 2 dias'); UI.refresh(); },
         pwWeight: () => Screens.measureSheet(() => UI.refresh()),
         deloadYes: () => { Store.startDeload(); toast('Semana leve ativada por 7 dias'); UI.refresh(); },
         deloadNo: () => { Store.snoozeDeload(); toast('Tudo bem. Pergunto de novo em uma semana.'); UI.refresh(); },
@@ -324,6 +329,52 @@
     });
   }
 
+  // Dor ou incômodo: onde e quanto. Forte → sugere parar e trocar o exercício.
+  function painSheet(s, it, done) {
+    const exId = Store.exOf(s, it), ex = Store.exercise(exId);
+    let where = null, lvl = 0, note = '';
+    sheet({
+      render: () => `<h3>Dor ou incômodo</h3><div class="desc">Em ${esc(ex.nome)}. Fica registrado; se repetir, o app avisa e sugere alternativas.</div>
+        <div class="field"><label>Onde?</label><div class="chip-pick">${Store.PAIN_SPOTS.map((p) => `<button class="${where === p ? 'on' : ''}" data-a="w" data-v="${p}">${p}</button>`).join('')}</div></div>
+        <div class="field"><label>Quanto?</label><div class="seg">${Store.PAIN_LEVELS.map((l, v) => `<button class="${lvl === v ? 'on' : ''}" data-a="l" data-v="${v}">${l}</button>`).join('')}</div></div>
+        <div class="field"><label>Observação (opcional)</label><input class="input" data-in="n" value="${esc(note)}" placeholder="Ex.: na descida, pegada aberta"></div>
+        <button class="btn lime block" style="margin-top:16px" data-a="ok" ${where ? '' : 'disabled'}>Registrar</button>`,
+      actions: {
+        w: (ds) => { where = ds.v; Native.vibrate(6); sheetRefresh(); },
+        l: (ds) => { lvl = Number(ds.v); Native.vibrate(6); sheetRefresh(); },
+        n: (ds, el) => { note = el.value; },
+        ok: () => {
+          if (!where) return;
+          Store.addPain({ exId, sessionId: s.id, where, lvl, note });
+          closeSheet(); done();
+          if (lvl === 2) setTimeout(() => UI.confirmSheet('Dor forte', `Melhor parar ${esc(ex.nome)} por hoje. Quer trocar por outro exercício para o mesmo músculo? Se a dor for aguda ou continuar, procure um profissional.`, 'Trocar exercício', () => Tools.swapSheet(s, it, done)), 380);
+          else toast('Registrado. Se repetir, eu aviso.');
+        },
+      },
+    });
+  }
+  // Dor repetida: alternativas.
+  function painAlertSheet(s, it, done) {
+    const exId = Store.exOf(s, it), ex = Store.exercise(exId), pa = Store.painAlert(exId, s.id);
+    const list = Store.painsFor(exId).slice(-5).reverse();
+    sheet({
+      render: () => `<h3>${esc(pa ? pa.where : 'Incômodo')} incomodando</h3><div class="desc">${esc(ex.nome)} causou incômodo ${pa ? pa.n : ''} vezes recentemente. Algumas saídas:</div>
+        <div class="list">
+          <button class="menu-item" data-a="swap"><span class="ic">${icon('repeat', 'sm')}</span><span class="grow">Trocar o exercício<div class="small muted">Outro para o mesmo músculo, com outro ângulo</div></span></button>
+          <button class="menu-item" data-a="light"><span class="ic">${icon('minus', 'sm')}</span><span class="grow">Fazer hoje com 20% menos carga<div class="small muted">Nas séries que faltam</div></span></button>
+          <button class="menu-item" data-a="ignore"><span class="ic">${icon('x', 'sm')}</span><span class="grow">Ignorar por agora<div class="small muted">Avisa de novo se houver outro registro</div></span></button>
+        </div>
+        <div class="caps" style="margin:16px 2px 6px">Registros</div>${list.map((p) => `<div class="kv"><span>${shortDateBR(p.date)} · ${esc(p.where)}</span><span class="small ${p.lvl === 2 ? 'late-txt' : 'muted'}">${Store.PAIN_LEVELS[p.lvl]}${p.note ? ' · ' + esc(p.note) : ''}</span></div>`).join('')}
+        <div class="tiny muted" style="margin-top:12px">Se a dor for aguda ou continuar, procure um profissional de saúde.</div>`,
+      actions: {
+        swap: () => { closeSheet(); setTimeout(() => Tools.swapSheet(s, it, done), 380); },
+        light: () => { s.sets.filter((x) => x.itemId === it.id && !x.done && Number(x.kg) > 0).forEach((x) => { x.kg = Math.round(x.kg * 0.8 * 2) / 2; }); Store.save(); closeSheet(); toast('Carga reduzida em 20% nas séries que faltam'); done(); },
+        ignore: () => { Store.snoozePain(exId); closeSheet(); done(); },
+      },
+    });
+  }
+  const shortDateBR = (d) => d.split('-').reverse().slice(0, 2).join('/');
+
   // Exercício estagnado: o que fazer.
   function stallSheet(s, it, done) {
     const exId = Store.exOf(s, it), ex = Store.exercise(exId), st = Store.stallOf(exId, s.id);
@@ -420,6 +471,8 @@
       const pin = Tools.pinOf(exId);
       const live = !s.finished && Store.state.activeSessionId === s.id;
       const stall = live && !s.deload && !pr.complete && Store.stallOf(exId, s.id);
+      const pa = live && Store.painAlert(exId, s.id);
+      const painHTML = pa ? `<button class="suggest warn" data-a="painAlert" data-i="${i}" style="width:100%;text-align:left">${icon('alert', 'sm')}<span><b>${esc(pa.where)} incomodou ${pa.n} vezes neste exercício.</b> Toque para ver alternativas.</span></button>` : '';
       const stallHTML = stall ? `<button class="suggest warn" data-a="stall" data-i="${i}" style="width:100%;text-align:left">${icon('info', 'sm')}<span><b>3 treinos sem evoluir neste exercício.</b> Toque para ver o que fazer.</span></button>` : '';
       const quickHTML = s.quick ? `<div class="suggest" style="margin-top:10px">${icon('timer', 'sm')}<span><b>Treino rápido (~${s.quick.min} min):</b> descanso mais curto e menos séries.</span></div>` : '';
       const adjHTML = quickHTML + (s.checkin && s.checkin.adj && !s.deload ? `<div class="suggest" style="margin-top:10px">${icon('sparkle', 'sm')}<span><b>Treino aliviado hoje:</b> 10% menos carga${s.checkin.adj >= 2 ? ' e uma série a menos' : ''}, porque o dia está puxado.</span></div>` : '');
@@ -432,10 +485,10 @@
         ${swapped ? `<div class="small" style="color:var(--gold);margin:-2px 0 6px">${icon('repeat', 'sm')} Trocado hoje (no plano: ${esc(Store.exercise(it.exId).nome)})</div>` : ''}
         <div class="plan-line"><span class="chip">${Tools.repsText(it, ex)}${it.tech && it.tech.id === 'r21' ? ' (7+7+7)' : ''}</span>${Tools.loadText(it.kg, ex) && !(it.tech && it.tech.id === 'w531') ? `<span class="chip">${Tools.loadText(it.kg, ex)}</span>` : ''}${Store.isCardio(ex) ? '' : `<button class="chip blue" data-a="restCfg" data-i="${i}">${icon('timer', 'sm')}Descanso ${restLabel(Store.restFor(s, it))}</button>`}${pr.complete ? `<span class="chip done">${icon('check', 'sm')}Concluído</span>` : ''}</div>
         ${pin ? `<button class="pin-note" data-a="pin" data-i="${i}">${icon('note', 'sm')}<span>${esc(pin)}</span></button>` : ''}
-        <div class="quick-row">${ex.tipo === 'tempo' ? '' : `<button data-a="warm" data-i="${i}">${icon('flame', 'sm')}Aquecer</button>`}<button data-a="swap" data-i="${i}">${icon('repeat', 'sm')}Trocar</button>${pin ? '' : `<button data-a="pin" data-i="${i}">${icon('note', 'sm')}Nota fixa</button>`}</div>
+        <div class="quick-row">${ex.tipo === 'tempo' ? '' : `<button data-a="warm" data-i="${i}">${icon('flame', 'sm')}Aquecer</button>`}<button data-a="swap" data-i="${i}">${icon('repeat', 'sm')}Trocar</button>${pin ? '' : `<button data-a="pin" data-i="${i}">${icon('note', 'sm')}Nota fixa</button>`}${live ? `<button data-a="pain" data-i="${i}">${icon('alert', 'sm')}Dor</button>` : ''}</div>
         ${techBanner(items, i)}
         ${it.note ? `<div class="small muted" style="margin-top:10px">${icon('note', 'sm')} ${esc(it.note)}</div>` : ''}
-        ${deloadHTML}${stallHTML}${sugHTML}
+        ${deloadHTML}${painHTML}${stallHTML}${sugHTML}
         <div class="sets"><div class="sets-head"><span>#</span><span>Carga</span><span>${ex.tipo === 'tempo' ? 'Tempo' : 'Reps'}</span><span></span></div>${sets.map((x) => setRow(x, last, Store.isUni(it, ex))).join('')}</div>
         <button class="add-set" data-a="addSet" data-i="${i}">${icon('plus', 'sm')}Adicionar série</button>
         ${lastHTML}
@@ -633,7 +686,8 @@
           const ex = Store.exercise(exIdOf(s, it));
           // Peso do corpo: digita o peso extra (ou a ajuda, se a carga já é negativa); o sinal é mantido.
           if (Store.isBodyweight(ex)) { const sign = Number(x.kg) < 0 ? -1 : 1; numberSheet((sign < 0 ? 'Ajuda' : 'Peso extra') + ' · ' + (x.sub ? x.label : 'série ' + x.n), Math.abs(Number(x.kg) || 0), 0.5, (v) => adjust(ds.set, 'kg', 0, sign * Math.abs(v)), 'kg'); return; }
-          numberSheet('Carga · ' + (x.sub ? x.label : 'série ' + x.n), x.kg, 0.5, (v) => adjust(ds.set, 'kg', 0, v), 'kg', /barra|smith/i.test(ex.equip || '') ? Tools.platesHTML : null);
+          const bar = /barra|smith/i.test(ex.equip || '');
+          numberSheet('Carga · ' + (x.sub ? x.label : 'série ' + x.n), x.kg, 0.5, (v) => adjust(ds.set, 'kg', 0, v), 'kg', (v) => (bar ? Tools.platesHTML(v) : '') + Tools.pctChips(ex.id));
         },
         rEdit: (ds) => {
           const { x, it } = findSet(ds.set);
@@ -657,6 +711,8 @@
           s.sets.filter((x) => x.itemId === it.id && !x.done && !x.warm && !x.sub).forEach((x) => { x.kg = Number(ds.kg); });
           Store.save(); updatePage(Number(ds.i)); toast('Carga atualizada para ' + kg(ds.kg));
         },
+        pain: (ds) => { const { s, items } = ctx(); const i = Number(ds.i); painSheet(s, items[i], () => updatePage(i)); },
+        painAlert: (ds) => { const { s, items } = ctx(); const i = Number(ds.i); painAlertSheet(s, items[i], () => updatePage(i)); },
         stall: (ds) => { const { s, items } = ctx(); const i = Number(ds.i); stallSheet(s, items[i], () => updatePage(i)); },
         warm: (ds) => { const { s, items } = ctx(); const i = Number(ds.i); Tools.warmupSheet(s, items[i], () => updatePage(i)); },
         swap: (ds) => { const { s, items } = ctx(); const i = Number(ds.i); Tools.swapSheet(s, items[i], () => updatePage(i)); },
@@ -734,9 +790,12 @@
           <div class="tiles"><div class="card tile"><div class="v num">${clock(Date.now() - s.start)}</div><div class="l">Duração</div></div><div class="card tile"><div class="v num">${pr.setsDone}<small>/${pr.setsTotal}</small></div><div class="l">Séries</div></div><div class="card tile"><div class="v num">${volume(Store.sessionVolume(s))}</div><div class="l">Volume</div></div></div>
           <div class="field"><label>Como foi o treino?</label><div class="feel">${FEEL.map(([v, l]) => `<button class="${String(feel) === v ? 'on' : ''}" data-a="feel" data-v="${v}"><b>${v}</b>${l}</button>`).join('')}</div></div>
           <div class="field"><label>Observação geral (opcional)</label><textarea class="note-field" data-in="note" placeholder="Ex.: dormi mal, treino rendeu menos">${esc(note)}</textarea></div>
-          <div class="btn-row" style="margin-top:16px"><button class="btn ghost" data-a="no">Voltar</button><button class="btn lime" data-a="ok">Salvar treino</button></div>`;
+          <div class="btn-row" style="margin-top:16px"><button class="btn ghost" data-a="no">Voltar</button><button class="btn lime" data-a="ok">Salvar treino</button></div>
+          <button class="discard-link" data-a="discard">${icon('trash', 'sm')}Cancelar treino sem salvar</button>`;
       },
       actions: {
+        // Cancelar: apaga este treino inteiro (séries, notas, tempo), como se não tivesse começado.
+        discard: () => confirmDiscard(sid),
         feel: (ds) => { feel = Number(ds.v); sheetRefresh(); },
         note: (ds, el) => { note = el.value; },
         no: closeSheet,
@@ -747,6 +806,14 @@
         },
       },
     });
+  }
+
+  function confirmDiscard(sid) {
+    const s = Store.session(sid), done = s ? s.sets.filter((x) => x.done).length : 0;
+    UI.confirmSheet('Cancelar treino?', `Nada deste treino fica salvo${done ? `: as <b>${done} séries</b> feitas, as notas e o tempo são apagados` : ''}. O treino volta a ficar pendente na semana.`, 'Cancelar treino', () => {
+      Store.deleteSession(sid); Rest.stop(); Live.tick(); Screens.syncNative();
+      popTo(1); UI.switchTab('home', true); toast('Treino cancelado. Nada foi salvo.');
+    }, true);
   }
 
   function celebrate(s) {

@@ -145,5 +145,27 @@
     sheet(def);
   }
 
-  window.Tools = { minText, loadText, loadSpoken, repsText, platesHTML, warmupSheet, swapSheet, swapCandidates, pinOf, pinSheet, timeSheet };
+  // ---------- porcentagens do 1RM ----------
+  // Base: 1RM estimado das suas melhores séries. Repetições máximas aproximadas pela fórmula de Epley.
+  const PCTS = [100, 95, 90, 85, 80, 75, 70, 65, 60, 50];
+  const SCHEMES = [['Força', '5×5', 80], ['Hipertrofia', '3×8', 72.5], ['Hipertrofia', '3×12', 67.5], ['Resistência', '2×15', 60]];
+  const repsAt = (p) => (p >= 100 ? 1 : Math.max(1, Math.round(30 * (100 / p - 1))));
+  function roundKg(ex, kg) { const st = /barra|smith/i.test((ex && ex.equip) || '') ? 2.5 : 0.5; return Math.round(kg / st) * st; }
+  function oneRM(exId) { const ex = Store.exercise(exId); if (!ex || ex.tipo === 'tempo' || Store.isBodyweight(ex)) return 0; return Analytics.bestOf(exId).e1rm || 0; }
+  function pctTable(exId) {
+    const rm = oneRM(exId), ex = Store.exercise(exId);
+    if (!rm) return '';
+    return `<div class="card pct-card"><div class="row"><div class="caps grow">Porcentagens do 1RM</div><span class="small muted">1RM estimado: <b class="gold">${UI.nf(Math.round(rm))} kg</b></span></div>
+      <div class="pct-schemes">${SCHEMES.map(([n, sr, p]) => `<div><small>${n}</small><b>${sr}</b><span>${UI.nf(roundKg(ex, rm * p / 100))} kg · ${String(p).replace('.', ',')}%</span></div>`).join('')}</div>
+      <div class="pct-grid"><span class="h">%</span><span class="h">Carga</span><span class="h">Reps máx.</span>${PCTS.map((p) => `<span class="p">${p}%</span><span class="num">${UI.nf(roundKg(ex, rm * p / 100))} kg</span><span class="muted">~${repsAt(p)}</span>`).join('')}</div>
+      <div class="tiny faint" style="margin-top:8px">Valores aproximados. Use como ponto de partida e ajuste pela sensação da série.</div></div>`;
+  }
+  // Atalhos na hora de digitar a carga: toca e preenche.
+  function pctChips(exId) {
+    const rm = oneRM(exId), ex = Store.exercise(exId);
+    if (!rm) return '';
+    return `<div class="caps" style="margin:14px 2px 6px">% do 1RM (${UI.nf(Math.round(rm))} kg)</div><div class="pct-chips">${[90, 85, 80, 75, 70, 65, 60].map((p) => { const k = roundKg(ex, rm * p / 100); return `<button data-a="numSet" data-v="${k}"><b>${p}%</b>${UI.nf(k)}</button>`; }).join('')}</div>`;
+  }
+
+  window.Tools = { pctTable, pctChips, minText, loadText, loadSpoken, repsText, platesHTML, warmupSheet, swapSheet, swapCandidates, pinOf, pinSheet, timeSheet };
 })();

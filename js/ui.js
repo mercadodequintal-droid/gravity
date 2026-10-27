@@ -26,6 +26,7 @@
     down: '<path d="m6 9 6 6 6-6"/>',
     video: '<rect x="2" y="5" width="14" height="14" rx="3"/><path d="m16 10 6-3.5v11L16 14"/>',
     info: '<circle cx="12" cy="12" r="9"/><path d="M12 16v-5M12 8h.01"/>',
+    alert: '<path d="M12 3.5 2.5 20h19Z"/><path d="M12 10v4.5M12 17.2v.1"/>',
     upload: '<path d="M12 15V3M7 8l5-5 5 5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/>',
     download: '<path d="M12 3v12M7 10l5 5 5-5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/>',
     share: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/>',
@@ -323,6 +324,8 @@
       actions: {
         no: closeSheet,
         numIn: (ds, el) => { const box = document.getElementById('numExtra'); if (box && extra) box.innerHTML = extra(parseFloat(String(el.value).replace(',', '.'))); },
+        // Atalhos dentro do "extra" (ex.: % do 1RM): tocar preenche o valor.
+        numSet: (ds) => { const i = document.getElementById('numIn'); i.value = ds.v; const box = document.getElementById('numExtra'); if (box && extra) box.innerHTML = extra(Number(ds.v)); Native.vibrate(6); },
         ok: (ds, el) => { const v = parseFloat(String(document.getElementById('numIn').value).replace(',', '.')); closeSheet(); if (!isNaN(v)) onOk(v); },
       },
     });
