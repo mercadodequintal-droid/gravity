@@ -32,6 +32,28 @@
   }
 
   // Cartão pequeno para a tela inicial.
+  // ---------- Nível de poder (força real) ----------
+  // full = versão do Progresso (com cada levantamento); senão, cartão compacto da tela inicial.
+  function strengthCard(full) {
+    const st = Analytics.strength();
+    const fmt = (n) => Math.round(n).toLocaleString('pt-BR');
+    const head = `<div class="row" style="align-items:flex-end"><div class="grow"><div class="caps">Nível de poder</div>
+      ${st.power != null ? `<div class="pw-num num">${fmt(st.power)}</div><div class="small muted">${esc(st.level)} · média de ${st.count} ${st.count === 1 ? 'levantamento' : 'levantamentos'}</div>` : ''}</div>
+      ${st.power != null ? `<div class="pw-max small faint">de 9.001</div>` : ''}</div>`;
+    if (!st.bw) return `<div class="card pw-card appear">${head}<div class="small muted" style="margin-top:6px">Calculado pela sua força em relação ao peso do corpo. Registre seu peso para ver o seu.</div><button class="btn ghost sm" style="margin-top:12px" data-a="pwWeight">${icon('weight', 'sm')}Registrar peso</button></div>`;
+    if (st.power == null) return `<div class="card pw-card appear">${head}<div class="small muted" style="margin-top:6px">Aparece quando você registrar supino, agachamento, terra, desenvolvimento ou barra fixa.</div></div>`;
+    const bar = (l) => `<div class="pw-bar"><i style="width:${Math.min(100, l.idx / 5 * 100)}%"></i>${[1, 2, 3, 4].map((k) => `<b style="left:${k * 20}%"></b>`).join('')}</div>`;
+    if (!full) {
+      return `<div class="card pw-card press appear" data-a="pwOpen">${head}<div class="pw-mini">${st.lifts.map((l) => `<div><span>${esc(l.nome)}</span>${l.idx != null ? bar(l) : '<div class="pw-bar off"></div>'}</div>`).join('')}</div></div>`;
+    }
+    const rows = st.lifts.map((l) => l.idx == null
+      ? `<div class="pw-row off"><div class="row"><b class="grow">${esc(l.nome)}</b><span class="small faint">sem registro</span></div></div>`
+      : `<div class="pw-row"><div class="row"><b class="grow">${esc(l.nome)}</b><span class="small gold">${esc(l.level)}</span></div>${bar(l)}
+        <div class="tiny muted">${UI.nf(Math.round(l.e1rm))} kg · ${UI.nf(Math.round(l.ratio * 100) / 100)}× seu peso${l.next ? ` · ${esc(l.next)}: ${l.nextKg} kg` : ' · topo da tabela!'}</div></div>`).join('');
+    return `<div class="card pw-card appear">${head}<div class="pw-scale tiny faint">${Analytics.STR_LEVELS.map((n) => `<span>${n}</span>`).join('')}</div>${rows}
+      <div class="tiny faint" style="margin-top:10px">1RM estimado pelas suas melhores séries, comparado com o seu peso (${UI.nf(st.bw)} kg) e com faixas de referência ${st.sex === 'f' ? 'femininas' : 'masculinas'} (troque em Músculos → Homem/Mulher).</div></div>`;
+  }
+
   function muscleCard() {
     const { st, map } = volumeData();
     return `<div class="card muscle-card press appear" data-a="muscles"><div class="row" style="align-items:flex-start">
@@ -294,5 +316,5 @@
     Native.widget(JSON.stringify({ line1, line2, done, total }));
   }
 
-  Object.assign(window.Screens, { syncNative, MuscleMap, muscleCard, bodySVG, Records, recordsTable, Body, Medals, calendarCard, shareSession, measureSheet });
+  Object.assign(window.Screens, { strengthCard, syncNative, MuscleMap, muscleCard, bodySVG, Records, recordsTable, Body, Medals, calendarCard, shareSession, measureSheet });
 })();

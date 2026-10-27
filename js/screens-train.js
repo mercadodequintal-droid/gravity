@@ -147,7 +147,7 @@
         const deloadCard = dl ? `<div class="card deload-card appear"><div class="row"><span class="dl-ic">${icon('sparkle', 'sm')}</span><div class="grow"><b>Semana leve em andamento</b><small>Até ${dl.end.split('-').reverse().slice(0, 2).join('/')} · menos séries e 10% menos carga</small></div><button class="small muted" data-a="deloadEnd">Encerrar</button></div></div>`
           : dp ? `<div class="card deload-card appear"><div class="row" style="align-items:flex-start"><span class="dl-ic">${icon('sparkle', 'sm')}</span><div class="grow"><b>Hora de uma semana leve?</b><small>${dp.hard ? 'Muitas séries no limite nas últimas 2 semanas' : dp.weeks + ' semanas seguidas de treino'}. Uma semana com ~60% das séries e 10% menos carga ajuda o corpo a recuperar e voltar mais forte.</small></div></div>
             <div class="btn-row" style="margin-top:12px"><button class="btn ghost sm" data-a="deloadNo">Agora não</button><button class="btn lime sm" data-a="deloadYes">Fazer semana leve</button></div></div>` : '';
-        return head + `<div class="content">${who}${overall}${deloadCard}${quoteCard}${sched}${Screens.muscleCard()}${streakCard}${mission}
+        return head + `<div class="content">${who}${overall}${deloadCard}${quoteCard}${sched}${Screens.muscleCard()}${Screens.strengthCard()}${streakCard}${mission}
           <div class="section-title"><h2>Esta semana</h2><button class="link" data-a="progress">Ver evolução</button></div>${tiles}</div>`;
       },
       actions: {
@@ -158,6 +158,8 @@
         medals: () => push(Screens.Medals()),
         avatar: () => Profile.sheet(UI.refresh),
         editPlan: () => push(Screens.PlanEditor(Store.activePlan().id)),
+        pwOpen: () => UI.switchTab('progress'),
+        pwWeight: () => Screens.measureSheet(() => UI.refresh()),
         deloadYes: () => { Store.startDeload(); toast('Semana leve ativada por 7 dias'); UI.refresh(); },
         deloadNo: () => { Store.snoozeDeload(); toast('Tudo bem. Pergunto de novo em uma semana.'); UI.refresh(); },
         deloadEnd: () => { Store.endDeload(); toast('Semana leve encerrada'); UI.refresh(); },
@@ -229,6 +231,7 @@
           <div class="content"><div class="row appear" style="margin:4px 0 6px;gap:14px"><div class="letter ${STATUS[st.status].cls}" style="width:64px;height:64px;font-size:28px;border-radius:20px">${esc(w.letter)}</div>
           <div class="grow"><div style="font-size:22px;font-weight:700;letter-spacing:-.3px">${esc(w.name)}</div><div class="small muted">${daysText(w.days)} · ${w.items.length} exercícios · ~${estMinutes(w)} min</div></div></div>
           <div style="margin:10px 0 14px">${statusChip(st)}</div>
+          ${!cur && w.items.length && estMinutes(w) > 25 ? `<button class="quick-link" data-a="quick">${icon('timer', 'sm')}Pouco tempo hoje?</button>` : ''}
           ${!cur && fw.plan.workouts.length > 1 ? `<button class="switch-w press" data-a="switchW">${icon('repeat', 'sm')}<span class="grow"><b>Trocar de treino</b><small>Fazer outro treino do plano hoje</small></span>${icon('next', 'sm')}</button>` : ''}
           <div class="list">${rows || '<div class="card empty">Nenhum exercício. Toque no lápis para montar o treino.</div>'}</div></div>
           <div class="footer">${footer}</div>`;
@@ -240,8 +243,9 @@
         start: () => {
           const fw = Store.findWorkout(wid);
           if (!fw.workout.items.length) { toast('Adicione exercícios primeiro'); return; }
-          const s = Store.startSession(wid); push(Player(s.id, 0));
+          beginWorkout(wid, null);
         },
+        quick: () => quickSheet(wid),
         continue: () => { const s = currentSession(Store.findWorkout(wid).workout); s.finished = false; Store.state.activeSessionId = s.id; Store.save(); push(Player(s.id, firstOpenIndex(s))); },
         summary: () => { const st = Store.workoutStatus(Store.findWorkout(wid).workout); push(Screens.SessionDetail(st.session.id)); },
         item: (ds) => {
@@ -252,6 +256,54 @@
       },
     };
     return def;
+  }
+
+  // Começa o treino: pergunta como a pessoa está (se ligado) e aplica treino rápido / dia aliviado.
+  function beginWorkout(wid, quickMin) {
+    const fw = Store.findWorkout(wid);
+    const go = (c) => {
+      const s = Store.startSession(wid);
+      if (quickMin && !s.deload) Store.applyQuick(s, fw.workout, quickMin);
+      if (c) Store.applyCheckin(s, c, fw.workout);
+      push(Player(s.id, 0));
+    };
+    if (Store.state.settings.checkin && !Store.deloadActive()) checkinSheet(go); else go(null);
+  }
+
+  // Treino rápido: "quanto tempo você tem?" → encurta descanso e tira séries para caber.
+  function quickSheet(wid) {
+    const w = Store.findWorkout(wid).workout, full = estMinutes(w);
+    const opts = [15, 20, 25, 30, 40, 50, 60].filter((m) => m < full - 4).slice(-4);
+    sheet({
+      render: () => `<h3>Pouco tempo hoje?</h3><div class="desc">O treino completo leva ~${full} min. Escolha quanto tempo você tem: o app encurta o descanso e tira algumas séries, mantendo todos os exercícios.</div>
+        <div class="list">${opts.map((m) => { const q = Store.quickPlan(w, m); return `<button class="menu-item" data-a="go" data-m="${m}"><span class="ic num" style="font-family:var(--display);font-size:15px">${m}'</span><span class="grow">${m} minutos<div class="small muted">~${q.est} min · descanso ${Math.round(q.restF * 100)}%${q.cut ? ' · ' + q.cut + (q.cut === 1 ? ' série a menos' : ' séries a menos') : ''}${q.est > m + 2 ? ' · não coube todo' : ''}</div></span>${icon('play', 'sm')}</button>`; }).join('')}</div>`,
+      actions: { go: (ds) => { closeSheet(); setTimeout(() => beginWorkout(wid, Number(ds.m)), 300); } },
+    });
+  }
+
+  // Como você está hoje: sono, energia e dor antes de começar. Dia ruim → sugere aliviar o treino.
+  function checkinSheet(go) {
+    const c = { sono: 1, energia: 1, dor: 2 };
+    const Q = [['sono', 'Sono', ['Ruim', 'Ok', 'Bom']], ['energia', 'Energia', ['Baixa', 'Ok', 'Alta']], ['dor', 'Dor ou cansaço muscular', ['Muita', 'Pouca', 'Nenhuma']]];
+    sheet({
+      render: () => {
+        const lv = Store.checkinLevel(c);
+        const tip = lv >= 2 ? '<b>Dia puxado.</b> Sugestão: 10% menos carga e uma série a menos nos exercícios com 3 ou mais.' : lv ? '<b>Dia mais pesado que o normal.</b> Sugestão: 10% menos carga hoje.' : '';
+        return `<h3>Como você está hoje?</h3><div class="desc">Leva 3 toques. Se o dia estiver ruim, o app sugere aliviar o treino.</div>
+          ${Q.map(([k, l, o]) => `<div class="field" style="margin-top:12px"><label>${l}</label><div class="seg">${o.map((t, v) => `<button class="${c[k] === v ? 'on' : ''}" data-a="v" data-k="${k}" data-v="${v}">${t}</button>`).join('')}</div></div>`).join('')}
+          ${lv ? `<div class="suggest" style="margin-top:14px">${icon('sparkle', 'sm')}<span>${tip}</span></div>
+            <div class="btn-row" style="margin-top:14px"><button class="btn ghost" data-a="normal">Treinar normal</button><button class="btn lime" data-a="adj">Aliviar hoje</button></div>`
+          : `<button class="btn lime block" style="margin-top:16px" data-a="normal">Começar treino</button>`}
+          <div class="row" style="justify-content:space-between;margin-top:12px"><button class="link small muted" data-a="skip">Pular</button><button class="link small muted" data-a="never">Não perguntar mais</button></div>`;
+      },
+      actions: {
+        v: (ds) => { c[ds.k] = Number(ds.v); Native.vibrate(6); sheetRefresh(); },
+        adj: () => { closeSheet(); go(c); },
+        normal: () => { closeSheet(); go(Object.assign({}, c, { forceNormal: true })); },
+        skip: () => { closeSheet(); go(null); },
+        never: () => { Store.state.settings.checkin = false; Store.save(); closeSheet(); toast('Não vou mais perguntar. Dá para ligar de novo em Configurações.'); go(null); },
+      },
+    });
   }
 
   // Faixa de repetições completa: pergunta antes de aplicar (uma vez, sempre ou não).
@@ -331,7 +383,7 @@
 
     // Linha de série. Séries extras (drop, mini, aquecimento…) aparecem recuadas, com o nome da etapa.
     // Exercício por tempo: a coluna de repetições vira segundos e o botão vira "iniciar".
-    function setRow(x, last) {
+    function setRow(x, last, uni) {
       const prev = !x.sub && last && (last[x.n - 1] || null);
       const bw = Store.isBodyweight(x.exId);
       // Peso do corpo: 0 mostra "Corpo"; o resto é o que se soma (+) ou tira (−) do corpo.
@@ -339,11 +391,14 @@
       const kgSmall = x.sub ? esc(x.label) : prev ? 'ant. ' + kgVal(prev.kg) : bw ? (Number(x.kg) < 0 ? 'kg ajuda' : Number(x.kg) > 0 ? 'kg extra' : 'peso') : 'kg';
       const cardio = x.time && Store.isCardio(x.exId);
       const repSmall = x.rir != null ? feelOf(x.rir).short : x.target ? 'alvo ' + x.target : cardio ? 'min' : x.time ? 'seg' : x.sub ? 'reps' : prev ? 'ant. ' + prev.reps : 'reps';
-      const val = cardio ? (x.reps % 60 === 0 ? x.reps / 60 : UI.secs(x.reps)) : x.time ? UI.secs(x.reps) : x.reps;
+      let val = cardio ? (x.reps % 60 === 0 ? x.reps / 60 : UI.secs(x.reps)) : x.time ? UI.secs(x.reps) : x.reps;
+      // Unilateral: "D 10 / E 9". O +/− muda os dois lados; tocar no número ajusta cada lado.
+      const sides = uni && !x.time;
+      if (sides) val = `<span class="sd">D</span>${Store.sideR(x)}<span class="sl">/</span><span class="sd">E</span>${Store.sideL(x)}`;
       const btn = x.time && !x.done ? `<button class="check play" data-a="play" data-set="${x.id}">${icon('play')}</button>` : `<button class="check" data-a="toggle" data-set="${x.id}">${icon('check')}</button>`;
       const row = `<div class="set ${x.done ? 'done' : ''} ${x.sub ? 'sub' : ''} ${x.warm ? 'warm' : ''}" data-set="${x.id}"><span class="n num">${x.sub ? icon(x.warm ? 'flame' : 'next', 'sm') : x.n}</span>
         <div class="stepper"><button data-a="kgm" data-set="${x.id}">${icon('minus', 'sm')}</button><div class="val" data-a="kgEdit" data-set="${x.id}"><b class="num">${kgVal(x.kg)}</b><small>${kgSmall}</small></div><button data-a="kgp" data-set="${x.id}">${icon('plus', 'sm')}</button></div>
-        <div class="stepper"><button data-a="rm" data-set="${x.id}">${icon('minus', 'sm')}</button><div class="val" data-a="rEdit" data-set="${x.id}"><b class="num">${val}</b><small>${repSmall}</small></div><button data-a="rp" data-set="${x.id}">${icon('plus', 'sm')}</button></div>
+        <div class="stepper"><button data-a="rm" data-set="${x.id}">${icon('minus', 'sm')}</button><div class="val ${sides ? 'uni' : ''}" data-a="rEdit" data-set="${x.id}"><b class="num">${val}</b><small>${sides && !x.rir && !x.target ? 'cada lado' : repSmall}</small></div><button data-a="rp" data-set="${x.id}">${icon('plus', 'sm')}</button></div>
         ${btn}</div>`;
       // Pergunta rápida de esforço logo após concluir (some sozinha).
       const pick = x.id === rirFor ? `<div class="rir-pick"><span>Como foi essa série?</span><div class="rir-opts">${EFFORT.map((f) => `<button data-a="rir" data-set="${x.id}" data-v="${f.v}"><b>${f.nome}</b><small>${f.desc}</small></button>`).join('')}</div></div>` : '';
@@ -361,25 +416,27 @@
       const sugTxt = sug && (sug.why === 'range' ? `Você fez ${sug.hi} repetições em todas as séries (faixa ${sug.lo}–${sug.hi}). <b>Subir para ${kg(sug.to)} e voltar para ${sug.lo}?</b>`
         : sug.why === 'rir' ? `Na última vez as séries foram tranquilas. <b>Subir para ${kg(sug.to)}?</b>` : `Você completou tudo nas 2 últimas vezes. <b>Subir para ${kg(sug.to)}?</b>`);
       const sugHTML = sug && !s.deload && !(s.rangeSkip || {})[it.id] && sets.some((x) => !x.done && !x.warm && x.kg < sug.to) ? `<button class="suggest" data-a="applySug" data-i="${i}" data-kg="${sug.to}" style="width:100%;text-align:left">${icon('sparkle', 'sm')}<span>${sugTxt}</span></button>` : '';
-      const lastHTML = last ? `<div class="small faint" style="margin-top:10px">Última vez: ${last.map((x) => (x.time ? UI.secs(x.reps) : Store.isBodyweight(x.exId) ? (Number(x.kg) ? (x.kg > 0 ? '+' : '−') + nf(Math.abs(x.kg)) + '×' : '') + x.reps : nf(x.kg) + '×' + x.reps)).join(' · ')}</div>` : '';
+      const lastHTML = last ? `<div class="small faint" style="margin-top:10px">Última vez: ${last.map((x) => (x.time ? UI.secs(x.reps) : x.repsR != null && x.repsR !== x.repsL ? nf(x.kg) + '×' + x.repsR + '/' + x.repsL : Store.isBodyweight(x.exId) ? (Number(x.kg) ? (x.kg > 0 ? '+' : '−') + nf(Math.abs(x.kg)) + '×' : '') + x.reps : nf(x.kg) + '×' + x.reps)).join(' · ')}</div>` : '';
       const pin = Tools.pinOf(exId);
       const live = !s.finished && Store.state.activeSessionId === s.id;
       const stall = live && !s.deload && !pr.complete && Store.stallOf(exId, s.id);
       const stallHTML = stall ? `<button class="suggest warn" data-a="stall" data-i="${i}" style="width:100%;text-align:left">${icon('info', 'sm')}<span><b>3 treinos sem evoluir neste exercício.</b> Toque para ver o que fazer.</span></button>` : '';
-      const deloadHTML = s.deload ? `<div class="suggest" style="margin-top:10px">${icon('sparkle', 'sm')}<span><b>Semana leve:</b> menos séries e 10% menos carga para o corpo recuperar.</span></div>` : '';
+      const quickHTML = s.quick ? `<div class="suggest" style="margin-top:10px">${icon('timer', 'sm')}<span><b>Treino rápido (~${s.quick.min} min):</b> descanso mais curto e menos séries.</span></div>` : '';
+      const adjHTML = quickHTML + (s.checkin && s.checkin.adj && !s.deload ? `<div class="suggest" style="margin-top:10px">${icon('sparkle', 'sm')}<span><b>Treino aliviado hoje:</b> 10% menos carga${s.checkin.adj >= 2 ? ' e uma série a menos' : ''}, porque o dia está puxado.</span></div>` : '');
+      const deloadHTML = adjHTML + (s.deload ? `<div class="suggest" style="margin-top:10px">${icon('sparkle', 'sm')}<span><b>Semana leve:</b> menos séries e 10% menos carga para o corpo recuperar.</span></div>` : '');
       const pending = items.findIndex((y) => !Store.itemProgress(s, y).complete);
       const doneBanner = live && pr.complete ? `<div class="done-banner" data-done-banner><span class="db-ic">${icon('check', 'sm')}</span><span class="grow"><b>Exercício finalizado</b><small>${sets.filter((x) => x.done).length} séries feitas${pending >= 0 ? ' · ainda faltam ' + items.filter((y) => !Store.itemProgress(s, y).complete).length + ' exercício(s)' : ' · treino completo'}</small></span>${pending >= 0 ? `<button data-a="go" data-i="${pending}">Ir ao próximo</button>` : `<button data-a="finish">Finalizar</button>`}</div>` : '';
       return `${doneBanner}<div class="player-img">${imgHTML(ex, '', true)}<div class="fade"></div><span class="chip count num">${i + 1} / ${items.length}</span>
           <div class="tools"><button data-a="howto" data-i="${i}">${icon('info', 'sm')}Como fazer</button><button data-a="video" data-i="${i}">${icon('video', 'sm')}Vídeo</button></div></div>
         <div class="ex-title">${esc(ex.nome)}</div>
         ${swapped ? `<div class="small" style="color:var(--gold);margin:-2px 0 6px">${icon('repeat', 'sm')} Trocado hoje (no plano: ${esc(Store.exercise(it.exId).nome)})</div>` : ''}
-        <div class="plan-line"><span class="chip">${Tools.repsText(it, ex)}${it.tech && it.tech.id === 'r21' ? ' (7+7+7)' : ''}</span>${Tools.loadText(it.kg, ex) && !(it.tech && it.tech.id === 'w531') ? `<span class="chip">${Tools.loadText(it.kg, ex)}</span>` : ''}${Store.isCardio(ex) ? '' : `<button class="chip blue" data-a="restCfg" data-i="${i}">${icon('timer', 'sm')}Descanso ${restLabel(it.rest)}</button>`}${pr.complete ? `<span class="chip done">${icon('check', 'sm')}Concluído</span>` : ''}</div>
+        <div class="plan-line"><span class="chip">${Tools.repsText(it, ex)}${it.tech && it.tech.id === 'r21' ? ' (7+7+7)' : ''}</span>${Tools.loadText(it.kg, ex) && !(it.tech && it.tech.id === 'w531') ? `<span class="chip">${Tools.loadText(it.kg, ex)}</span>` : ''}${Store.isCardio(ex) ? '' : `<button class="chip blue" data-a="restCfg" data-i="${i}">${icon('timer', 'sm')}Descanso ${restLabel(Store.restFor(s, it))}</button>`}${pr.complete ? `<span class="chip done">${icon('check', 'sm')}Concluído</span>` : ''}</div>
         ${pin ? `<button class="pin-note" data-a="pin" data-i="${i}">${icon('note', 'sm')}<span>${esc(pin)}</span></button>` : ''}
         <div class="quick-row">${ex.tipo === 'tempo' ? '' : `<button data-a="warm" data-i="${i}">${icon('flame', 'sm')}Aquecer</button>`}<button data-a="swap" data-i="${i}">${icon('repeat', 'sm')}Trocar</button>${pin ? '' : `<button data-a="pin" data-i="${i}">${icon('note', 'sm')}Nota fixa</button>`}</div>
         ${techBanner(items, i)}
         ${it.note ? `<div class="small muted" style="margin-top:10px">${icon('note', 'sm')} ${esc(it.note)}</div>` : ''}
         ${deloadHTML}${stallHTML}${sugHTML}
-        <div class="sets"><div class="sets-head"><span>#</span><span>Carga</span><span>${ex.tipo === 'tempo' ? 'Tempo' : 'Reps'}</span><span></span></div>${sets.map((x) => setRow(x, last)).join('')}</div>
+        <div class="sets"><div class="sets-head"><span>#</span><span>Carga</span><span>${ex.tipo === 'tempo' ? 'Tempo' : 'Reps'}</span><span></span></div>${sets.map((x) => setRow(x, last, Store.isUni(it, ex))).join('')}</div>
         <button class="add-set" data-a="addSet" data-i="${i}">${icon('plus', 'sm')}Adicionar série</button>
         ${lastHTML}
         <div class="section-title"><h2>Observação</h2></div>
@@ -422,6 +479,30 @@
       idx = i; updateChrome();
     }
     function findSet(id) { const { s, items } = ctx(); const x = s.sets.find((y) => y.id === id); const i = items.findIndex((it) => it.id === x.itemId); return { s, x, i, it: items[i] }; }
+    // Unilateral: ajusta direito/esquerdo e repete nas séries seguintes ainda não feitas que estavam iguais.
+    const uniSet = (x, it) => !x.time && Store.isUni(it, Store.exercise(x.exId));
+    function adjustSides(id, dR, dL, absR, absL) {
+      const { s, x, i } = findSet(id);
+      const oR = Store.sideR(x), oL = Store.sideL(x);
+      const r = absR != null ? absR : oR + dR, l = absL != null ? absL : oL + dL;
+      Store.setSides(x, r, l);
+      if (!x.sub) s.sets.filter((y) => y.itemId === x.itemId && !y.sub && y.n > x.n && !y.done && Store.sideR(y) === oR && Store.sideL(y) === oL).forEach((y) => Store.setSides(y, r, l));
+      Store.save(); Native.vibrate(8); updatePage(i);
+    }
+    function sidesSheet(id) {
+      const { x } = findSet(id);
+      let r = Store.sideR(x), l = Store.sideL(x);
+      const box = (k, lb, v) => `<div class="field"><label>${lb}</label><div class="stepper big"><button data-a="sd" data-k="${k}" data-d="-1">${icon('minus')}</button><div class="val"><b class="num">${v}</b></div><button data-a="sd" data-k="${k}" data-d="1">${icon('plus')}</button></div></div>`;
+      sheet({
+        render: () => `<h3>Repetições · ${x.sub ? esc(x.label) : 'série ' + x.n}</h3><div class="desc">Exercício unilateral: conte cada lado separado.</div>
+          <div class="form-row">${box('r', 'Lado direito', r)}${box('l', 'Lado esquerdo', l)}</div>
+          <button class="btn lime block" style="margin-top:16px" data-a="ok">Salvar</button>`,
+        actions: {
+          sd: (ds) => { if (ds.k === 'r') r = Math.max(0, r + Number(ds.d)); else l = Math.max(0, l + Number(ds.d)); Native.vibrate(6); sheetRefresh(); },
+          ok: () => { closeSheet(); adjustSides(id, 0, 0, r, l); },
+        },
+      });
+    }
     // Ajusta uma série e repete o valor nas séries seguintes ainda não feitas que tinham o mesmo valor.
     function adjust(id, field, delta, absolute) {
       const { s, x, i } = findSet(id);
@@ -467,7 +548,7 @@
         return;
       }
       if (Store.isCardio(exIdOf(s, it))) { Rest.stop(); if (!wasComplete && Store.itemProgress(s, it).complete) toast('Cardio concluído'); return; }
-      Rest.start(Number(it.rest) || Store.state.settings.restDefault, exName);
+      Rest.start(Store.restFor(s, it), exName);
       if (g && i === g.end) {
         const back = [...Array(g.size).keys()].map((k) => g.start + k).find((k) => !Store.itemProgress(s, items[k]).complete);
         if (back != null) setTimeout(() => go(back), 450);
@@ -499,6 +580,14 @@
           }, 60);
         }, { passive: true });
         Native.keepOn(true);
+        // "Feito" por voz: marca a próxima série do exercício que está na tela.
+        window.onVoiceCmd = () => {
+          const page = el.querySelectorAll('.page')[idx];
+          const b = page && page.querySelector('.set:not(.done) [data-a="toggle"]');
+          if (b) { b.click(); toast('🎙 Série marcada'); } else toast('🎙 Nenhuma série pendente neste exercício');
+        };
+        const sLive = Store.session(sid);
+        Voice.listen(!!(sLive && !sLive.finished && Store.state.activeSessionId === sid));
         const s0 = Store.session(sid);
         if (s0 && s0.autoUp && s0.autoUp.length && !s0.autoUpShown) {
           s0.autoUpShown = true; Store.save();
@@ -507,7 +596,7 @@
         clearInterval(elapsedT);
         elapsedT = setInterval(() => { const e = el.querySelector('[data-elapsed]'); const s = Store.session(sid); if (e && s) e.textContent = clock(Date.now() - s.start); }, 1000);
       },
-      leave() { clearInterval(elapsedT); clearTimeout(rirT); Native.keepOn(false); },
+      leave() { clearInterval(elapsedT); clearTimeout(rirT); Native.keepOn(false); Voice.listen(false); window.onVoiceCmd = null; },
       actions: {
         back: pop,
         go: (ds) => go(Number(ds.i)),
@@ -537,8 +626,8 @@
         rir: (ds) => { const { s, x, i } = findSet(ds.set); x.rir = Number(ds.v); rirFor = null; Store.save(); Native.vibrate(10); updatePage(i); },
         kgm: (ds) => adjust(ds.set, 'kg', -(Store.state.settings.incKg || 1)),
         kgp: (ds) => adjust(ds.set, 'kg', Store.state.settings.incKg || 1),
-        rm: (ds) => { const { x } = findSet(ds.set); adjust(ds.set, 'reps', Store.isCardio(x.exId) ? -(x.reps > 60 ? 60 : 0) : x.time ? -(x.reps > 120 ? 60 : 15) : -1); },
-        rp: (ds) => { const { x } = findSet(ds.set); adjust(ds.set, 'reps', Store.isCardio(x.exId) ? 60 : x.time ? (x.reps >= 120 ? 60 : 15) : 1); },
+        rm: (ds) => { const { x, it } = findSet(ds.set); if (uniSet(x, it)) { adjustSides(ds.set, -1, -1); return; } adjust(ds.set, 'reps', Store.isCardio(x.exId) ? -(x.reps > 60 ? 60 : 0) : x.time ? -(x.reps > 120 ? 60 : 15) : -1); },
+        rp: (ds) => { const { x, it } = findSet(ds.set); if (uniSet(x, it)) { adjustSides(ds.set, 1, 1); return; } adjust(ds.set, 'reps', Store.isCardio(x.exId) ? 60 : x.time ? (x.reps >= 120 ? 60 : 15) : 1); },
         kgEdit: (ds) => {
           const { s, x, it } = findSet(ds.set);
           const ex = Store.exercise(exIdOf(s, it));
@@ -547,7 +636,8 @@
           numberSheet('Carga · ' + (x.sub ? x.label : 'série ' + x.n), x.kg, 0.5, (v) => adjust(ds.set, 'kg', 0, v), 'kg', /barra|smith/i.test(ex.equip || '') ? Tools.platesHTML : null);
         },
         rEdit: (ds) => {
-          const { x } = findSet(ds.set);
+          const { x, it } = findSet(ds.set);
+          if (uniSet(x, it)) { sidesSheet(ds.set); return; }
           if (Store.isCardio(x.exId)) { numberSheet('Tempo (minutos)', Math.round(x.reps / 60), 1, (v) => adjust(ds.set, 'reps', 0, Math.max(1, Math.round(v)) * 60), 'min'); return; }
           numberSheet((x.time ? 'Tempo (segundos)' : 'Repetições') + ' · ' + (x.sub ? x.label : 'série ' + x.n), x.reps, 1, (v) => adjust(ds.set, 'reps', 0, Math.round(v)));
         },

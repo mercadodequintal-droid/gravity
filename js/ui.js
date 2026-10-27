@@ -498,7 +498,75 @@
   };
   window.addEventListener('keydown', (e) => { if (e.key === 'Escape') window.appBack(); });
 
-    // iPhone no Safari (fora da tela de início): como instalar.
+    // Reordenar arrastando: segure o cartão (~0,35 s) e arraste. As setas continuam funcionando.
+  // list: elemento com os cartões; sel: seletor dos cartões; onMove(de, para) recebe os índices.
+  function sortable(list, sel, onMove) {
+    if (!list) return;
+    let drag = null, press = null, raf = 0, lastY = 0, block = false;
+    const scroller = list.closest('.content') || list.parentElement;
+    const items = () => [...list.querySelectorAll(sel)];
+    items().forEach((c) => c.classList.add('sort-item'));
+    function begin(card, y) {
+      const all = items(), from = all.indexOf(card);
+      const rects = all.map((c) => c.getBoundingClientRect());
+      const gap = all.length > 1 ? Math.max(0, (from < all.length - 1 ? rects[from + 1].top - rects[from].bottom : rects[from].top - rects[from - 1].bottom)) : 0;
+      drag = { card, all, from, to: from, y0: y, rects, gap, s0: scroller.scrollTop };
+      list.classList.add('sorting'); card.classList.add('dragging'); Native.vibrate(18);
+      raf = requestAnimationFrame(tick);
+    }
+    function place(y) {
+      const d = drag, dy = y - d.y0 + (scroller.scrollTop - d.s0);
+      d.card.style.transform = `translateY(${dy}px) scale(1.02)`;
+      const r0 = d.rects[d.from], mid = r0.top + r0.height / 2 + dy, step = r0.height + d.gap;
+      let to = d.from;
+      d.rects.forEach((r, k) => { const c = r.top + r.height / 2; if (k < d.from && mid < c) to = Math.min(to, k); if (k > d.from && mid > c) to = Math.max(to, k); });
+      if (to !== d.to) Native.vibrate(6);
+      d.to = to;
+      d.all.forEach((c, k) => {
+        if (c === d.card) return;
+        const s = d.from < to && k > d.from && k <= to ? -step : d.from > to && k >= to && k < d.from ? step : 0;
+        c.style.transform = s ? `translateY(${s}px)` : '';
+      });
+    }
+    // Rola a tela sozinho quando o dedo chega perto das bordas.
+    function tick() {
+      if (!drag) return;
+      const b = scroller.getBoundingClientRect(), edge = 70;
+      const v = lastY < b.top + edge ? -(b.top + edge - lastY) / 6 : lastY > b.bottom - edge - 90 ? (lastY - (b.bottom - edge - 90)) / 6 : 0;
+      if (v) { scroller.scrollTop += Math.max(-14, Math.min(14, v)); place(lastY); }
+      raf = requestAnimationFrame(tick);
+    }
+    function end() {
+      cancelAnimationFrame(raf);
+      const d = drag; drag = null;
+      list.classList.remove('sorting');
+      d.all.forEach((c) => { c.style.transform = ''; c.classList.remove('dragging'); });
+      block = true; setTimeout(() => { block = false; }, 350);
+      if (d.to !== d.from) onMove(d.from, d.to);
+    }
+    list.addEventListener('pointerdown', (e) => {
+      const card = e.target.closest(sel);
+      if (!card || e.target.closest('button,input,textarea,select,a') || e.button > 0) return;
+      lastY = e.clientY;
+      const x0 = e.clientX, y0 = e.clientY;
+      press = { x0, y0, t: setTimeout(() => { press = null; try { list.setPointerCapture(e.pointerId); } catch (er) { /* ignora */ } begin(card, y0); }, 350) };
+    });
+    list.addEventListener('pointermove', (e) => {
+      lastY = e.clientY;
+      if (press && Math.hypot(e.clientX - press.x0, e.clientY - press.y0) > 8) { clearTimeout(press.t); press = null; }
+      if (drag) place(e.clientY);
+    });
+    const up = () => { if (press) { clearTimeout(press.t); press = null; } if (drag) end(); };
+    list.addEventListener('pointerup', up); list.addEventListener('pointercancel', up);
+    // Enquanto arrasta, a tela não rola com o dedo e o toque final não abre o cartão.
+    list.addEventListener('touchmove', (e) => { if (drag) e.preventDefault(); }, { passive: false });
+    list.addEventListener('click', (e) => { if (block) { e.stopPropagation(); e.preventDefault(); } }, true);
+    list.addEventListener('contextmenu', (e) => { if (drag || press) e.preventDefault(); });
+  }
+  // Move um elemento de uma posição para outra dentro da lista.
+  const moveIn = (arr, from, to) => { const [x] = arr.splice(from, 1); arr.splice(to, 0, x); };
+
+  // iPhone no Safari (fora da tela de início): como instalar.
   function installHint() {
     if (document.getElementById('splash')) { setTimeout(installHint, 1500); return; }
     sheet({
@@ -512,5 +580,5 @@
       actions: { ok: closeSheet },
     });
   }
-  window.UI = { installHint, editable, savedFlash, replace, onSwipe, countdown, prBurst, icon, esc, nf, kg, secs, restLabel, clock, volume, shortDate, MONTHS, imgHTML, thumb, ring, Native, beep, toast, R, push, pop, popTo, switchTab, refresh, rerender, top, sheet, sheetRefresh, closeSheet, confirmSheet, numberSheet, Rest, bind, setNav };
+  window.UI = { installHint, sortable, moveIn, editable, savedFlash, replace, onSwipe, countdown, prBurst, icon, esc, nf, kg, secs, restLabel, clock, volume, shortDate, MONTHS, imgHTML, thumb, ring, Native, beep, toast, R, push, pop, popTo, switchTab, refresh, rerender, top, sheet, sheetRefresh, closeSheet, confirmSheet, numberSheet, Rest, bind, setNav };
 })();

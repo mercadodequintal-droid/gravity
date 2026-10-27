@@ -302,13 +302,15 @@
           <div class="form-row"><div class="field"><label>Duração (semanas)</label><div class="stepper big"><button data-a="wk" data-d="-1">${icon('minus')}</button><div class="val"><b class="num">${p.weeks}</b></div><button data-a="wk" data-d="1">${icon('plus')}</button></div></div>
           <div class="field"><label>Início</label><input class="input" type="date" data-ch="date" value="${p.startDate}"></div></div>
           <div class="section-title"><h2>Treinos</h2><span class="small muted">${p.workouts.length}</span></div>
-          <div class="list">${p.workouts.map((w, i) => `<div class="card wo press" data-a="w" data-id="${w.id}"><div class="letter">${esc(w.letter)}</div><div class="grow"><h4 class="ellipsis">${esc(w.name)}</h4><div class="meta">${Screens.daysText(w.days)} · ${w.items.length} exercícios</div></div>
+          ${p.workouts.length > 1 ? '<div class="sort-hint">Segure um treino e arraste para mudar a ordem</div>' : ''}
+          <div class="list" data-sort>${p.workouts.map((w, i) => `<div class="card wo press" data-a="w" data-id="${w.id}" data-i="${i}"><div class="letter">${esc(w.letter)}</div><div class="grow"><h4 class="ellipsis">${esc(w.name)}</h4><div class="meta">${Screens.daysText(w.days)} · ${w.items.length} exercícios</div></div>
             <div class="ord" style="display:flex;flex-direction:column"><button class="icon-btn" style="width:32px;height:28px;border-radius:9px" data-a="mv" data-i="${i}" data-d="-1">${icon('up', 'sm')}</button><button class="icon-btn" style="width:32px;height:28px;border-radius:9px;margin-top:4px" data-a="mv" data-i="${i}" data-d="1">${icon('down', 'sm')}</button></div></div>`).join('')}</div>
           <button class="add-set" style="margin-top:12px;height:52px" data-a="addW">${icon('plus', 'sm')}Adicionar treino</button>
           <div class="divider" style="margin-top:22px"></div>
           ${!active ? `<button class="btn lime block" data-a="activate">Usar este plano</button>` : '<div class="small muted" style="text-align:center;margin-bottom:6px">Este é o seu plano ativo.</div>'}
           <div class="btn-row" style="margin-top:10px"><button class="btn ghost sm" data-a="dup">${icon('copy', 'sm')}Duplicar</button><button class="btn danger sm" data-a="del">${icon('trash', 'sm')}Excluir</button></div></div>`;
       },
+      after(el) { UI.sortable(el.querySelector('[data-sort]'), '.card.wo', (a, b) => { UI.moveIn(Store.plan(pid).workouts, a, b); Store.save(); refresh(); }); },
       actions: {
         back: pop,
         f: (ds, el) => { Store.plan(pid)[ds.k] = el.value; Store.save(); },
@@ -362,11 +364,13 @@
           <div class="field" style="margin-top:0"><label>Nome</label><input class="input" data-in="f" data-k="name" value="${esc(w.name)}" placeholder="Ex.: Peito e Tríceps"></div></div>
           <div class="field"><label>Dias da semana</label><div class="days-pick">${[0, 1, 2, 3, 4, 5, 6].map((d) => `<button class="${w.days.includes(d) ? 'on' : ''}" data-a="day" data-d="${d}">${Store.WEEKDAYS[d]}</button>`).join('')}</div></div>
           <div class="section-title"><h2>Exercícios</h2><span class="small muted">${w.items.length} · ~${Screens.estMinutes(w)} min</span></div>
-          <div class="list">${w.items.map((it, i) => { const ex = Store.exercise(it.exId); const g = TECH.groupOf(w.items, i); return `${g && g.pos === 1 ? `<div class="group-label">${icon('repeat', 'sm')}${esc(g.tech.nome)} · ${g.size} exercícios sem descanso entre eles</div>` : ''}<div class="card edit-item press ${g ? 'grouped' : ''}" data-a="item" data-i="${i}">${thumb(ex)}<div class="grow"><h4 class="ellipsis">${esc(ex.nome)}</h4><div class="meta num">${ex.tipo === 'tempo' ? Tools.repsText(it, ex) : it.sets + ' × ' + esc(it.reps)}${Tools.loadText(it.kg, ex) ? ' · ' + Tools.loadText(it.kg, ex) : ''}${Store.isCardio(ex) ? ' · sem descanso' : ' · ' + restLabel(it.rest)}</div>${it.tech && TECH.get(it.tech.id) ? `<div class="chip-row" style="margin-top:6px"><span class="chip blue tchip">${icon('flame', 'sm')}${esc(TECH.chip(it))}</span></div>` : ''}</div>
+          ${w.items.length > 1 ? '<div class="sort-hint">Segure um exercício e arraste para mudar a ordem</div>' : ''}
+          <div class="list" data-sort>${w.items.map((it, i) => { const ex = Store.exercise(it.exId); const g = TECH.groupOf(w.items, i); return `${g && g.pos === 1 ? `<div class="group-label">${icon('repeat', 'sm')}${esc(g.tech.nome)} · ${g.size} exercícios sem descanso entre eles</div>` : ''}<div class="card edit-item press ${g ? 'grouped' : ''}" data-a="item" data-i="${i}">${thumb(ex)}<div class="grow"><h4 class="ellipsis">${esc(ex.nome)}</h4><div class="meta num">${ex.tipo === 'tempo' ? Tools.repsText(it, ex) : it.sets + ' × ' + esc(it.reps)}${Tools.loadText(it.kg, ex) ? ' · ' + Tools.loadText(it.kg, ex) : ''}${Store.isCardio(ex) ? ' · sem descanso' : ' · ' + restLabel(it.rest)}</div>${it.tech && TECH.get(it.tech.id) ? `<div class="chip-row" style="margin-top:6px"><span class="chip blue tchip">${icon('flame', 'sm')}${esc(TECH.chip(it))}</span></div>` : ''}</div>
             <div class="ord"><button data-a="mv" data-i="${i}" data-d="-1">${icon('up', 'sm')}</button><button data-a="mv" data-i="${i}" data-d="1">${icon('down', 'sm')}</button></div></div>`; }).join('') || '<div class="card small muted">Nenhum exercício ainda.</div>'}</div>
           <button class="btn blue block" style="margin-top:14px" data-a="add">${icon('plus', 'sm')}Adicionar exercícios</button>
           <button class="btn danger block sm" style="margin-top:24px" data-a="del">${icon('trash', 'sm')}Excluir treino</button></div>`;
       },
+      after(el) { UI.sortable(el.querySelector('[data-sort]'), '.card.edit-item', (a, b) => { UI.moveIn(W().items, a, b); Store.save(); refresh(); }); },
       actions: {
         back: pop,
         f: (ds, el) => { W()[ds.k] = ds.k === 'letter' ? el.value.toUpperCase() : el.value; Store.save(); },
@@ -429,6 +433,7 @@
             <div class="small muted" style="margin:-2px 2px 4px">Cardio não tem descanso: o treino segue direto para o próximo exercício.</div>`
           : `<div class="form-row">${step('Séries', 'sets', 1)}<div class="field"><label>${ex.tipo === 'tempo' ? 'Tempo (segundos)' : 'Repetições'}</label><input class="input num" style="height:54px;text-align:center;font-size:19px;font-weight:700" data-in="reps" value="${esc(it.reps)}" placeholder="10 ou 8-12"></div></div>
         ${Store.isBodyweight(ex) ? bwHTML() : ''}<div class="form-row">${Store.isBodyweight(ex) ? (Number(it.kg) ? bwStep() : '') : step('Carga sugerida (kg)', 'kg', S().settings.incKg || 1)}${step('Descanso', 'rest', 15, restLabel)}</div>`}
+        ${ex.tipo === 'tempo' ? '' : `<div class="switch-row" data-a="uni" style="margin-top:6px"><div class="grow">Unilateral<div class="small muted">Conta as repetições do lado direito e do esquerdo separadas</div></div><div class="switch ${Store.isUni(it, ex) ? 'on' : ''}"></div></div>`}
         ${techHTML()}
         <div class="field"><label>Observação</label><input class="input" data-in="note" value="${esc(it.note || '')}" placeholder="Ex.: pegada fechada"></div>
         <div class="btn-row" style="margin-top:18px"><button class="btn danger" style="flex:0 0 56px;padding:0" data-a="rm">${icon('trash')}</button><button class="btn ghost" style="flex:0 0 auto" data-a="info">${icon('info', 'sm')}</button><button class="btn lime" data-a="ok">Salvar</button></div>`,
@@ -436,6 +441,7 @@
         st: (ds) => { const min = ds.k === 'sets' ? 1 : ds.k === 'rest' ? 5 : 0; it[ds.k] = Math.max(min, Math.round((Number(it[ds.k]) + Number(ds.d)) * 100) / 100); Store.save(); Native.vibrate(6); sheetRefresh(); },
         ed: (ds) => numberSheet(ds.k === 'kg' ? 'Carga (kg)' : ds.k === 'rest' ? 'Descanso (segundos)' : 'Séries', it[ds.k], 1, (v) => { it[ds.k] = Math.max(0, v); Store.save(); refresh(); setTimeout(() => itemSheet(w, i), 380); }),
         reps: (ds, el) => { it.reps = el.value.trim() || '10'; Store.save(); },
+        uni: () => { it.uni = !Store.isUni(it, ex); Store.save(); Native.vibrate(6); sheetRefresh(); },
         bw: (ds) => { const m = Math.abs(Number(it.kg) || 0) || 5; it.kg = ds.v === 'corpo' ? 0 : ds.v === 'mais' ? m : -m; Store.save(); Native.vibrate(6); sheetRefresh(); },
         bwst: (ds) => {
           const sign = Number(it.kg) < 0 ? -1 : 1, inc = S().settings.incKg || 1;
@@ -560,6 +566,7 @@
             <div class="card tile"><div class="ic" style="color:var(--amber)">${icon('flame', 'sm')}</div><div class="v num">${streak}<small>sem</small></div><div class="l">Semanas completas seguidas</div></div>
             <div class="card tile"><div class="ic" style="color:var(--blue)">${icon('weight', 'sm')}</div><div class="v num">${volume(totalVol)}</div><div class="l">Volume levantado</div></div>
             <div class="card tile"><div class="ic" style="color:var(--violet)">${icon('clock', 'sm')}</div><div class="v num">${avgMin}<small>min</small></div><div class="l">Duração média · ${totalSets} séries</div></div></div>
+          <div class="section-title"><h2>Força</h2><span class="small muted">o nível de poder de verdade</span></div>${Screens.strengthCard(true)}
           <div class="section-title"><h2>Constância</h2><span class="small muted">treinos completos por semana</span></div>
           <div class="card">${barChart(perWeek, { color: 'var(--lime)' })}<div class="legend"><span><i style="background:var(--lime)"></i>Completos</span><span><i style="background:rgba(var(--fg-rgb),.1)"></i>Planejados</span></div></div>
           <div class="section-title"><h2>Evolução de força</h2>${gain ? `<span class="chip ${gain > 0 ? 'done' : 'late'}">${gain > 0 ? '+' : ''}${gain}%</span>` : ''}</div>
@@ -584,6 +591,7 @@
         sess: (ds) => push(SessionDetail(ds.id)),
         demo: () => { if (!Store.activePlan()) { toast('Escolha um plano primeiro, em Planos'); return; } Store.seedDemo(); refresh(); toast('Dados de exemplo criados. Remova em Configurações.'); },
         muscles: () => push(progSection(0)),
+        pwWeight: () => Screens.measureSheet(() => refresh()),
         records: () => push(progSection(1)),
         body: () => push(progSection(2)),
         tests: () => push(progSection(3)),
@@ -649,9 +657,12 @@
           ${sw('Sugerir aumento de carga', 'Pelas repetições e pelo esforço (RIR)', 'suggest')}
           <div class="switch-row" style="flex-wrap:wrap"><div class="grow"><div>Progressão pela faixa de repetições</div><div class="small muted">Exercícios com faixa (ex.: 8–12): bateu o topo em todas as séries, a carga sobe e volta para o início</div></div>
             <div class="seg" style="width:100%;margin-top:8px">${[['ask', 'Perguntar'], ['auto', 'Automática'], ['off', 'Desligada']].map(([v, l]) => `<button class="${(st().rangeMode || 'ask') === v ? 'on' : ''}" data-a="rangeMode" data-v="${v}">${l}</button>`).join('')}</div></div>
+          ${sw('Perguntar como você está hoje', 'Sono, energia e dor antes do treino · dia ruim alivia o treino', 'checkin')}
           ${sw('Perguntar como foi a série', 'No limite, pesado ou tranquilo · ajuda a sugerir a carga', 'askRir')}
           ${sw('Som no fim do descanso', 'Bipes 3, 2, 1 e sinal de largada', 'sound')}
           <button class="menu-item" data-a="voice"><span class="ic">${icon('play', 'sm')}</span><span class="grow">Voz no treino<div class="small muted">${Voice.LEVELS[Voice.cfg().level][1]}${Voice.cfg().level ? ' · fala a próxima série e o fim do descanso' : ''}</div></span>${icon('next', 'sm')}</button>
+          ${window.Android ? `<button class="menu-item" data-a="band"><span class="ic">${icon('timer', 'sm')}</span><span class="grow">Aviso na pulseira ou relógio<div class="small muted">Galaxy Fit, Galaxy Watch e outros: vibra no pulso quando o descanso acaba</div></span>${icon('next', 'sm')}</button>` : ''}
+          ${sw('Série feita por voz', 'Diga “feito” para marcar a série · usa o microfone durante o treino' + (window.Android ? '' : ' · no iPhone pode não funcionar'), 'voiceDone')}
           ${sw('Vibração', 'Ao concluir séries e no fim do descanso', 'vibrate')}
           ${sw('Abertura animada', 'Scouter ao abrir o app (toque para pular)', 'splash')}
           ${sw('Fotos coloridas', 'Desligado: fotos no tom do tema', 'colorPhotos')}</div>
@@ -668,6 +679,16 @@
         back: pop,
         name: (ds, el) => { st().name = el.value.trim(); Store.save(); UI.savedFlash(); },
         st: (ds) => { st()[ds.k] = Math.max(Number(ds.min), Math.round((Number(st()[ds.k]) + Number(ds.d)) * 10) / 10); Store.save(); Native.vibrate(6); refresh(); UI.savedFlash(); },
+        band: () => sheet({
+          render: () => `<h3>Aviso na pulseira</h3><div class="desc">Quando o descanso acaba, o Gravity mostra a notificação <b>“Bora! Descanso acabou”</b> com a próxima série. Pulseiras e relógios recebem essa notificação e vibram no pulso. Para ligar numa Galaxy Fit (ou Galaxy Watch):</div>
+            <div class="list">
+              <div class="menu-item"><span class="ic">1</span><span class="grow">Abra o app <b>Galaxy Wearable</b> no celular</span></div>
+              <div class="menu-item"><span class="ic">2</span><span class="grow">Toque em <b>Notificações</b> e ligue o <b>Gravity</b> na lista de apps</span></div>
+              <div class="menu-item"><span class="ic">3</span><span class="grow">Ainda em Notificações, ligue <b>Mostrar com o celular em uso</b> (ou desligue “Só quando o celular não estiver em uso”). Sem isso, a pulseira não vibra enquanto o Gravity está aberto na tela</span></div>
+            </div><div class="tiny muted" style="margin-top:12px">Os nomes das opções podem mudar um pouco conforme a versão. Em outras marcas, o caminho é parecido: app da pulseira → Notificações → Gravity.</div>
+            <button class="btn lime block" style="margin-top:16px" data-a="ok">Entendi</button>`,
+          actions: { ok: closeSheet },
+        }),
         rangeMode: (ds) => { st().rangeMode = ds.v; Store.save(); UI.savedFlash(); refresh(); },
         theme: (ds) => { Theme.apply(ds.v); Store.save(); Native.vibrate(8); UI.savedFlash(); refresh(); },
         sw: (ds) => { st()[ds.k] = !st()[ds.k]; Store.save(); document.body.classList.toggle('color-photos', !!st().colorPhotos); if (ds.k === 'reminder') { Screens.syncNative(); if (st().reminder) toast('Lembrete às ' + st().reminderTime + ' nos dias do plano'); else UI.savedFlash(); } else UI.savedFlash(); refresh(); },

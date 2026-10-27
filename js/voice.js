@@ -113,5 +113,33 @@
   }
   Object.assign(window.Screens, { VoiceSettings });
 
-  window.Voice = { LEVELS, cfg, set, push, say, speak, secs, kg, voices, SAMPLE, log };
+  // ====================== "SÉRIE FEITA" POR VOZ ======================
+  // Com settings.voiceDone ligado, a tela do treino escuta o microfone e, ao ouvir "feito" (ou "pronto"),
+  // chama window.onVoiceCmd('feito'). No Android usa o reconhecimento do celular (sem internet quando dá);
+  // no navegador (iPhone) usa o reconhecimento do Safari, que pode falhar ou pedir permissão de novo.
+  let wanted = false, active = false, rec = null, lastHit = 0;
+  const HIT = /(^|[^a-zà-ú])(feito|feita|pronto|pronta)([^a-zà-ú]|$)/i;
+  function webStart() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return;
+    rec = new SR(); rec.lang = 'pt-BR'; rec.continuous = true; rec.interimResults = true;
+    rec.onresult = (e) => {
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (HIT.test(e.results[i][0].transcript) && Date.now() - lastHit > 2500) { lastHit = Date.now(); if (window.onVoiceCmd) window.onVoiceCmd('feito'); }
+      }
+    };
+    rec.onend = () => { if (active && rec) setTimeout(() => { try { rec && rec.start(); } catch (e) { /* já ligado */ } }, 300); };
+    rec.onerror = (e) => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { active = false; wanted = false; rec = null; UI.toast('Sem acesso ao microfone para o "feito" por voz'); } };
+    try { rec.start(); } catch (e) { /* ignora */ }
+  }
+  function apply(on) {
+    if (on === active) return;
+    active = on;
+    if (A && A.voiceListen) { try { A.voiceListen(on); } catch (e) { /* ignora */ } return; }
+    if (on) webStart(); else if (rec) { const r = rec; rec = null; r.onend = null; try { r.abort(); } catch (e) { /* ignora */ } }
+  }
+  function listen(on) { wanted = !!on && !!Store.state.settings.voiceDone; apply(wanted); }
+  document.addEventListener('visibilitychange', () => apply(wanted && !document.hidden));
+
+  window.Voice = { listen, LEVELS, cfg, set, push, say, speak, secs, kg, voices, SAMPLE, log };
 })();

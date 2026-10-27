@@ -132,7 +132,7 @@
   // Instalação nova começa zerada: sem plano e sem histórico (os modelos ficam em Planos → Modelos prontos).
   // Quem atualiza o app mantém tudo, porque load() só chama fresh() quando não há dados salvos.
   function fresh() {
-    const settings = { name: '', restDefault: 60, restStep: 15, incKg: 2, weekStart: 1, sound: true, vibrate: true, suggest: true, colorPhotos: false, splash: true, bar: 20, askRir: true, reminder: false, reminderTime: '18:00' };
+    const settings = { name: '', restDefault: 60, restStep: 15, incKg: 2, weekStart: 1, sound: true, vibrate: true, suggest: true, colorPhotos: false, splash: true, bar: 20, askRir: true, reminder: false, reminderTime: '18:00', checkin: true, voiceDone: false };
     return { v: 1, settings, customExercises: [], exMeta: {}, plans: [], activePlanId: null, sessions: [], activeSessionId: null };
   }
 
@@ -213,12 +213,15 @@
   }
 
   // Exercício concluído = todas as séries planejadas marcadas (ou marcado manualmente).
+  // Séries que este treino pede do exercício: as do plano, ou menos (semana leve, dia aliviado, treino rápido).
+  function sessionNeed(s, item) { return s.target && s.target[item.id] != null ? s.target[item.id] : item.sets; }
   function itemProgress(session, item) {
     const mains = session.sets.filter((x) => x.itemId === item.id && !x.sub);
     const done = mains.filter((x) => x.done).length;
-    const planned = Math.max(item.sets, mains.length);
+    const need = sessionNeed(session, item);
+    const planned = Math.max(need, mains.length);
     const extrasLeft = session.sets.some((x) => x.itemId === item.id && x.sub && !x.warm && !x.done);
-    const complete = (session.completed || []).includes(item.id) || (done >= item.sets && !extrasLeft);
+    const complete = (session.completed || []).includes(item.id) || (done >= need && !extrasLeft);
     return { done, planned, complete };
   }
   function sessionProgress(session) {
@@ -321,10 +324,81 @@
       const mine = s.sets.filter((x) => x.itemId === it.id);
       const mains = mine.filter((x) => !x.sub);
       const n = Math.max(1, Math.round(mains.length * DELOAD.sets));
+      (s.target = s.target || {})[it.id] = n;
       mains.slice(0, n).forEach((x) => { if (Number(x.kg) > 0 && !x.time) x.kg = Math.round(x.kg * DELOAD.load * 2) / 2; keep.push(x); });
     });
     s.sets = s.sets.filter((x) => keep.includes(x));
   }
+
+  // ---------- exercícios unilaterais ----------
+  // Lado direito e esquerdo contados separados (x.repsR / x.repsL); x.reps guarda o menor dos dois
+  // para recordes e volume. Liga sozinho para nomes como "unilateral", "um braço", "uma perna".
+  const UNI_RX = /unilateral|um braço|uma perna|uma mão|one.arm|one.leg|single/i;
+  function isUni(it, ex) { if (it && it.uni != null) return !!it.uni; const e = ex || (it && exercise(it.exId)); return !!(e && e.tipo !== 'tempo' && UNI_RX.test(e.nome || '')); }
+  const sideR = (x) => (x.repsR != null ? x.repsR : Number(x.reps) || 0);
+  const sideL = (x) => (x.repsL != null ? x.repsL : Number(x.reps) || 0);
+  function setSides(x, r, l) { x.repsR = Math.max(0, r); x.repsL = Math.max(0, l); x.reps = Math.min(x.repsR, x.repsL); }
+
+  // ---------- como você está hoje ----------
+  // Respostas: sono, energia e dor (0 = ruim/baixa/muita, 1 = ok/pouca, 2 = bom/alta/nenhuma).
+  // 1 resposta ruim → 10% menos carga; 2 ou mais → também 1 série a menos nos exercícios com 3 ou mais.
+  function checkinLevel(c) { return ['sono', 'energia', 'dor'].filter((k) => c[k] === 0).length; }
+  function applyCheckin(s, c, w) {
+    const lv = c.forceNormal ? 0 : checkinLevel(c);
+    s.checkin = { sono: c.sono, energia: c.energia, dor: c.dor, adj: lv ? Math.min(2, lv) : 0 };
+    if (!lv) return;
+    const keep = [];
+    w.items.forEach((it) => {
+      const mains = s.sets.filter((x) => x.itemId === it.id && !x.sub);
+      const n = lv >= 2 && mains.length >= 3 ? mains.length - 1 : mains.length;
+      if (n < mains.length) (s.target = s.target || {})[it.id] = Math.min(sessionNeed(s, it), n);
+      s.sets.filter((x) => x.itemId === it.id).forEach((x) => { if (!x.sub && mains.indexOf(x) >= n) return; if (Number(x.kg) > 0 && !x.time) x.kg = Math.round(x.kg * 0.9 * 2) / 2; keep.push(x); });
+    });
+    s.sets = s.sets.filter((x) => keep.includes(x));
+    save();
+  }
+  // ---------- treino rápido ----------
+  // "Pouco tempo hoje": primeiro encurta o descanso (60%, mínimo 30 s); se ainda não couber, tira séries
+  // dos exercícios com mais séries, deixando pelo menos 1 em cada. Sem as etapas extras das técnicas.
+  const SET_S = 45;
+  function estimate(w, sets, restF) {
+    return w.items.reduce((a, it, k) => a + (isCardio(it.exId) ? sets[k] * (Number(it.reps) || 1200)
+      : sets[k] * (SET_S + Math.max(restF < 1 ? 30 : 0, Math.round((Number(it.rest) || S.settings.restDefault) * restF)))), 0) / 60;
+  }
+  function quickPlan(w, min) {
+    const full = w.items.map((it) => Number(it.sets) || 1), sets = full.slice();
+    let restF = 0.6;
+    while (estimate(w, sets, restF) > min) {
+      let k = -1;
+      sets.forEach((n, j) => { if (n > 1 && !isCardio(w.items[j].exId) && (k < 0 || n >= sets[k])) k = j; });
+      if (k < 0) break;
+      sets[k]--;
+    }
+    return { sets, restF, est: Math.round(estimate(w, sets, restF)), full: Math.round(estimate(w, full, 1)), cut: full.reduce((a, n) => a + n, 0) - sets.reduce((a, n) => a + n, 0) };
+  }
+  function applyQuick(s, w, min) {
+    const q = quickPlan(w, min);
+    s.quick = { min, rest: q.restF };
+    s.target = s.target || {};
+    const keep = [];
+    w.items.forEach((it, k) => {
+      const mine = s.sets.filter((x) => x.itemId === it.id), mains = mine.filter((x) => !x.sub);
+      const n = Math.min(mains.length, q.sets[k]);
+      s.target[it.id] = Math.min(sessionNeed(s, it), n);
+      mains.slice(0, n).forEach((x) => keep.push(x));
+      if (n >= mains.length) mine.filter((x) => x.sub).forEach((x) => keep.push(x));
+    });
+    s.sets = s.sets.filter((x) => keep.includes(x));
+    save();
+  }
+  // Descanso deste exercício neste treino (encurtado no treino rápido).
+  function restFor(s, it) {
+    const r = Number(it.rest) || S.settings.restDefault;
+    return s && s.quick ? Math.max(30, Math.round(r * s.quick.rest / 5) * 5) : r;
+  }
+
+  // Treinos "leves" (semana leve ou dia ajustado) não contam para sugestões e estagnação.
+  const lightSession = (s) => !!(s.deload || (s.checkin && s.checkin.adj));
 
   // ---------- estagnação ----------
   // Os 3 últimos treinos do exercício não superaram o anterior a eles (1RM estimado, ou repetições
@@ -332,7 +406,7 @@
   function stallOf(exId, currentSessionId) {
     const ex = exercise(exId);
     if (!ex || ex.tipo === 'tempo') return null;
-    const h = exerciseHistory(exId).filter((x) => !x.session.deload && x.session.id !== currentSessionId);
+    const h = exerciseHistory(exId).filter((x) => !lightSession(x.session) && x.session.id !== currentSessionId);
     if (h.length < 4) return null;
     const score = (x) => (x.e1rm > 0 ? x.e1rm : Math.max(...x.sets.map((y) => Number(y.reps) || 0)));
     const base = score(h[h.length - 4]), best = Math.max(...h.slice(-3).map(score));
@@ -441,7 +515,7 @@
     exId = exId || item.exId;
     // Peso do corpo progride em repetições, sem sugestão de carga.
     if (exercise(exId).tipo === 'tempo' || isBodyweight(exId) || (item.tech && item.tech.id === 'w531')) return null;
-    const all = exerciseHistory(exId).filter((h) => h.session.id !== currentSessionId && !h.session.deload);
+    const all = exerciseHistory(exId).filter((h) => h.session.id !== currentSessionId && !lightSession(h.session));
     const lastH = all[all.length - 1];
     const rg = repRange(item.reps);
     if (rg && rangeMode() !== 'off') {
@@ -608,7 +682,7 @@
   function clearDemo() { S.sessions = S.sessions.filter((s) => !s.demo); save(true); }
 
   window.Store = {
-    load, save, get state() { return S; }, uid, isCardio, isBodyweight, bodyWeight, loadOf, repRange, rangeMode, applyRange, deloadActive, deloadProposal, startDeload, endDeload, snoozeDeload, stallOf, snoozeStall, stalledExercises, DELOAD,
+    load, save, get state() { return S; }, uid, sessionNeed, quickPlan, applyQuick, restFor, isUni, sideR, sideL, setSides, checkinLevel, applyCheckin, lightSession, isCardio, isBodyweight, bodyWeight, loadOf, repRange, rangeMode, applyRange, deloadActive, deloadProposal, startDeload, endDeload, snoozeDeload, stallOf, snoozeStall, stalledExercises, DELOAD,
     WEEKDAYS, WEEKDAYS_LONG, GROUPS, TEMPLATES, DAY,
     iso, parseISO, today, addDays, weekStartOf, weekRange, weeksBack,
     allExercises, exercise, findExerciseByName, videoUrl,

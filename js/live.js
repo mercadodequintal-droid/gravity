@@ -37,7 +37,7 @@
     const mine = a.s.sets.filter((y) => y.itemId === n.it.id);
     const after = mine[mine.indexOf(n.x) + 1];
     if (after && after.sub && !after.warm && after.n === n.x.n) { const p = TECH.pauseFor(n.it); if (p !== 'rest') return p || 0; }
-    return Number(n.it.rest) || S().settings.restDefault;
+    return Store.restFor(a.s, n.it);
   }
 
   function setText(a, n) {

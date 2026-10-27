@@ -244,5 +244,41 @@
     return out;
   }
 
-  window.Analytics = { REGIONS, musclesOf, setsByRegion, volumeStatus, recovery, bestOf, newRecord, allRecords, recordCount, MEDALS, earned, newMedals, calendar, plates, warmup, REPS };
+  // ====================== NÍVEL DE FORÇA ("nível de poder" de verdade) ======================
+  // 1RM estimado dividido pelo peso do corpo, comparado com faixas de referência por sexo
+  // (aproximação das tabelas de força mais usadas). Cada levantamento vira um índice de 0 a 5
+  // (iniciante → elite); a média vira o nível de poder: 9.001 = elite em tudo.
+  const LEVELS = ['Iniciante', 'Novato', 'Intermediário', 'Avançado', 'Elite'];
+  const LIFTS = [
+    { key: 'supino', nome: 'Supino', ex: ['Supino reto com barra', 'Supino reto no Smith'], m: [0.5, 0.75, 1, 1.5, 2], f: [0.25, 0.5, 0.75, 1, 1.4] },
+    { key: 'agachamento', nome: 'Agachamento', ex: ['Agachamento livre', 'Agachamento no Smith'], m: [0.75, 1, 1.5, 2, 2.5], f: [0.5, 0.75, 1.25, 1.5, 2] },
+    { key: 'terra', nome: 'Terra', ex: ['Levantamento terra', 'Levantamento terra sumô'], m: [1, 1.25, 1.75, 2.5, 3], f: [0.5, 1, 1.25, 1.75, 2.25] },
+    { key: 'desenvolvimento', nome: 'Desenvolvimento', ex: ['Desenvolvimento com barra', 'Desenvolvimento no Smith'], m: [0.35, 0.55, 0.75, 1, 1.35], f: [0.2, 0.35, 0.5, 0.75, 1] },
+    { key: 'barra', nome: 'Barra fixa', ex: ['Barra fixa', 'Barra fixa supinada'], m: [0.8, 1, 1.2, 1.5, 1.8], f: [0.6, 0.8, 1, 1.25, 1.5] },
+  ];
+  // Índice contínuo: 0 abaixo de iniciante, 1 = iniciante … 5 = elite (com fração entre as faixas).
+  function levelIdx(r, t) {
+    if (r < t[0]) return Math.max(0, r / t[0]);
+    for (let i = 0; i < t.length - 1; i++) if (r < t[i + 1]) return i + 1 + (r - t[i]) / (t[i + 1] - t[i]);
+    return 5;
+  }
+  function strength() {
+    const bw = Store.bodyWeight(), sex = (S().settings.bodyType || 'm') === 'f' ? 'f' : 'm';
+    const all = Store.allExercises ? Store.allExercises() : [];
+    const lifts = LIFTS.map((L) => {
+      const ids = all.filter((e) => L.ex.includes(e.nome)).map((e) => e.id);
+      let best = 0, exId = null;
+      ids.forEach((id) => { const b = bestOf(id); if (b.e1rm > best) { best = b.e1rm; exId = id; } });
+      if (!best || !bw) return Object.assign({}, L, { e1rm: best, exId, ratio: 0, idx: null });
+      const t = L[sex], ratio = best / bw, idx = levelIdx(ratio, t), lv = Math.max(0, Math.min(4, Math.floor(idx) - 1));
+      const nextKg = idx >= 5 ? null : Math.ceil(t[Math.min(4, Math.floor(idx))] * bw);
+      return Object.assign({}, L, { e1rm: best, exId, ratio, idx, level: idx < 1 ? 'Abaixo de iniciante' : LEVELS[lv], next: idx >= 5 ? null : LEVELS[Math.min(4, Math.floor(idx))], nextKg });
+    });
+    const have = lifts.filter((l) => l.idx != null);
+    const idx = have.length ? have.reduce((a, l) => a + l.idx, 0) / have.length : null;
+    const power = idx == null ? null : Math.round(9001 * Math.pow(Math.min(5, idx) / 5, 1.5));
+    return { bw, sex, lifts, idx, power, level: idx == null ? null : idx < 1 ? 'Abaixo de iniciante' : LEVELS[Math.max(0, Math.min(4, Math.floor(idx) - 1))], count: have.length };
+  }
+
+  window.Analytics = { strength, STR_LEVELS: LEVELS, REGIONS, musclesOf, setsByRegion, volumeStatus, recovery, bestOf, newRecord, allRecords, recordCount, MEDALS, earned, newMedals, calendar, plates, warmup, REPS };
 })();
