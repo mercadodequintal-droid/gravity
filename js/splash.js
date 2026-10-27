@@ -130,7 +130,7 @@
       shade: 'linear-gradient(180deg, #08080a 0%, #08080a 30%, rgba(8,8,10,.2) 48%, rgba(8,8,10,.12) 80%, rgba(8,8,10,.85) 100%)',
     },
     // Capas da abertura. Para incluir outra: salvar em img/capas/capa-NN.jpg (900 px de largura) e aumentar COVERS.
-    COVERS: 16,
+    COVERS: 21,
     // Sorteia sem repetir: todas as capas aparecem uma vez antes de recomeçar a fila, e a primeira
     // da fila nova nunca é a última mostrada. A fila fica no aparelho (localStorage).
     nextCover() {
