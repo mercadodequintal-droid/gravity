@@ -1,5 +1,5 @@
 // Gerado por tools/web.sh. Guarda o app no celular para abrir sem internet; versão nova troca o cache.
-const CACHE = 'gravity-0.25.1-20261029150458';
+const CACHE = 'gravity-0.25.2-20261029151624';
 const FILES = [
   './',
   "css/app.css",
@@ -82,6 +82,11 @@ const FILES = [
   "img/Cable_Rope_Overhead_Triceps_Extension_1.jpg",
   "img/Calf_Press_On_The_Leg_Press_Machine_0.jpg",
   "img/Calf_Press_On_The_Leg_Press_Machine_1.jpg",
+  "img/Cardio_Bicicleta_0.jpg",
+  "img/Cardio_Eliptico_0.jpg",
+  "img/Cardio_Escada_0.jpg",
+  "img/Cardio_Esteira_0.jpg",
+  "img/Cardio_Pular_Corda_0.jpg",
   "img/Chin-Up_0.jpg",
   "img/Chin-Up_1.jpg",
   "img/Close-Grip_Barbell_Bench_Press_0.jpg",
