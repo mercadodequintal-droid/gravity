@@ -193,9 +193,10 @@
 
   function build(def, cls) {
     const el = document.createElement('div');
-    el.className = 'screen ' + (cls || '') + (def.footer ? ' has-footer' : '');
     el._def = def; def.el = el;
     el.innerHTML = def.render();
+    // A classe vem depois do desenho: algumas telas só ligam o rodapé fixo (def.footer) dentro do render.
+    el.className = 'screen ' + (cls || '') + (def.footer ? ' has-footer' : '');
     return el;
   }
   function rerender(def) {
