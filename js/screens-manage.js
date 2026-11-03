@@ -681,6 +681,10 @@
         <div class="section-title"><h2>Lembrete de treino</h2></div><div class="card" style="padding:4px 16px">
           ${sw('Lembrar de treinar', 'Notificação nos dias do plano', 'reminder')}
           ${st().reminder ? `<div class="switch-row"><div class="grow">Horário</div><input class="input" type="time" style="width:130px;height:44px" data-ch="rtime" value="${esc(st().reminderTime)}"></div>` : ''}</div>
+        <div class="section-title"><h2>App</h2></div><div class="card" style="padding:4px 16px">
+          <button class="menu-item" data-a="checkUpdate"><span class="ic">${icon('download', 'sm')}</span><span class="grow">Verificar atualizações<div class="small muted">Versão instalada: ${News.VERSION}${Updater.available ? ' · nova: ' + esc(Updater.available.versionName) : ''}</div></span></button>
+          ${sw('Avisar quando sair versão nova', window.Android ? 'Consulta ao abrir o app, se houver internet' : 'Mostra o aviso para recarregar na hora', 'updateCheck')}
+          <button class="menu-item" data-a="news"><span class="ic">${icon('sparkle', 'sm')}</span><span class="grow">Novidades<div class="small muted">O que mudou em cada versão</div></span>${icon('next', 'sm')}</button></div>
         <div class="section-title"><h2>Seus dados</h2></div><div class="card" style="padding:4px 16px">
           ${sw('Backup automático semanal', window.Android ? 'Salva toda semana em Downloads/Gravity (guarda os 4 últimos)' + (st().lastBackup ? ' · último: ' + new Date(st().lastBackup).toLocaleDateString('pt-BR') : '') : 'Lembra toda semana de salvar o backup' + (st().lastBackup ? ' · último: ' + new Date(st().lastBackup).toLocaleDateString('pt-BR') : ''), 'autoBackup')}
           <button class="menu-item" data-a="export"><span class="ic">${icon('download', 'sm')}</span><span class="grow">Fazer backup<div class="small muted">Envie para o Drive, WhatsApp ou e-mail</div></span></button>
@@ -702,6 +706,8 @@
             <button class="btn lime block" style="margin-top:16px" data-a="ok">Entendi</button>`,
           actions: { ok: closeSheet },
         }),
+        checkUpdate: () => Updater.check(true),
+        news: () => push(News.History()),
         rangeMode: (ds) => { st().rangeMode = ds.v; Store.save(); UI.savedFlash(); refresh(); },
         theme: (ds) => { Theme.apply(ds.v); Store.save(); Native.vibrate(8); UI.savedFlash(); refresh(); },
         sw: (ds) => { st()[ds.k] = !st()[ds.k]; Store.save(); document.body.classList.toggle('color-photos', !!st().colorPhotos); if (ds.k === 'reminder') { Screens.syncNative(); if (st().reminder) toast('Lembrete às ' + st().reminderTime + ' nos dias do plano'); else UI.savedFlash(); } else UI.savedFlash(); refresh(); },

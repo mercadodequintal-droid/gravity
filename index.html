@@ -46,6 +46,8 @@
 <script src="js/live.js"></script>
 <script src="js/splash.js"></script>
 <script src="js/theme.js"></script>
+<script src="js/news.js"></script>
+<script src="js/updater.js"></script>
 <script>
   Store.load();
   Theme.apply();
@@ -59,8 +61,11 @@
   Splash.show();
   setTimeout(Screens.syncNative, 1500);
   setTimeout(Store.autoBackup, 4000);
+  News.maybeShow();
+  setTimeout(function () { Updater.check(false); }, 2500);
   // Ao voltar para o app, atualiza a tela (o dia pode ter mudado).
-  document.addEventListener('visibilitychange', function () { if (!document.hidden) { UI.Rest.sync(); Live.pull(); UI.refresh(); } });
+  var lastUpdCheck = Date.now();
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && Date.now() - lastUpdCheck > 6 * 3600e3) { lastUpdCheck = Date.now(); Updater.check(false); } if (!document.hidden) { UI.Rest.sync(); Live.pull(); UI.refresh(); } });
   // Versão web: funciona sem internet (service worker) e, no iPhone fora da tela de início, ensina a instalar.
   if (!window.Android && 'serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {});
   if (!window.Android && /iPhone|iPad|iPod/.test(navigator.userAgent) && !navigator.standalone) setTimeout(function () { UI.installHint && UI.installHint(); }, 6500);

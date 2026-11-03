@@ -1,0 +1,19 @@
+{
+ "versionCode": 30,
+ "versionName": "0.26.0",
+ "date": "2026-11-03",
+ "apk": "download/Gravity-v0.26.0.apk",
+ "notes": [
+  {
+   "t": "Atualização pelo próprio app",
+   "plat": "android"
+  },
+  {
+   "t": "Aviso de versão nova",
+   "plat": "web"
+  },
+  {
+   "t": "O que há de novo"
+  }
+ ]
+}
