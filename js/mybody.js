@@ -35,10 +35,12 @@
 
   // Fundo do mapa: a foto de cada vista recortada na sua metade; sem foto naquela vista, fica o boneco.
   // ghost = boneco transparente por cima (só na tela de encaixe).
-  function bg(img, ghost) {
+  // uid: cada desenho precisa de ids próprios; com ids repetidos o navegador usa o recorte de outra tela
+  // (escondida) e a foto some.
+  function bg(img, ghost, uid) {
     const d = data(), out = [];
     Object.keys(VIEWS).forEach((k) => {
-      const v = VIEWS[k], p = d[k], cid = 'mbc-' + k;
+      const v = VIEWS[k], p = d[k], cid = 'mbc-' + (uid || 'x') + '-' + k;
       out.push(`<clipPath id="${cid}"><rect x="${v.x0}" y="0" width="${v.x1 - v.x0}" height="1024"/></clipPath>`);
       out.push(`<rect x="${v.x0}" y="0" width="${v.x1 - v.x0}" height="1024" fill="#0b0b0b"/>`);
       if (p) out.push(`<g clip-path="url(#${cid})"><image href="${p.src}" x="${p.x}" y="${p.y}" width="${p.w * p.s}" height="${p.h * p.s}" preserveAspectRatio="none"/></g>`);

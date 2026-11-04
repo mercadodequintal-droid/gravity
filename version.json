@@ -1,20 +1,11 @@
 {
- "versionCode": 33,
- "versionName": "0.29.0",
+ "versionCode": 34,
+ "versionName": "0.29.1",
  "date": "2026-11-04",
- "apk": "download/Gravity-v0.29.0.apk",
+ "apk": "download/Gravity-v0.29.1.apk",
  "notes": [
   {
-   "t": "134 exercícios novos"
-  },
-  {
-   "t": "Minha academia"
-  },
-  {
-   "t": "Voz: escolha cada aviso"
-  },
-  {
-   "t": "Textos no lugar"
+   "t": "Mapa com a sua foto corrigido"
   }
  ]
 }

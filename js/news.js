@@ -4,6 +4,9 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.29.1', date: '2026-11-04', items: [
+      { icon: 'camera', t: 'Mapa com a sua foto corrigido', d: 'Na tela Músculos, a sua foto agora aparece com os músculos pintados, também no modo Recuperação.', go: 'myBody' },
+    ] },
     { v: '0.29.0', date: '2026-11-04', items: [
       { icon: 'dumbbell', t: '134 exercícios novos', d: 'Agora são 326: máquinas novas (pêndulo, belt squat, hip thrust na máquina, remadas iso-laterais), exercícios em alta (rosca bayesiana, Kelso, tibial), HYROX, calistenia e mobilidade. Filtre por Novos, Máquinas, Em alta, HYROX ou Calistenia.', go: 'libNew', img: 'img/news/0.29.0.jpg', main: true, dot: { tab: 'library', sel: '[data-a="kind"][data-k="novo"]' } },
       { icon: 'target', t: 'Minha academia', d: 'Desligue os aparelhos que a sua academia não tem: eles somem das trocas sugeridas e dos planos que o app monta.', go: 'gym', dot: { sel: '[data-a="gym"]' },
