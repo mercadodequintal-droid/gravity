@@ -487,7 +487,7 @@
         ${swapped ? `<div class="small" style="color:var(--gold);margin:-2px 0 6px">${icon('repeat', 'sm')} Trocado hoje (no plano: ${esc(Store.exercise(it.exId).nome)})</div>` : ''}
         <div class="plan-line"><span class="chip">${Tools.repsText(it, ex)}${it.tech && it.tech.id === 'r21' ? ' (7+7+7)' : ''}</span>${Tools.loadText(it.kg, ex) && !(it.tech && it.tech.id === 'w531') ? `<span class="chip">${Tools.loadText(it.kg, ex)}</span>` : ''}${Store.isCardio(ex) ? '' : `<button class="chip blue" data-a="restCfg" data-i="${i}">${icon('timer', 'sm')}Descanso ${restLabel(Store.restFor(s, it))}</button>`}${pr.complete ? `<span class="chip done">${icon('check', 'sm')}Concluído</span>` : ''}</div>
         ${pin ? `<button class="pin-note" data-a="pin" data-i="${i}">${icon('note', 'sm')}<span>${esc(pin)}</span></button>` : ''}
-        <div class="quick-row">${ex.tipo === 'tempo' ? '' : `<button data-a="warm" data-i="${i}">${icon('flame', 'sm')}Aquecer</button>`}<button data-a="swap" data-i="${i}">${icon('repeat', 'sm')}Trocar</button>${pin ? '' : `<button data-a="pin" data-i="${i}">${icon('note', 'sm')}Nota fixa</button>`}${live ? `<button data-a="pain" data-i="${i}">${icon('alert', 'sm')}Dor</button>` : ''}</div>
+        <div class="quick-row">${ex.tipo === 'tempo' ? '' : `<button data-a="warm" data-i="${i}">${icon('flame', 'sm')}Aquecer</button>`}${ex.tipo === 'tempo' || Store.isCardio(ex) ? '' : `<button data-a="metro" data-i="${i}">${icon('timer', 'sm')}Metrônomo</button>`}<button data-a="swap" data-i="${i}">${icon('repeat', 'sm')}Trocar</button>${pin ? '' : `<button data-a="pin" data-i="${i}">${icon('note', 'sm')}Nota fixa</button>`}${live ? `<button data-a="pain" data-i="${i}">${icon('alert', 'sm')}Dor</button>` : ''}</div>
         ${techBanner(items, i)}
         ${it.note ? `<div class="small muted" style="margin-top:10px">${icon('note', 'sm')} ${esc(it.note)}</div>` : ''}
         ${deloadHTML}${painHTML}${stallHTML}${sugHTML}
@@ -531,7 +531,17 @@
       i = Math.max(0, Math.min(items.length - 1, i));
       const pager = def.el.querySelector('.pager');
       pager.scrollTo({ left: i * pager.clientWidth, behavior: smooth === false ? 'auto' : 'smooth' });
+      if (i !== idx && Metro.running()) Metro.stop();
       idx = i; updateChrome();
+    }
+    // Barra do metrônomo (fase, segundo e repetição), por cima do rodapé.
+    function paintMetro(st) {
+      const bar = def.el && def.el.querySelector('[data-metro]'); if (!bar) return;
+      def.el.classList.toggle('metro-on', !!st);
+      if (!st) { bar.hidden = true; bar.innerHTML = ''; return; }
+      bar.hidden = false;
+      bar.className = 'metro-bar ph-' + st.ph;
+      bar.innerHTML = `<span class="mb-ph">${st.label}</span><span class="mb-k num">${st.ph === 'prep' ? st.k : st.k + 1}</span><span class="grow mb-info">Rep <b class="num">${st.rep + (st.ph === 'prep' ? 0 : 1)}</b> · ${Metro.fmt(st.c)}</span><button class="icon-btn" data-a="metroStop" aria-label="Parar metrônomo">${icon('x', 'sm')}</button>`;
     }
     function findSet(id) { const { s, items } = ctx(); const x = s.sets.find((y) => y.id === id); const i = items.findIndex((it) => it.id === x.itemId); return { s, x, i, it: items[i] }; }
     // Unilateral: ajusta direito/esquerdo e repete nas séries seguintes ainda não feitas que estavam iguais.
@@ -622,6 +632,7 @@
           <button class="btn sm lime" data-a="finish">Finalizar</button></div>
           <div class="session-head"><div class="segs" style="display:flex;gap:4px">${segs()}</div></div>
           <div class="pager">${items.map((_, i) => `<div class="page">${pageHTML(i)}</div>`).join('')}</div>
+          <div class="metro-bar" data-metro hidden></div>
           <div class="footer">${footerHTML()}</div>`;
       },
       after(el) {
@@ -631,7 +642,7 @@
           clearTimeout(scrollT);
           scrollT = setTimeout(() => {
             const i = Math.round(pager.scrollLeft / pager.clientWidth);
-            if (i !== idx) { idx = i; updateChrome(); }
+            if (i !== idx) { if (Metro.running()) Metro.stop(); idx = i; updateChrome(); }
           }, 60);
         }, { passive: true });
         Native.keepOn(true);
@@ -651,14 +662,20 @@
         clearInterval(elapsedT);
         elapsedT = setInterval(() => { const e = el.querySelector('[data-elapsed]'); const s = Store.session(sid); if (e && s) e.textContent = clock(Date.now() - s.start); }, 1000);
       },
-      leave() { clearInterval(elapsedT); clearTimeout(rirT); Native.keepOn(false); Voice.listen(false); window.onVoiceCmd = null; },
+      leave() { Metro.stop(); clearInterval(elapsedT); clearTimeout(rirT); Native.keepOn(false); Voice.listen(false); window.onVoiceCmd = null; },
       actions: {
         back: pop,
         go: (ds) => go(Number(ds.i)),
         prev: () => go(idx - 1),
         next: () => go(idx + 1),
+        metro: (ds) => {
+          const { s, items } = ctx(), it = items[Number(ds.i)], exId = exIdOf(s, it);
+          Metro.sheet(it, exId, (c, m) => Metro.start({ c, mode: m, exId, onTick: paintMetro }));
+        },
+        metroStop: () => Metro.stop(),
         toggle: (ds) => {
           const { s, x, i, it } = findSet(ds.set);
+          if (Metro.running()) Metro.stop();
           const wasComplete = Store.itemProgress(s, it).complete;
           Store.toggleSet(s, x.id);
           Native.vibrate(x.done ? 30 : 10);
@@ -833,6 +850,7 @@
         ${medals.length ? `<div class="section-title"><h2>${icon('star', 'sm')} Conquista${medals.length > 1 ? 's' : ''} nova${medals.length > 1 ? 's' : ''}</h2></div>${medals.map((m) => `<div class="kv"><span><b style="color:var(--gold-2)">${esc(m.nome)}</b></span><span class="small">${esc(m.desc)}</span></div>`).join('')}` : ''}
         <div class="btn-row" style="margin-top:18px"><button class="btn ghost" data-a="share">${icon('share', 'sm')}Compartilhar</button><button class="btn lime" data-a="ok">Fechar</button></div>`,
       actions: { ok: closeSheet, share: () => { toast('Gerando imagem…'); Screens.shareSession(s.id); } },
+      onClose: () => { if (window.News) News.afterWorkout(); },
     });
   }
 

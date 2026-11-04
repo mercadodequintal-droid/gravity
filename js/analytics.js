@@ -90,6 +90,62 @@
       .sort((a, b) => b.gap - a.gap);
   }
 
+  // Equilíbrio entre lados opostos, contado por tipo de movimento (séries de trabalho):
+  // empurrar = músculo principal peitoral, ou ombros + tríceps (desenvolvimentos, paralelas);
+  // puxar = principal dorsais ou meio das costas; quadríceps × posterior pelo músculo principal.
+  const PAIRS = [
+    { id: 'pp', a: 'Empurrar', b: 'Puxar', max: 1.5,
+      fixA: 'inclua mais remadas e puxadas', fixB: 'inclua mais supinos e flexões', why: 'Empurrar muito mais do que puxar é uma causa comum de ombro projetado para frente e dor no ombro.' },
+    { id: 'qp', a: 'Quadríceps', b: 'Posterior', max: 2,
+      fixA: 'inclua mais stiff, mesa flexora ou nórdico', fixB: 'inclua mais agachamento, leg press ou extensora', why: 'Posterior de coxa fraco em relação ao quadríceps aumenta o risco de lesão no posterior e no joelho.' },
+  ];
+  // Lado de cada exercício em cada par: { pp: 'a'|'b', qp: 'a'|'b' }.
+  function sidesOf(ex) {
+    const m = ex.musculos || [], sec = ex.secundarios || [], o = {};
+    // Exercícios de potência (saltos, tiros, arremessos, olímpicos) não contam: são treino de potência, não de volume.
+    if (ex.tipo === 'tempo' || /salto|tiro|sprint|pulo|corrida|corda|medicine|landmine|pliom|burpee|clean|snatch|arranco|arremesso|escalador/i.test(ex.nome)) return o;
+    const pull = m.includes('dorsais') || m.includes('meio das costas');
+    const push = m.includes('peitoral') || (m.includes('ombros') && (m.includes('tríceps') || sec.includes('tríceps')));
+    if (push && !pull) o.pp = 'a'; else if (pull && !push) o.pp = 'b';
+    // Pernas: dominante de joelho (agachamento, leg press, extensora) × de quadril (terra, stiff, flexora,
+    // elevação pélvica, nórdico).
+    {
+      const q = m.includes('quadríceps'), h = m.includes('posteriores de coxa') || ((m.includes('glúteos') || m.includes('lombar')) && !q);
+      if (q && !h) o.qp = 'a'; else if (h && !q) o.qp = 'b';
+    }
+    return o;
+  }
+  function count(list) { // list = [{ex, n}]
+    const t = { pp: { a: 0, b: 0 }, qp: { a: 0, b: 0 } };
+    list.forEach(({ ex, n }) => { const sd = sidesOf(ex); Object.keys(sd).forEach((k) => { t[k][sd[k]] += n; }); });
+    return t;
+  }
+  function judge(t) {
+    return PAIRS.map((p) => {
+      const A = t[p.id].a, B = t[p.id].b;
+      let off = null;
+      if (A + B >= 6) { if (A > B * p.max) off = 'a'; else if (B > A * 3) off = 'b'; }
+      return Object.assign({}, p, { A, B, off, fix: off === 'a' ? p.fixA : off === 'b' ? p.fixB : '' });
+    });
+  }
+  function balanceDone(fromISO, toISO) {
+    const r = Store.weekRange(); fromISO = fromISO || r.startISO; toISO = toISO || r.endISO;
+    const list = [];
+    S().sessions.filter((s) => s.date >= fromISO && s.date <= toISO).forEach((s) => s.sets.filter(workSet).forEach((x) => list.push({ ex: Store.exercise(x.exId), n: 1 })));
+    return judge(count(list));
+  }
+  function balancePlan(plan) {
+    const list = [];
+    (plan ? plan.workouts : []).forEach((w) => { const times = Math.max(1, (w.days || []).length); w.items.forEach((it) => list.push({ ex: Store.exercise(it.exId), n: (Number(it.sets) || 0) * times })); });
+    return judge(count(list));
+  }
+  // Equilíbrio da semana; no começo da semana (poucas séries) usa o que o plano ativo prevê.
+  function balanceNow() {
+    const b = balanceDone();
+    if (b.every((x) => x.A + x.B >= 10)) return { src: 'semana', list: b };
+    return { src: 'plano', list: balancePlan(Store.activePlan()) };
+  }
+
   // Recuperação estimada de cada região (0 = acabou de treinar, 1 = recuperado).
   // Precisa de 48 h + 4 h por série feita, até 96 h.
   function recovery() {
@@ -334,5 +390,5 @@
     return { bw, sex, lifts, idx, power, level: idx == null ? null : idx < 1 ? 'Abaixo de iniciante' : LEVELS[Math.max(0, Math.min(4, Math.floor(idx) - 1))], count: have.length };
   }
 
-  window.Analytics = { target, plannedByRegion, volumeAlerts, month, MONTHS_PT, strength, STR_LEVELS: LEVELS, REGIONS, musclesOf, setsByRegion, volumeStatus, recovery, bestOf, newRecord, allRecords, recordCount, MEDALS, earned, newMedals, calendar, plates, warmup, REPS };
+  window.Analytics = { PAIRS, sidesOf, balanceDone, balancePlan, balanceNow, target, plannedByRegion, volumeAlerts, month, MONTHS_PT, strength, STR_LEVELS: LEVELS, REGIONS, musclesOf, setsByRegion, volumeStatus, recovery, bestOf, newRecord, allRecords, recordCount, MEDALS, earned, newMedals, calendar, plates, warmup, REPS };
 })();

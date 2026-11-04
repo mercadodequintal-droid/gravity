@@ -116,7 +116,7 @@
     const parts = PATHS[g].map((p) => ({ c: color(p.k), d: p.d })).filter((p) => p.c);
     return `<svg viewBox="120 0 1290 1010" class="bodymap real" style="height:${height || 300}px" role="img" aria-label="Mapa muscular">
       <defs><filter id="${id}" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="3"/></filter></defs>
-      <image href="${b.img}" x="0" y="0" width="1536" height="1024" preserveAspectRatio="none"/>
+      ${window.MyBody && MyBody.active() ? MyBody.bg(b.img) : `<image href="${b.img}" x="0" y="0" width="1536" height="1024" preserveAspectRatio="none"/>`}
       ${layer(parts, id, 'mix-blend-mode:color', 1)}${layer(parts, id, 'mix-blend-mode:soft-light', 1)}${layer(parts, id, '', 0.2)}
       <text x="${g === 'f' ? 400 : 410}" y="1004" text-anchor="middle" font-size="24" letter-spacing="6" fill="#8a8478">FRENTE</text>
       <text x="${g === 'f' ? 1116 : 1118}" y="1004" text-anchor="middle" font-size="24" letter-spacing="6" fill="#8a8478">COSTAS</text>
@@ -130,5 +130,5 @@
   }
   function setGender(v) { Store.state.settings.bodyType = v === 'f' ? 'f' : 'm'; Store.save(); }
 
-  window.AnatomyReal = { bodySVG, genderSwitch, setGender, gender, BODIES };
+  window.AnatomyReal = { bodySVG, genderSwitch, setGender, gender, BODIES, paths: () => PATHS[gender()] };
 })();

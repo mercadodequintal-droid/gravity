@@ -292,6 +292,34 @@
       });
       plan.workouts.push({ id: Store.uid('w'), letter: String.fromCharCode(65 + i), name: sess.nome, days: [DAY[i % DAY.length]], items });
     });
+    return rebalance(plan, ctx);
+  }
+
+
+  // Evita montar plano desequilibrado (empurrar × puxar e quadríceps × posterior, ver Analytics.PAIRS):
+  // primeiro soma séries nos exercícios do lado fraco que já estão no plano (até 5); se não bastar,
+  // acrescenta um exercício do lado fraco no treino com menos exercícios.
+  const FIX = { pp: { a: ['rowPull', 'pullV', 'pullH'], b: ['pushH', 'pushup'] }, qp: { a: ['hinge', 'hamIso', 'hipthrust', 'nordic'], b: ['squat', 'lunge', 'quadIso'] } };
+  function rebalance(plan, ctx) {
+    if (!window.Analytics || !Analytics.balancePlan) return plan;
+    const weak = { a: 'b', b: 'a' };
+    for (let guard = 0; guard < 12; guard++) {
+      const off = Analytics.balancePlan(plan).find((x) => x.off);
+      if (!off) break;
+      const side = weak[off.off];
+      const cand = [];
+      plan.workouts.forEach((w) => w.items.forEach((it) => { if (Analytics.sidesOf(Store.exercise(it.exId))[off.id] === side && it.sets < 5) cand.push(it); }));
+      if (cand.length && guard % 2 === 0) { cand.sort((x, y) => x.sets - y.sets)[0].sets += 1; continue; }
+      const w = plan.workouts.slice().sort((x, y) => x.items.length - y.items.length)[0];
+      const used = new Set(w.items.map((it) => it.exId));
+      let id = null;
+      for (const pat of FIX[off.id][off.off]) { id = pick(pat, 0, ctx, used); if (id && Analytics.sidesOf(Store.exercise(id))[off.id] === side) break; id = null; }
+      if (!id) { if (cand.length) { cand.sort((x, y) => x.sets - y.sets)[0].sets += 1; continue; } break; }
+      // Entra antes do core/condicionamento.
+      const pos = w.items.findIndex((it) => { const e = Store.exercise(it.exId); return e.tipo === 'tempo' || /abd|prancha|core|giro/i.test(e.grupo + ' ' + e.nome); });
+      const it = { id: Store.uid('i'), exId: id, sets: 3, reps: '10', kg: 0, rest: 90, note: 'Para equilibrar o plano', tech: null, group: null };
+      if (pos < 0) w.items.push(it); else w.items.splice(pos, 0, it);
+    }
     return plan;
   }
 
@@ -338,5 +366,5 @@
     return ids;
   }
 
-  window.Goals = { S, BLOCK, DAYS, pick, HARD, EQUIP_OK, GOALS, goal, LEVELS, EQUIPS, buildPlan, TESTS, test, parseVal, fmtVal, results, addResult, suggestedTests, POOLS };
+  window.Goals = { rebalance, S, BLOCK, DAYS, pick, HARD, EQUIP_OK, GOALS, goal, LEVELS, EQUIPS, buildPlan, TESTS, test, parseVal, fmtVal, results, addResult, suggestedTests, POOLS };
 })();

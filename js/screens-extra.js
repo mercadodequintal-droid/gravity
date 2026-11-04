@@ -37,6 +37,26 @@
     if (!al.length) return '';
     return `<div class="mv-alerts">${al.map((r) => `<div class="${r.low ? 'low' : 'high'}"><b>${esc(r.nome)}:</b> ${nf(r.n)} de ${r.low ? r.alvo[0] : r.alvo[1]} séries${r.low ? '' : ' (acima da meta)'}</div>`).join('')}</div>`;
   }
+  // Equilíbrio empurrar × puxar e quadríceps × posterior.
+  const balLine = (x) => `<div class="low"><b>${x.a} ${nf(x.A)} × ${x.b} ${nf(x.B)}:</b> ${esc(x.fix)}</div>`;
+  function balanceAlertsHTML() {
+    const off = Analytics.balanceNow().list.filter((x) => x.off);
+    return off.map(balLine).join('');
+  }
+  function balanceCard() {
+    const bn = Analytics.balanceNow();
+    return `<div class="card bal-card">${bn.list.map((x) => {
+      const tot = x.A + x.B, pa = tot ? x.A / tot * 100 : 50;
+      return `<div class="bal-row ${x.off ? 'off' : ''}"><div class="row"><span class="grow">${x.a} <b class="num">${nf(x.A)}</b></span><span>${x.b} <b class="num">${nf(x.B)}</b></span></div>
+        <div class="bal-bar"><i style="width:${pa}%"></i><span class="mid"></span></div>
+        <div class="small ${x.off ? '' : 'muted'}" style="margin-top:6px">${tot ? (x.off ? icon('alert', 'sm') + ' ' + esc(x.fix[0].toUpperCase() + x.fix.slice(1)) + '. ' + esc(x.why) : 'Equilibrado.') : 'Sem séries ainda.'}</div></div>`;
+    }).join('')}<div class="tiny faint" style="margin-top:4px">${bn.src === 'semana' ? 'Séries feitas nesta semana.' : 'Pelo plano ativo (a semana ainda tem poucas séries).'} Saltos, tiros e arremessos não entram na conta.</div></div>`;
+  }
+  function balanceWarnHTML(plan) {
+    const off = Analytics.balancePlan(plan).filter((x) => x.off);
+    if (!off.length) return '';
+    return `<div class="card bal-warn small">${icon('alert', 'sm')} <span>Plano desequilibrado: ${off.map((x) => `${x.a.toLowerCase()} ${nf(x.A)} × ${x.b.toLowerCase()} ${nf(x.B)} séries por semana, ${esc(x.fix)}`).join('; ')}.</span></div>`;
+  }
   // Meta de séries por semana de um músculo (mínimo e máximo).
   function metaSheet(id, done) {
     const g = Analytics.REGIONS.find((x) => x.id === id);
@@ -211,7 +231,7 @@
     const { st, map } = volumeData();
     return `<div class="card muscle-card press appear" data-a="muscles"><div class="row" style="align-items:flex-start">
       <div style="flex:0 0 156px">${bodySVG((k) => VCOL[(map[k] || {}).st || 'zero'], 122)}</div>
-      <div class="grow"><div class="caps">Músculos da semana</div>${volumeAlertsHTML(3) || `<div class="small" style="margin-top:8px">${esc(volumeSummary(st))}</div>`}
+      <div class="grow"><div class="caps">Músculos da semana</div>${(() => { const bal = balanceAlertsHTML(), vol = volumeAlertsHTML(bal ? 2 : 3); return bal || vol ? (bal ? `<div class="mv-alerts">${bal}</div>` : '') + vol : `<div class="small" style="margin-top:8px">${esc(volumeSummary(st))}</div>`; })()}
       <div class="legend" style="margin-top:10px"><span><i style="background:${VCOL.pouco}"></i>Pouco</span><span><i style="background:${VCOL.ideal}"></i>Ideal</span><span><i style="background:${VCOL.alto}"></i>Alto</span></div></div></div></div>`;
   }
 
@@ -229,16 +249,17 @@
         const tired = Analytics.REGIONS.filter((g) => rec[g.id] < 0.6).map((g) => g.nome);
         return topbar('Músculos') + `<div class="content">
           <div class="seg"><button class="${mode === 'volume' ? 'on' : ''}" data-a="mode" data-m="volume">Volume da semana</button><button class="${mode === 'rec' ? 'on' : ''}" data-a="mode" data-m="rec">Recuperação</button></div>
-          <div class="card" style="margin-top:12px;text-align:center">${AnatomyReal.genderSwitch()}${bodySVG(color, 300)}
+          <div class="card" style="margin-top:12px;text-align:center"><div class="seg body-switch mb-switch"><button class="${MyBody.active() ? '' : 'on'}" data-a="bodyView" data-v="boneco">Boneco</button><button class="${MyBody.active() ? 'on' : ''}" data-a="bodyView" data-v="foto">Minha foto</button></div>${MyBody.active() ? '' : AnatomyReal.genderSwitch()}${bodySVG(color, 300)}${MyBody.active() ? `<button class="link small gold" style="margin:4px 0 8px" data-a="myBody">Trocar ou ajustar a foto</button>` : ''}
             <div class="legend" style="justify-content:center">${mode === 'volume'
               ? `<span><i style="background:#5c6067"></i>Nada</span><span><i style="background:${VCOL.pouco}"></i>Abaixo</span><span><i style="background:${VCOL.ideal}"></i>Ideal</span><span><i style="background:${VCOL.alto}"></i>Acima</span>`
               : `<span><i style="background:#c8574b"></i>Cansado</span><span><i style="background:#d0803e"></i>Recuperando</span><span><i style="background:var(--map-ideal, #e2b95b)"></i>Pronto</span>`}</div></div>
           <div class="small muted" style="margin:12px 2px 0">${mode === 'volume' ? esc(volumeSummary(st).replace(/\.$/, '')) + '. Faixa ideal: a área marcada em cada barra (séries por semana; auxiliares contam meia série).' : tired.length ? 'Ainda se recuperando: ' + esc(tired.join(', ')) + '. Prefira treinar outros grupos hoje.' : 'Todos os músculos recuperados. Pode treinar pesado.'}</div>
           <div class="section-title"><h2>${mode === 'volume' ? 'Séries por músculo' : 'Recuperação estimada'}</h2></div>
           <div class="card">${rows}</div>
+          ${mode === 'volume' ? `<div class="section-title"><h2>Equilíbrio</h2></div>${balanceCard()}` : ''}
           <div class="tiny faint" style="margin-top:14px">${mode === 'volume' ? 'Faixas baseadas em recomendações comuns de hipertrofia (cerca de 10 a 20 séries semanais para músculos grandes).' : 'Estimativa: cada músculo precisa de 48 h + 4 h por série feita, até 96 h.'}</div></div>`;
       },
-      actions: { back: pop, meta: (ds) => metaSheet(ds.id, refresh), mode: (ds) => { mode = ds.m; refresh(); }, bodyType: (ds) => { AnatomyReal.setGender(ds.v); Native.vibrate(8); refresh(); } },
+      actions: { bodyView: (ds) => { if (ds.v === 'foto') { if (MyBody.has()) { MyBody.setView('foto'); refresh(); } else MyBody.setup(refresh); } else { MyBody.setView('boneco'); refresh(); } }, myBody: () => MyBody.setup(refresh), back: pop, meta: (ds) => metaSheet(ds.id, refresh), mode: (ds) => { mode = ds.m; refresh(); }, bodyType: (ds) => { AnatomyReal.setGender(ds.v); Native.vibrate(8); refresh(); } },
     };
   }
 
@@ -471,5 +492,5 @@
     Native.widget(JSON.stringify({ line1, line2, done, total }));
   }
 
-  Object.assign(window.Screens, { volumeAlertsHTML, metaSheet, MonthSummary, shareMonth, PhotoCompare, strengthCard, syncNative, MuscleMap, muscleCard, bodySVG, Records, recordsTable, Body, Medals, calendarCard, shareSession, measureSheet });
+  Object.assign(window.Screens, { balanceCard, balanceWarnHTML, balanceAlertsHTML, volumeAlertsHTML, metaSheet, MonthSummary, shareMonth, PhotoCompare, strengthCard, syncNative, MuscleMap, muscleCard, bodySVG, Records, recordsTable, Body, Medals, calendarCard, shareSession, measureSheet });
 })();

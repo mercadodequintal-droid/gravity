@@ -1,14 +1,23 @@
 {
- "versionCode": 31,
- "versionName": "0.27.0",
+ "versionCode": 32,
+ "versionName": "0.28.0",
  "date": "2026-11-04",
- "apk": "download/Gravity-v0.27.0.apk",
+ "apk": "download/Gravity-v0.28.0.apk",
  "notes": [
   {
-   "t": "Treinos por esporte"
+   "t": "Equilíbrio entre os músculos"
   },
   {
-   "t": "Meta de séries por músculo"
+   "t": "Mapa com a sua foto"
+  },
+  {
+   "t": "Metrônomo da cadência"
+  },
+  {
+   "t": "Fotos dos exercícios novos"
+  },
+  {
+   "t": "Novidades de um jeito novo"
   }
  ]
 }

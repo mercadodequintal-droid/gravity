@@ -888,3 +888,53 @@ body.live-out .rest-pill { visibility: hidden !important; pointer-events: none !
   --photo-filter: grayscale(1) contrast(1.06) brightness(1.03);
 }
 [data-theme="branco"] #splash { --logo-ink: #fcf6e8; --bg: #08080a; --text: #eee8da; }
+
+/* equilíbrio empurrar × puxar, quadríceps × posterior */
+.bal-row { padding: 4px 0 12px; }
+.bal-row + .bal-row { border-top: 1px solid var(--line); padding-top: 12px; }
+.bal-row .row { font-size: 13px; color: var(--text-2); }
+.bal-row .row b { color: var(--text); margin-left: 4px; }
+.bal-bar { position: relative; height: 8px; border-radius: 6px; background: var(--line-2); margin-top: 8px; overflow: hidden; }
+.bal-bar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--gold); border-radius: 6px 0 0 6px; }
+.bal-bar .mid { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 2px; background: var(--bg); }
+.bal-row.off .small { color: var(--amber); }
+.bal-warn { display: flex; gap: 8px; align-items: flex-start; color: var(--amber); border-color: rgba(226,160,60,.35); }
+
+/* metrônomo da cadência */
+.metro-bar { position: absolute; left: 12px; right: 12px; bottom: calc(86px + env(safe-area-inset-bottom)); z-index: 6; display: flex; align-items: center; gap: 12px;
+  padding: 8px 8px 8px 16px; border-radius: 18px; background: rgba(12,12,12,.94); border: 1px solid var(--gold); box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+.metro-bar[hidden] { display: none; }
+.metro-bar .mb-ph { font-family: var(--display, inherit); text-transform: uppercase; letter-spacing: 2px; font-size: 15px; color: var(--gold-2); min-width: 78px; }
+.metro-bar .mb-k { font-size: 30px; font-weight: 700; color: var(--text); min-width: 26px; text-align: center; }
+.metro-bar .mb-info { font-size: 12px; color: var(--text-2); text-align: right; }
+.metro-bar.ph-sobe { border-color: var(--lime, var(--gold)); }
+.metro-bar.ph-sobe .mb-ph { color: var(--lime, var(--gold-2)); }
+.metro-bar.ph-segura .mb-ph, .metro-bar.ph-topo .mb-ph, .metro-bar.ph-prep .mb-ph { color: var(--text-2); }
+.metro-on .page { padding-bottom: 180px; }
+
+/* novidades v0.28: print, "e mais", ponto Novo, tour */
+.news-img { width: 100%; max-height: 230px; border-radius: 16px; overflow: hidden; border: 1px solid var(--line-2); margin-bottom: 4px; background: var(--bg-2); }
+.news-img img { width: 100%; display: block; object-fit: cover; object-position: top; max-height: 230px; }
+.news-more { width: 100%; margin-top: 6px; border-top: 1px solid var(--line); padding-top: 8px; text-align: left; }
+.news-more > span { display: block; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-3, var(--text-2)); margin-bottom: 2px; }
+.news-more button { width: 100%; display: flex; align-items: center; gap: 10px; padding: 8px 2px; color: var(--gold); font-size: 13px; text-align: left; }
+.news-more button span { color: var(--text); }
+.news-card p { min-height: 0; }
+.nd { position: relative; }
+.nd::after { content: ""; position: absolute; top: 6px; right: 6px; width: 9px; height: 9px; border-radius: 50%; background: var(--gold-2); box-shadow: 0 0 0 2px var(--bg), 0 0 10px rgba(var(--acc-rgb), .8); animation: ndPulse 1.6s ease-in-out infinite; z-index: 3; pointer-events: none; }
+.nav button.nd::after { top: 4px; right: calc(50% - 18px); }
+@keyframes ndPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.25); } }
+.spot-tip.tour { pointer-events: auto; border: 0; font-family: inherit; }
+.spot-tip.tour small { display: block; font-size: 10.5px; font-weight: 500; opacity: .75; margin-top: 3px; }
+
+/* mapa com a foto da pessoa */
+.mb-switch { margin-bottom: 8px; }
+.mb-switch button svg { margin-right: 6px; vertical-align: -2px; }
+.mb-row { display: flex; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+.mb-row b { display: block; } .mb-row small { color: var(--text-2); font-size: 12px; }
+.mb-thumb { flex: 0 0 64px; height: 86px; border-radius: 12px; overflow: hidden; background: var(--bg-2); border: 1px solid var(--line); display: grid; place-items: center; color: var(--text-2); }
+.mb-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.mb-fit { padding: 0; overflow: hidden; }
+.mb-fit svg { display: block; width: 100%; height: auto; max-height: 62vh; touch-action: none; }
+.range { width: 100%; accent-color: var(--gold); }
+.mb-switch button { white-space: nowrap; padding: 0 18px; }

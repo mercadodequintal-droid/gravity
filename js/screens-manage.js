@@ -309,6 +309,7 @@
           ${p.workouts.length > 1 ? '<div class="sort-hint">Segure um treino e arraste para mudar a ordem</div>' : ''}
           <div class="list" data-sort>${p.workouts.map((w, i) => `<div class="card wo press" data-a="w" data-id="${w.id}" data-i="${i}"><div class="letter">${esc(w.letter)}</div><div class="grow"><h4 class="ellipsis">${esc(w.name)}</h4><div class="meta">${Screens.daysText(w.days)} · ${w.items.length} exercícios</div></div>
             <div class="ord" style="display:flex;flex-direction:column"><button class="icon-btn" style="width:32px;height:28px;border-radius:9px" data-a="mv" data-i="${i}" data-d="-1">${icon('up', 'sm')}</button><button class="icon-btn" style="width:32px;height:28px;border-radius:9px;margin-top:4px" data-a="mv" data-i="${i}" data-d="1">${icon('down', 'sm')}</button></div></div>`).join('')}</div>
+          ${Screens.balanceWarnHTML(p) ? `<div style="margin-top:12px">${Screens.balanceWarnHTML(p)}</div>` : ''}
           <button class="add-set" style="margin-top:12px;height:52px" data-a="addW">${icon('plus', 'sm')}Adicionar treino</button>
           <div class="divider" style="margin-top:22px"></div>
           ${!active ? `<button class="btn lime block" data-a="activate">Usar este plano</button>` : '<div class="small muted" style="text-align:center;margin-bottom:6px">Este é o seu plano ativo.</div>'}

@@ -195,7 +195,7 @@
       });
       plan.workouts.push({ id: Store.uid('w'), letter: String.fromCharCode(65 + i), name: t.nome + (round ? ' · variação' : ''), days: [DAY[i % DAY.length]], items });
     }
-    return plan;
+    return Goals.rebalance(plan, ctx);
   }
   // Treino pronto: 3 dias, intermediário, fora de temporada, 60 min.
   const ready = (sportId, equip) => buildPlan({ sport: sportId, equip, level: 'intermediario', days: 3, time: 60, phase: 'fora', injuries: [] });

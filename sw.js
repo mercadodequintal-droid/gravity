@@ -1,5 +1,5 @@
 // Gerado por tools/web.sh. Guarda o app no celular para abrir sem internet; versão nova troca o cache.
-const CACHE = 'gravity-0.27.0-20261104004237';
+const CACHE = 'gravity-0.28.0-20261104160420';
 const FILES = [
   './',
   "css/app.css",
@@ -271,6 +271,15 @@ const FILES = [
   "img/Rope_Straight-Arm_Pulldown_1.jpg",
   "img/Russian_Twist_0.jpg",
   "img/Russian_Twist_1.jpg",
+  "img/SX_Burpee_0.jpg",
+  "img/SX_Deslocamento_Lateral_0.jpg",
+  "img/SX_Equilibrio_Uma_Perna_0.jpg",
+  "img/SX_Flexao_Pike_0.jpg",
+  "img/SX_Panturrilha_Unilateral_Degrau_0.jpg",
+  "img/SX_Rotacao_Externa_Ombro_0.jpg",
+  "img/SX_Salto_Patinador_0.jpg",
+  "img/SX_Suspensao_Barra_0.jpg",
+  "img/SX_YTW_Deitado_0.jpg",
   "img/Seated_Cable_Rows_0.jpg",
   "img/Seated_Cable_Rows_1.jpg",
   "img/Seated_Calf_Raise_0.jpg",
@@ -392,6 +401,7 @@ const FILES = [
   "img/capas/capa-19.jpg",
   "img/capas/capa-20.jpg",
   "img/capas/capa-21.jpg",
+  "img/news/0.28.0.jpg",
   "index.html",
   "js/analytics.js",
   "js/anatomy-real.js",
@@ -401,6 +411,8 @@ const FILES = [
   "js/library.js",
   "js/live.js",
   "js/logo.js",
+  "js/metro.js",
+  "js/mybody.js",
   "js/news.js",
   "js/profile.js",
   "js/screens-extra.js",
