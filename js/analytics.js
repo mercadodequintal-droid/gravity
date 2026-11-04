@@ -50,13 +50,44 @@
     }));
     return out;
   }
-  // Situação de cada região em relação à faixa ideal.
+  // Meta semanal de séries de cada região: a da pessoa (settings.muscleTargets) ou a faixa padrão.
+  function target(id) {
+    const t = (S().settings.muscleTargets || {})[id];
+    const g = REGIONS.find((x) => x.id === id);
+    return t && t.length === 2 ? t : g.alvo;
+  }
+  const customTarget = (id) => !!(S().settings.muscleTargets || {})[id];
+  // Situação de cada região em relação à meta.
   function volumeStatus(sets) {
     return REGIONS.map((g) => {
-      const n = Math.round(sets[g.id] * 2) / 2;
-      const st = n === 0 ? 'zero' : n < g.alvo[0] ? 'pouco' : n > g.alvo[1] ? 'alto' : 'ideal';
-      return { id: g.id, nome: g.nome, n, alvo: g.alvo, st };
+      const n = Math.round(sets[g.id] * 2) / 2, alvo = target(g.id);
+      const st = n === 0 ? 'zero' : n < alvo[0] ? 'pouco' : n > alvo[1] ? 'alto' : 'ideal';
+      return { id: g.id, nome: g.nome, n, alvo, st, custom: customTarget(g.id) };
     });
+  }
+  // Séries por semana que o plano ativo prevê para cada região (cada treino conta uma vez por dia marcado).
+  function plannedByRegion(plan) {
+    const out = {}; REGIONS.forEach((g) => { out[g.id] = 0; });
+    if (!plan) return out;
+    plan.workouts.forEach((w) => {
+      const times = Math.max(1, (w.days || []).length);
+      w.items.forEach((it) => {
+        const ex = Store.exercise(it.exId); if (!ex || ex.tipo === 'tempo') return;
+        const m = musclesOf(ex);
+        Object.keys(m).forEach((k) => { out[k] += m[k] * (Number(it.sets) || 0) * times; });
+      });
+    });
+    return out;
+  }
+  // Alertas diretos ("Posterior: 4 de 10 séries"): só músculos que o plano treina ou com meta escolhida
+  // pela pessoa. Abaixo da meta mínima ou acima da máxima, do maior desvio para o menor.
+  function volumeAlerts() {
+    const plan = Store.activePlan(), planned = plannedByRegion(plan);
+    return volumeStatus(setsByRegion())
+      .filter((r) => planned[r.id] > 0 || r.custom)
+      .filter((r) => r.n < r.alvo[0] || r.n > r.alvo[1])
+      .map((r) => Object.assign(r, { gap: r.n < r.alvo[0] ? (r.alvo[0] - r.n) / r.alvo[0] : (r.n - r.alvo[1]) / r.alvo[1], low: r.n < r.alvo[0] }))
+      .sort((a, b) => b.gap - a.gap);
   }
 
   // Recuperação estimada de cada região (0 = acabou de treinar, 1 = recuperado).
@@ -303,5 +334,5 @@
     return { bw, sex, lifts, idx, power, level: idx == null ? null : idx < 1 ? 'Abaixo de iniciante' : LEVELS[Math.max(0, Math.min(4, Math.floor(idx) - 1))], count: have.length };
   }
 
-  window.Analytics = { month, MONTHS_PT, strength, STR_LEVELS: LEVELS, REGIONS, musclesOf, setsByRegion, volumeStatus, recovery, bestOf, newRecord, allRecords, recordCount, MEDALS, earned, newMedals, calendar, plates, warmup, REPS };
+  window.Analytics = { target, plannedByRegion, volumeAlerts, month, MONTHS_PT, strength, STR_LEVELS: LEVELS, REGIONS, musclesOf, setsByRegion, volumeStatus, recovery, bestOf, newRecord, allRecords, recordCount, MEDALS, earned, newMedals, calendar, plates, warmup, REPS };
 })();

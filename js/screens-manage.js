@@ -228,6 +228,7 @@
         };
         return `<div class="hello"><div class="t"><h1>Planos<span>de treino</span></h1></div><button class="icon-btn" data-a="new">${icon('plus')}</button></div>
           <div class="content"><button class="card tech-banner goal-banner press" style="margin:0 0 12px" data-a="goal"><span class="tb-ic">${icon('target', 'sm')}</span><span class="grow"><b>Montar por objetivo</b><small>Hipertrofia, força, salto, sprint, corrida, soco, prevenção, emagrecimento, saúde ou TAF</small></span>${icon('next', 'sm')}</button>
+          <button class="card tech-banner goal-banner press" style="margin:0 0 12px;width:100%" data-a="sports"><span class="tb-ic">${icon('bolt', 'sm')}</span><span class="grow"><b>Treinos por esporte</b><small>Futebol, vôlei, corrida, jiu-jitsu, beach tennis e mais 15 · academia ou sem equipamento</small></span>${icon('next', 'sm')}</button>
           ${act ? planCard(act, true) : ''}
           <div class="btn-row" style="margin-top:12px"><button class="btn ghost sm" data-a="new">${icon('plus', 'sm')}Novo plano</button><button class="btn ghost sm" data-a="import">${icon('upload', 'sm')}Importar planilha</button></div>
           ${others.length ? `<div class="section-title"><h2>Meus outros planos</h2></div><div class="list">${others.map((p) => planCard(p, false)).join('')}</div>` : ''}
@@ -240,6 +241,7 @@
         activate: (ds) => { S().activePlanId = ds.id; Store.save(); toast('Plano ativado'); refresh(); },
         guide: () => push(TechGuide()),
         goal: () => push(Screens.GoalWizard()),
+        sports: () => push(Screens.SportList()),
         new: () => {
           const p = { id: Store.uid('p'), name: 'Meu plano', goal: '', weeks: 4, startDate: Store.iso(Store.weekStartOf(Store.today(), S().settings.weekStart)), workouts: [{ id: Store.uid('w'), letter: 'A', name: 'Treino A', days: [1], items: [] }] };
           S().plans.push(p); if (!Store.activePlan()) S().activePlanId = p.id; Store.save(); push(PlanEditor(p.id));

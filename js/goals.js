@@ -48,20 +48,21 @@
     hipthrust: ['ex39', 'ex40', 'ex83'],
     lunge: ['ex86', 'ex38', 'ex87', 'ex89'],
     pushH: ['ex01', 'ex02', 'ex08'],
-    pushV: ['ex44', 'ex43', 'ex08'],
+    pushV: ['ex44', 'ex43', 'sx07', 'ex08'],
     pullV: ['ex17', 'ex22', 'ex85', 'ex84'],
     pullH: ['ex19', 'ex20', 'ex18', 'ex84'],
     biceps: ['ex25', 'ex26', 'ex27', 'ex85'],
-    triceps: ['ex11', 'ex12', 'ex13', 'ex15'],
-    delts: ['ex46', 'ex48', 'ex49'],
+    triceps: ['ex11', 'ex12', 'ex13', 'ex15', 'ex14'],
+    delts: ['ex46', 'ex48', 'ex49', 'sx07', 'sx03'],
     quadIso: ['ex34', 'ex82'],
     hamIso: ['ex35', 'ex36', 'ex76'],
-    calves: ['ex42', 'ex41'],
+    calves: ['ex42', 'ex41', 'sx08'],
     core: ['ex55', 'ex54', 'ex52', 'ex88'],
-    coreRot: ['ex75', 'ex69', 'ex53', 'tx01'],
+    coreRot: ['ex75', 'ex69', 'ex53', 'ex175', 'tx01'],
     plyoV: ['ex56', 'ex58', 'ex61'],
     plyoH: ['ex62', 'ex60'],
     olympic: ['ex63', 'ex64', 'ex71', 'ex59', 'ex58'],
+    hingeBW: ['ex71', 'ex149', 'ex83', 'ex127'],
     pushPower: ['ex65', 'ex79', 'ex66'],
     throwMB: ['ex66', 'ex67', 'ex70', 'ex68'],
     rotMB: ['ex69', 'ex75', 'ex68'],
@@ -78,16 +79,28 @@
     situp: ['ex52', 'ex88'],
     jumpBW: ['ex58'],
     lungeBW: ['ex89', 'ex38'],
+    // Para os treinos por esporte (sports.js)
+    lateral: ['sx01'],
+    agility: ['sx09', 'ex80'],
+    shoulderPre: ['ex49', 'sx02', 'sx03'],
+    balance: ['sx04'],
+    grip: ['sx05', 'ex78'],
+    conditioning: ['tx06', 'sx06', 'ex80'],
+    burpee: ['sx06'],
+    rowPull: ['ex20', 'ex19', 'ex84'],
+    singleLeg: ['ex143', 'ex87', 'ex86', 'ex89'],
   };
   // Bloco de cada padrão: define a ordem dentro do treino (potência primeiro, cardio por último).
   const BLOCK = { plyoV: 0, plyoH: 0, olympic: 0, sprint: 0, sled: 0, punch: 0, throwMB: 0, pushPower: 0, jumpBW: 1,
     squat: 1, squatEasy: 1, hinge: 1, pushH: 1, pushV: 1, pullV: 1, pullH: 1, lunge: 1, hipthrust: 1, pushup: 1, pullup: 1, lungeBW: 1,
     biceps: 2, triceps: 2, delts: 2, quadIso: 2, hamIso: 2, calves: 2, rotMB: 2,
-    nordic: 3, adductor: 3, sidePlank: 3, core: 3, coreRot: 3, carry: 3, situp: 3, cardio: 4 };
+    nordic: 3, adductor: 3, sidePlank: 3, core: 3, coreRot: 3, carry: 3, situp: 3, cardio: 4,
+    lateral: 0, agility: 0, hingeBW: 1, rowPull: 1, singleLeg: 1, shoulderPre: 3, balance: 3, grip: 3, conditioning: 4, burpee: 4 };
   const EQUIP_OK = {
     academia: null,
     halteres: ['Halteres', 'Peso corporal', 'Caixa', 'Kettlebell', 'Medicine ball', 'Banco', 'Corda'],
     corpo: ['Peso corporal', 'Banco', 'Caixa', 'Corda'],
+    nada: ['Peso corporal', 'Banco'], // "sem equipamento" dos esportes: só o corpo (e um banco ou cadeira)
   };
   const HARD = ['ex57', 'ex63', 'ex64', 'ex65', 'ex24'];
 
@@ -325,5 +338,5 @@
     return ids;
   }
 
-  window.Goals = { GOALS, goal, LEVELS, EQUIPS, buildPlan, TESTS, test, parseVal, fmtVal, results, addResult, suggestedTests, POOLS };
+  window.Goals = { S, BLOCK, DAYS, pick, HARD, EQUIP_OK, GOALS, goal, LEVELS, EQUIPS, buildPlan, TESTS, test, parseVal, fmtVal, results, addResult, suggestedTests, POOLS };
 })();

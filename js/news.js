@@ -4,6 +4,10 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.27.0', date: '2026-11-04', items: [
+      { icon: 'bolt', t: 'Treinos por esporte', d: '20 esportes: futebol, vôlei, corrida, jiu-jitsu, beach tennis e mais. Responda o questionário (posição, fase, lesões) ou pegue um treino pronto, na academia ou sem equipamento.', go: 'sports' },
+      { icon: 'target', t: 'Meta de séries por músculo', d: 'A tela inicial avisa direto quem está faltando, ex.: “Posteriores de coxa: 4 de 10 séries”. Toque num músculo em Progresso → Músculos para mudar a meta.', go: 'muscles' },
+    ] },
     { v: '0.26.0', date: '2026-11-03', items: [
       { icon: 'download', t: 'Atualização pelo próprio app', d: 'Quando sair versão nova, aparece um aviso na tela inicial. Toque em Atualizar e confirme: o app baixa e instala, sem perder nada.', go: 'settingsUpdate', plat: 'android' },
       { icon: 'download', t: 'Aviso de versão nova', d: 'Quando sair versão nova, aparece o aviso “Atualizar agora” e o app recarrega na hora.', go: 'settingsUpdate', plat: 'web' },
@@ -53,6 +57,8 @@
   }
   // Atalhos do "Ver agora".
   const GO = {
+    sports: () => { UI.switchTab('plans', true); setTimeout(() => spotlight('[data-a="sports"]', 'Treinos por esporte'), 250); },
+    muscles: () => { UI.switchTab('home', true); setTimeout(() => UI.push(Screens.MuscleMap()), 250); },
     month: () => { UI.switchTab('progress', true); setTimeout(() => UI.push(Screens.MonthSummary()), 250); },
     compare: () => { UI.switchTab('progress', true); setTimeout(() => { const b = document.querySelector('.screen [data-a="body"]'); if (b) b.click(); setTimeout(() => spotlight('[data-a="compare"]', 'Comparar fotos'), 500); }, 250); },
     power: () => { UI.switchTab('home', true); setTimeout(() => spotlight('.pw-card', 'Seu nível de poder'), 250); },

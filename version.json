@@ -1,19 +1,14 @@
 {
- "versionCode": 30,
- "versionName": "0.26.0",
- "date": "2026-11-03",
- "apk": "download/Gravity-v0.26.0.apk",
+ "versionCode": 31,
+ "versionName": "0.27.0",
+ "date": "2026-11-04",
+ "apk": "download/Gravity-v0.27.0.apk",
  "notes": [
   {
-   "t": "Atualização pelo próprio app",
-   "plat": "android"
+   "t": "Treinos por esporte"
   },
   {
-   "t": "Aviso de versão nova",
-   "plat": "web"
-  },
-  {
-   "t": "O que há de novo"
+   "t": "Meta de séries por músculo"
   }
  ]
 }

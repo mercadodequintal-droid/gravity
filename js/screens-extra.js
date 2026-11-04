@@ -31,6 +31,29 @@
     return parts.length ? parts.join(' · ') : 'Todos os músculos na faixa ideal.';
   }
 
+  // Alertas diretos para a tela inicial ("Posterior: 4 de 10 séries").
+  function volumeAlertsHTML(max) {
+    const al = Analytics.volumeAlerts().slice(0, max || 3);
+    if (!al.length) return '';
+    return `<div class="mv-alerts">${al.map((r) => `<div class="${r.low ? 'low' : 'high'}"><b>${esc(r.nome)}:</b> ${nf(r.n)} de ${r.low ? r.alvo[0] : r.alvo[1]} séries${r.low ? '' : ' (acima da meta)'}</div>`).join('')}</div>`;
+  }
+  // Meta de séries por semana de um músculo (mínimo e máximo).
+  function metaSheet(id, done) {
+    const g = Analytics.REGIONS.find((x) => x.id === id);
+    let [lo, hi] = Analytics.target(id);
+    const box = (k, lb, v) => `<div class="field"><label>${lb}</label><div class="stepper big"><button data-a="st" data-k="${k}" data-d="-1">${icon('minus')}</button><div class="val"><b class="num">${v}</b></div><button data-a="st" data-k="${k}" data-d="1">${icon('plus')}</button></div></div>`;
+    sheet({
+      render: () => `<h3>Meta · ${esc(g.nome)}</h3><div class="desc">Séries por semana (exercícios auxiliares contam meia série). Padrão: ${g.alvo[0]} a ${g.alvo[1]}.</div>
+        <div class="form-row">${box('lo', 'Mínimo', lo)}${box('hi', 'Máximo', hi)}</div>
+        <div class="btn-row" style="margin-top:16px"><button class="btn ghost" data-a="def">Usar o padrão</button><button class="btn lime" data-a="ok">Salvar</button></div>`,
+      actions: {
+        st: (ds) => { if (ds.k === 'lo') lo = Math.max(0, Math.min(hi, lo + Number(ds.d))); else hi = Math.max(lo, Math.min(40, hi + Number(ds.d))); Native.vibrate(6); sheetRefresh(); },
+        def: () => { const t = Object.assign({}, S().settings.muscleTargets); delete t[id]; S().settings.muscleTargets = t; Store.save(); closeSheet(); toast('Meta padrão'); done && done(); },
+        ok: () => { S().settings.muscleTargets = Object.assign({}, S().settings.muscleTargets, { [id]: [lo, hi] }); Store.save(); closeSheet(); toast('Meta salva: ' + lo + ' a ' + hi + ' séries'); done && done(); },
+      },
+    });
+  }
+
   // Cartão pequeno para a tela inicial.
   // ---------- Nível de poder (força real) ----------
   // full = versão do Progresso (com cada levantamento); senão, cartão compacto da tela inicial.
@@ -188,7 +211,7 @@
     const { st, map } = volumeData();
     return `<div class="card muscle-card press appear" data-a="muscles"><div class="row" style="align-items:flex-start">
       <div style="flex:0 0 156px">${bodySVG((k) => VCOL[(map[k] || {}).st || 'zero'], 122)}</div>
-      <div class="grow"><div class="caps">Músculos da semana</div><div class="small" style="margin-top:8px">${esc(volumeSummary(st))}</div>
+      <div class="grow"><div class="caps">Músculos da semana</div>${volumeAlertsHTML(3) || `<div class="small" style="margin-top:8px">${esc(volumeSummary(st))}</div>`}
       <div class="legend" style="margin-top:10px"><span><i style="background:${VCOL.pouco}"></i>Pouco</span><span><i style="background:${VCOL.ideal}"></i>Ideal</span><span><i style="background:${VCOL.alto}"></i>Alto</span></div></div></div></div>`;
   }
 
@@ -201,7 +224,7 @@
         const rec = Analytics.recovery();
         const color = mode === 'volume' ? (k) => VCOL[(map[k] || {}).st || 'zero'] : (k) => recColor(rec[k]);
         const rows = mode === 'volume'
-          ? st.map((r) => `<div class="hbar mrow"><span class="ellipsis">${esc(r.nome)}</span><div class="track band"><span class="zone" style="left:${r.alvo[0] / 24 * 100}%;width:${(r.alvo[1] - r.alvo[0]) / 24 * 100}%"></span><i style="width:${Math.min(100, r.n / 24 * 100)}%;background:${VCOL[r.st]}"></i></div><span class="v num">${nf(r.n)}</span></div>`).join('')
+          ? st.map((r) => `<div class="hbar mrow press" data-a="meta" data-id="${r.id}"><span class="ellipsis">${esc(r.nome)}${r.custom ? ' <i class="meta-dot"></i>' : ''}</span><div class="track band"><span class="zone" style="left:${r.alvo[0] / 24 * 100}%;width:${(r.alvo[1] - r.alvo[0]) / 24 * 100}%"></span><i style="width:${Math.min(100, r.n / 24 * 100)}%;background:${VCOL[r.st]}"></i></div><span class="v num">${nf(r.n)}<small>/${r.alvo[0]}</small></span></div>`).join('')
           : Analytics.REGIONS.map((g) => { const v = rec[g.id]; return `<div class="hbar mrow"><span class="ellipsis">${esc(g.nome)}</span><div class="track"><i style="width:${Math.round(v * 100)}%;background:${recColor(v)}"></i></div><span class="v num">${Math.round(v * 100)}%</span></div>`; }).join('');
         const tired = Analytics.REGIONS.filter((g) => rec[g.id] < 0.6).map((g) => g.nome);
         return topbar('Músculos') + `<div class="content">
@@ -215,7 +238,7 @@
           <div class="card">${rows}</div>
           <div class="tiny faint" style="margin-top:14px">${mode === 'volume' ? 'Faixas baseadas em recomendações comuns de hipertrofia (cerca de 10 a 20 séries semanais para músculos grandes).' : 'Estimativa: cada músculo precisa de 48 h + 4 h por série feita, até 96 h.'}</div></div>`;
       },
-      actions: { back: pop, mode: (ds) => { mode = ds.m; refresh(); }, bodyType: (ds) => { AnatomyReal.setGender(ds.v); Native.vibrate(8); refresh(); } },
+      actions: { back: pop, meta: (ds) => metaSheet(ds.id, refresh), mode: (ds) => { mode = ds.m; refresh(); }, bodyType: (ds) => { AnatomyReal.setGender(ds.v); Native.vibrate(8); refresh(); } },
     };
   }
 
@@ -448,5 +471,5 @@
     Native.widget(JSON.stringify({ line1, line2, done, total }));
   }
 
-  Object.assign(window.Screens, { MonthSummary, shareMonth, PhotoCompare, strengthCard, syncNative, MuscleMap, muscleCard, bodySVG, Records, recordsTable, Body, Medals, calendarCard, shareSession, measureSheet });
+  Object.assign(window.Screens, { volumeAlertsHTML, metaSheet, MonthSummary, shareMonth, PhotoCompare, strengthCard, syncNative, MuscleMap, muscleCard, bodySVG, Records, recordsTable, Body, Medals, calendarCard, shareSession, measureSheet });
 })();
