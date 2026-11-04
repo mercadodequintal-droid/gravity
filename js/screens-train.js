@@ -585,7 +585,7 @@
       const { s, items } = ctx();
       const exName = Store.exercise(exIdOf(s, it)).nome;
       const rec = Analytics.newRecord(x);
-      if (rec) { UI.prBurst(rec.tipo, exName + ' · ' + rec.txt); Voice.say('Novo recorde no ' + exName + '!', 3); }
+      if (rec) { UI.prBurst(rec.tipo, exName + ' · ' + rec.txt); Voice.say('Novo recorde no ' + exName + '!', 'recordes'); }
       if (Store.state.settings.askRir && !x.warm && !x.time && !x.sub) {
         rirFor = x.id; clearTimeout(rirT);
         rirT = setTimeout(() => { if (rirFor === x.id) { rirFor = null; updatePage(i); } }, 10000);
@@ -593,14 +593,14 @@
       }
       if (x.warm) { Rest.start(45, 'Aquecimento · ' + exName); return; }
       const allDone = items.every((y) => Store.itemProgress(s, y).complete);
-      if (allDone) { Rest.stop(); toast('Treino completo! Toque em Finalizar'); Voice.say('Treino completo! Toque em finalizar.', 2, rec ? 1800 : 0); return; }
+      if (allDone) { Rest.stop(); toast('Treino completo! Toque em Finalizar'); Voice.say('Treino completo! Toque em finalizar.', 'resumo', rec ? 1800 : 0); return; }
       // Técnica com série extra logo em seguida (drop, rest-pause, myo-reps, cluster…)
       const mine = s.sets.filter((y) => y.itemId === it.id);
       const nextRow = mine.slice(mine.indexOf(x) + 1).find((y) => !y.done);
       const pause = TECH.pauseFor(it);
       if (nextRow && nextRow.sub && !nextRow.warm && nextRow.n === x.n && pause !== null && pause !== 'rest') {
         if (pause > 0) Rest.start(pause, 'Pausa · ' + nextRow.label);
-        else { Rest.stop(); Native.pattern([0, 60, 60, 60]); toast('Sem descanso! ' + nextRow.label + ': ' + (Tools.loadText(nextRow.kg, nextRow.exId) || kg(0))); Voice.say('Sem descanso! ' + nextRow.label + (Tools.loadSpoken(nextRow.kg, nextRow.exId) ? ', ' + Tools.loadSpoken(nextRow.kg, nextRow.exId) : '') + '.', 2); }
+        else { Rest.stop(); Native.pattern([0, 60, 60, 60]); toast('Sem descanso! ' + nextRow.label + ': ' + (Tools.loadText(nextRow.kg, nextRow.exId) || kg(0))); Voice.say('Sem descanso! ' + nextRow.label + (Tools.loadSpoken(nextRow.kg, nextRow.exId) ? ', ' + Tools.loadSpoken(nextRow.kg, nextRow.exId) : '') + '.', 'tecnicas'); }
         return;
       }
       // Bi-set, tri-set…: segue para o próximo exercício do grupo sem descanso
@@ -608,7 +608,7 @@
       if (g && i < g.end && !Store.itemProgress(s, items[i + 1]).complete) {
         Rest.stop();
         toast('Sem descanso: ' + Store.exercise(exIdOf(s, items[i + 1])).nome);
-        Voice.say('Sem descanso: agora ' + Store.exercise(exIdOf(s, items[i + 1])).nome + '.', 2);
+        Voice.say('Sem descanso: agora ' + Store.exercise(exIdOf(s, items[i + 1])).nome + '.', 'tecnicas');
         setTimeout(() => go(i + 1), 380);
         return;
       }
@@ -842,7 +842,7 @@
     Screens.syncNative();
     const complete = pr.complete >= pr.total;
     Native.pattern([0, 40, 60, 40]);
-    Voice.say((complete ? 'Treino concluído! ' : 'Treino salvo. ') + Store.sessionDuration(s) + ' minutos, ' + pr.setsDone + ' séries.' + (recs.length ? ' ' + recs.length + (recs.length > 1 ? ' recordes!' : ' recorde!') : ''), 3);
+    Voice.say((complete ? 'Treino concluído! ' : 'Treino salvo. ') + Store.sessionDuration(s) + ' minutos, ' + pr.setsDone + ' séries.' + (recs.length ? ' ' + recs.length + (recs.length > 1 ? ' recordes!' : ' recorde!') : ''), 'resumo');
     sheet({
       render: () => `<div class="celebrate"><div class="badge">${icon(complete ? 'check' : 'flame', 'lg')}</div><h3>${complete ? 'Treino concluído!' : 'Treino salvo'}</h3><div class="desc">${complete ? 'Mais um na conta. Consistência é tudo.' : pr.complete + ' de ' + pr.total + ' exercícios feitos. Dá para continuar depois.'}</div></div>
         <div class="tiles"><div class="card tile"><div class="v num">${Store.sessionDuration(s)}<small>min</small></div><div class="l">Duração</div></div><div class="card tile"><div class="v num">${pr.setsDone}</div><div class="l">Séries</div></div><div class="card tile"><div class="v num">${volume(Store.sessionVolume(s))}</div><div class="l">Volume</div></div></div>

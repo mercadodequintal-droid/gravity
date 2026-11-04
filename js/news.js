@@ -4,6 +4,13 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.29.0', date: '2026-11-04', items: [
+      { icon: 'dumbbell', t: '134 exercícios novos', d: 'Agora são 326: máquinas novas (pêndulo, belt squat, hip thrust na máquina, remadas iso-laterais), exercícios em alta (rosca bayesiana, Kelso, tibial), HYROX, calistenia e mobilidade. Filtre por Novos, Máquinas, Em alta, HYROX ou Calistenia.', go: 'libNew', img: 'img/news/0.29.0.jpg', main: true, dot: { tab: 'library', sel: '[data-a="kind"][data-k="novo"]' } },
+      { icon: 'target', t: 'Minha academia', d: 'Desligue os aparelhos que a sua academia não tem: eles somem das trocas sugeridas e dos planos que o app monta.', go: 'gym', dot: { sel: '[data-a="gym"]' },
+        tour: [['[data-a="gymOnly"]', 'Ligue para ver só o que tem na sua academia'], ['[data-a="gym"]', 'Toque aqui para marcar os aparelhos']] },
+      { icon: 'play', t: 'Voz: escolha cada aviso', d: 'Em Voz no treino, cada aviso falado tem a sua chave: fim do descanso, próxima série, técnicas, 10 segundos finais, recordes e resumo.', go: 'voice' },
+      { icon: 'check', t: 'Textos no lugar', d: 'Botões e seletores não deixam mais o texto sair do quadro em telas estreitas.' },
+    ] },
     { v: '0.28.0', date: '2026-11-04', items: [
       { icon: 'layers', t: 'Equilíbrio entre os músculos', d: 'Empurrar × puxar e quadríceps × posterior: o app avisa quando um lado passa muito do outro e diz o que incluir. Os planos que o app monta já saem equilibrados.', go: 'balance', img: 'img/news/0.28.0.jpg', main: true, dot: { sel: '.muscle-card' } },
       { icon: 'camera', t: 'Mapa com a sua foto', d: 'Em Músculos, toque em Minha foto, escolha uma foto de frente e outra de costas e encaixe no desenho. Fica só no seu celular.', go: 'myBody', dot: { tab: 'progress', sel: '[data-a="bodyView"][data-v="foto"]' },
@@ -65,6 +72,9 @@
   }
   // Atalhos do "Ver agora".
   const GO = {
+    libNew: () => { UI.switchTab('library', true); setTimeout(() => { const b = document.querySelector('[data-a="kind"][data-k="novo"]'); if (b) b.click(); spotlight('[data-a="kind"][data-k="novo"]', 'Os exercícios novos'); }, 300); },
+    gym: () => { UI.switchTab('library', true); },
+    voice: () => { UI.push(Screens.Settings()); setTimeout(() => UI.push(Screens.VoiceSettings()), 300); },
     balance: () => { UI.switchTab('home', true); setTimeout(() => { UI.push(Screens.MuscleMap()); setTimeout(() => spotlight('.bal-card', 'Equilíbrio entre os músculos'), 450); }, 250); },
     myBody: () => { UI.switchTab('home', true); setTimeout(() => UI.push(Screens.MuscleMap()), 250); },
     sports: () => { UI.switchTab('plans', true); setTimeout(() => spotlight('[data-a="sports"]', 'Treinos por esporte'), 250); },

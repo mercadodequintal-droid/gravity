@@ -67,7 +67,7 @@
   function swapCandidates(exId) {
     const ex = Store.exercise(exId), mine = Analytics.musclesOf(ex);
     const main = Object.keys(mine).filter((k) => mine[k] === 1);
-    return Store.allExercises().filter((e) => e.id !== exId && (e.tipo === 'tempo') === (ex.tipo === 'tempo')).map((e) => {
+    return Store.allExercises().filter((e) => e.id !== exId && Store.available(e) && (e.tipo === 'tempo') === (ex.tipo === 'tempo')).map((e) => {
       const m = Analytics.musclesOf(e);
       let score = 0;
       main.forEach((k) => { if (m[k] === 1) score += 3; else if (m[k]) score += 1; });
@@ -116,7 +116,7 @@
     const finish = (secsDone) => {
       if (finished) return; finished = true; clearInterval(tick);
       Native.pattern([0, 700]); UI.beep('go');
-      if (secsDone >= total) Voice.say('Acabou!', 1, Store.state.settings.sound ? 850 : 0);
+      if (secsDone >= total) Voice.say('Acabou!', 'conta', Store.state.settings.sound ? 850 : 0);
       closeSheet(); onDone(secsDone);
     };
     const def = {
@@ -132,8 +132,8 @@
           const br = box.querySelector('.bar'); const c = parseFloat(br.getAttribute('stroke-dasharray')); br.setAttribute('stroke-dashoffset', c * (1 - l / total));
           if (l <= 0 && !pausedAt) finish(total);
           else if (!pausedAt && total >= 4) UI.countdown(cd, l);
-          if (!pausedAt && total >= 40 && !cd.half && l <= total / 2) { cd.half = true; Voice.say('Metade', 3); }
-          if (!pausedAt && total >= 30 && !cd.ten && l <= 10) { cd.ten = true; Voice.say('Faltam 10 segundos', 3); }
+          if (!pausedAt && total >= 40 && !cd.half && l <= total / 2) { cd.half = true; Voice.say('Metade', 'dez'); }
+          if (!pausedAt && total >= 30 && !cd.ten && l <= 10) { cd.ten = true; Voice.say('Faltam 10 segundos', 'dez'); }
         }, 250);
       },
       onClose: () => clearInterval(tick),

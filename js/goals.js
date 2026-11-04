@@ -98,7 +98,7 @@
     lateral: 0, agility: 0, hingeBW: 1, rowPull: 1, singleLeg: 1, shoulderPre: 3, balance: 3, grip: 3, conditioning: 4, burpee: 4 };
   const EQUIP_OK = {
     academia: null,
-    halteres: ['Halteres', 'Peso corporal', 'Caixa', 'Kettlebell', 'Medicine ball', 'Banco', 'Corda'],
+    halteres: ['Halteres', 'Peso corporal', 'Caixa', 'Kettlebell', 'Medicine ball', 'Banco', 'Corda', 'Elástico'],
     corpo: ['Peso corporal', 'Banco', 'Caixa', 'Corda'],
     nada: ['Peso corporal', 'Banco'], // "sem equipamento" dos esportes: só o corpo (e um banco ou cadeira)
   };
@@ -226,6 +226,7 @@
     const list = (POOLS[pattern] || []).filter((id) => {
       const e = Store.exercise(id);
       if (!e || e.nome === 'Exercício removido') return false;
+      if (Store.available && !Store.available(id)) return false;
       if (ok && !ok.includes(e.equip || '')) return false;
       if (ctx.level === 'iniciante' && HARD.includes(id)) return false;
       return true;

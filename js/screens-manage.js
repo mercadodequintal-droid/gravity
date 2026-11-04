@@ -74,8 +74,9 @@
   // ====================== BIBLIOTECA ======================
   function Library(opts) {
     opts = opts || {};
-    let q = '', group = 'Todos';
+    let q = '', group = 'Todos', kind = 'all';
     const picked = new Set();
+    const KINDS = [['all', 'Todos'], ['novo', 'Novos'], ['maquina', 'Máquinas'], ['moda', 'Em alta'], ['hyrox', 'HYROX'], ['cal', 'Calistenia']];
     const def = {
       hideNav: !!opts.pick,
       render() {
@@ -85,13 +86,18 @@
         return topbar(opts.pick ? 'Adicionar exercícios' : 'Exercícios', right, !opts.pick) +
           `<div class="content"><div class="search">${icon('search', 'sm')}<input type="search" placeholder="Buscar exercício" value="${esc(q)}" data-in="q"></div>
           <div class="filters">${groups.map((g) => `<button class="filter ${g === group ? 'on' : ''}" data-a="group" data-g="${g}">${g}</button>`).join('')}</div>
+          <div class="filters kinds">${KINDS.map(([k, l]) => `<button class="filter ${k === kind ? 'on' : ''}" data-a="kind" data-k="${k}">${l}</button>`).join('')}</div>
+          <div class="gym-row"><div class="switch-row" data-a="gymOnly"><div class="grow"><div>Só o que tem na minha academia</div><div class="small muted">${Object.keys(S().settings.gymOff || {}).length ? Object.keys(S().settings.gymOff).length + ' aparelhos marcados como “não tem”' : 'Marque os aparelhos que sua academia não tem'}</div></div><div class="switch ${S().settings.gymOnly ? 'on' : ''}"></div></div><button class="link small gold" data-a="gym">Minha academia</button></div>
           <div class="ex-grid" style="margin-top:14px" data-grid>${gridHTML()}</div></div>` +
           (opts.pick ? `<div class="footer"><button class="btn ghost" style="flex:0 0 auto" data-a="back">Cancelar</button><button class="btn lime" data-a="done">Adicionar${picked.size ? ' (' + picked.size + ')' : ''}</button></div>` : '');
       },
       actions: {
         back: pop,
         q: (ds, el) => { q = el.value; def.el.querySelector('[data-grid]').innerHTML = gridHTML(); },
-        group: (ds) => { group = ds.g; def.el.querySelectorAll('.filter').forEach((b) => b.classList.toggle('on', b.dataset.g === group)); def.el.querySelector('[data-grid]').innerHTML = gridHTML(); },
+        group: (ds) => { group = ds.g; def.el.querySelectorAll('.filter[data-g]').forEach((b) => b.classList.toggle('on', b.dataset.g === group)); def.el.querySelector('[data-grid]').innerHTML = gridHTML(); },
+        kind: (ds) => { kind = ds.k; def.el.querySelectorAll('.filter[data-k]').forEach((b) => b.classList.toggle('on', b.dataset.k === kind)); def.el.querySelector('[data-grid]').innerHTML = gridHTML(); },
+        gymOnly: () => { S().settings.gymOnly = !S().settings.gymOnly; Store.save(); refresh(); },
+        gym: () => push(GymSetup()),
         ex: (ds, el) => {
           if (opts.pick) {
             picked.has(ds.id) ? picked.delete(ds.id) : picked.add(ds.id);
@@ -109,13 +115,44 @@
       const words = n(q || '').split(/\s+/).filter(Boolean);
       const list = Store.allExercises().filter((e) => {
         if (group !== 'Todos' && e.grupo !== group) return false;
+        if (kind === 'novo' ? !e.novo : kind !== 'all' && e.tag !== kind) return false;
+        if (S().settings.gymOnly && !Store.available(e)) return false;
         const hay = n(e.nome + ' ' + e.grupo + ' ' + (e.equip || '') + ' ' + (e.alias || ''));
         return words.every((w) => hay.includes(w));
       });
       if (!list.length) return `<div class="empty" style="grid-column:1/-1">Nenhum exercício encontrado.<br><button class="btn ghost sm" style="margin-top:12px" data-a="new">Criar “${esc(q || 'novo')}”</button></div>`;
-      return list.map((e) => `<div class="card ex-card press ${picked.has(e.id) ? 'sel' : ''}" data-a="ex" data-id="${e.id}"><span class="selmark">${icon('check', 'sm')}</span>${imgHTML(e, '', false)}<div class="t"><h4>${esc(e.nome)}</h4><div class="g">${esc(e.grupo)}${e.equip ? ' · ' + esc(e.equip) : ''}</div></div></div>`).join('');
+      return list.map((e) => `<div class="card ex-card press ${picked.has(e.id) ? 'sel' : ''}" data-a="ex" data-id="${e.id}"><span class="selmark">${icon('check', 'sm')}</span>${imgHTML(e, '', false)}<div class="t">${e.novo && window.LIB_TAGS[e.tag] ? `<span class="ex-tag">${window.LIB_TAGS[e.tag]}</span>` : ''}<h4>${esc(e.nome)}</h4><div class="g">${esc(e.grupo)}${e.equip ? ' · ' + esc(e.equip) : ''}</div></div></div>`).join('');
     }
     return def;
+  }
+
+  // ====================== MINHA ACADEMIA ======================
+  // Marca os aparelhos que a academia tem. O que estiver desligado some da biblioteca (com o filtro ligado),
+  // das trocas sugeridas e dos planos que o app monta.
+  function GymSetup() {
+    let open = null;
+    return {
+      hideNav: true,
+      render() {
+        const all = Store.allExercises().filter((e) => Store.gymDependent(e) && !e.custom);
+        const groups = Store.GROUPS.filter((g) => all.some((e) => e.grupo === g));
+        const off = all.filter((e) => !Store.available(e)).length;
+        return topbar('Minha academia') + `<div class="content">
+          <div class="small muted" style="margin:0 2px 12px">Desligue os aparelhos que a sua academia não tem. Eles deixam de aparecer nas trocas sugeridas e nos planos que o app monta, e somem da biblioteca com o filtro “Só o que tem na minha academia”.</div>
+          <div class="card small" style="margin-bottom:12px">${icon('info', 'sm')} ${all.length - off} de ${all.length} aparelhos disponíveis.</div>
+          <div class="list">${groups.map((g) => { const ex = all.filter((e) => e.grupo === g), n = ex.filter((e) => Store.available(e)).length;
+            return `<div class="card gym-group"><div class="row press" data-a="open" data-g="${g}"><b class="grow">${esc(g)}</b><span class="small muted">${n}/${ex.length}</span>${icon(open === g ? 'up' : 'down', 'sm')}</div>
+              ${open === g ? `<div class="btn-row" style="margin:10px 0 4px"><button class="btn ghost sm" data-a="allOn" data-g="${g}">Tem todos</button><button class="btn ghost sm" data-a="allOff" data-g="${g}">Não tem nenhum</button></div>
+              ${ex.map((e) => `<div class="switch-row" data-a="tog" data-id="${e.id}">${UI.thumb(e)}<div class="grow"><div>${esc(e.nome)}</div><div class="small muted">${esc(e.equip)}</div></div><div class="switch ${Store.available(e) ? 'on' : ''}"></div></div>`).join('')}` : ''}</div>`; }).join('')}</div></div>`;
+      },
+      actions: {
+        back: pop,
+        open: (ds) => { open = open === ds.g ? null : ds.g; refresh(); },
+        tog: (ds) => { Store.setAvailable(ds.id, !Store.available(ds.id)); Native.vibrate(6); refresh(); },
+        allOn: (ds) => { Store.allExercises().filter((e) => e.grupo === ds.g && Store.gymDependent(e)).forEach((e) => Store.setAvailable(e.id, true)); refresh(); },
+        allOff: (ds) => { Store.allExercises().filter((e) => e.grupo === ds.g && Store.gymDependent(e)).forEach((e) => Store.setAvailable(e.id, false)); refresh(); },
+      },
+    };
   }
 
   // ====================== FICHA DO EXERCÍCIO ======================
@@ -135,6 +172,7 @@
           <div class="detail-title">${esc(ex.nome)}</div>
           <div class="chip-row" style="margin-top:0"><span class="chip blue">${esc(ex.grupo)}</span>${ex.equip ? `<span class="chip">${esc(ex.equip)}</span>` : ''}</div>
           ${ex.musculos && ex.musculos.length ? `<div class="small muted" style="margin-top:12px"><b style="color:var(--text)">Músculos:</b> ${esc(ex.musculos.join(', '))}${ex.secundarios && ex.secundarios.length ? ' · <span class="faint">auxiliares: ' + esc(ex.secundarios.join(', ')) + '</span>' : ''}</div>` : ''}
+          ${Store.gymDependent(ex) && !ex.custom ? `<div class="switch-row" data-a="avail" style="margin-top:6px"><div class="grow"><div>Tem na minha academia</div><div class="small muted">Desligado: o app não sugere este aparelho nas trocas e nos planos que monta</div></div><div class="switch ${Store.available(ex) ? 'on' : ''}"></div></div>` : ''}
           <button class="pin-note" style="margin-top:12px" data-a="pin">${icon('note', 'sm')}<span>${Tools.pinOf(exId) ? esc(Tools.pinOf(exId)) : 'Adicionar nota fixa (ajuste do banco, assento, pegada…)'}</span></button>
           <div class="btn-row" style="margin-top:16px"><button class="btn blue" data-a="video">${icon('video', 'sm')}Ver vídeo</button><button class="btn ghost" data-a="setVideo">${icon('edit', 'sm')}Link próprio</button></div>
           ${ex.dicas && ex.dicas.length ? `<div class="section-title"><h2>Como executar</h2></div><div class="card"><ol class="tips">${ex.dicas.map((d) => `<li>${esc(d)}</li>`).join('')}</ol></div>` : ''}
@@ -146,11 +184,12 @@
           <div class="card" style="margin-top:12px"><div class="small muted">Última vez · ${shortDate(last.date)}</div><div style="margin-top:6px;font-weight:600" class="num">${last.sets.map((x) => nf(x.kg) + ' kg × ' + x.reps).join('  ·  ')}</div></div>`
           : '<div class="card small muted">Você ainda não registrou este exercício. Os gráficos aparecem depois do primeiro treino.</div>'}
           ${(() => { const pl = Store.painsFor(exId).slice(-6).reverse(); return pl.length ? `<div class="section-title"><h2>Dores registradas</h2><span class="small muted">${Store.painsFor(exId).length}</span></div><div class="card">${pl.map((p) => `<div class="kv"><span>${p.date.split('-').reverse().slice(0, 2).join('/')} · ${esc(p.where)}</span><span class="small ${p.lvl === 2 ? 'late-txt' : 'muted'}">${Store.PAIN_LEVELS[p.lvl]}${p.note ? ' · ' + esc(p.note) : ''}</span></div>`).join('')}</div>` : ''; })()}
-          ${ex.img && ex.img.length && !ex.custom ? '<div class="tiny faint" style="margin-top:18px">Imagens: Free Exercise DB (domínio público).</div>' : ''}</div>`;
+          ${ex.img && ex.img.length && /^ex/.test(ex.id) ? '<div class="tiny faint" style="margin-top:18px">Imagens: Free Exercise DB (domínio público).</div>' : ''}</div>`;
       },
       actions: {
         back: pop,
         metric: (ds) => { metric = ds.m; refresh(); },
+        avail: () => { Store.setAvailable(exId, !Store.available(exId)); refresh(); },
         pin: () => Tools.pinSheet(exId, refresh),
         video: () => Native.open(Store.videoUrl(Store.exercise(exId))),
         setVideo: () => {
@@ -675,7 +714,8 @@
           ${sw('Perguntar como você está hoje', 'Sono, energia e dor antes do treino · dia ruim alivia o treino', 'checkin')}
           ${sw('Perguntar como foi a série', 'No limite, pesado ou tranquilo · ajuda a sugerir a carga', 'askRir')}
           ${sw('Som no fim do descanso', 'Bipes 3, 2, 1 e sinal de largada', 'sound')}
-          <button class="menu-item" data-a="voice"><span class="ic">${icon('play', 'sm')}</span><span class="grow">Voz no treino<div class="small muted">${Voice.LEVELS[Voice.cfg().level][1]}${Voice.cfg().level ? ' · fala a próxima série e o fim do descanso' : ''}</div></span>${icon('next', 'sm')}</button>
+          <button class="menu-item" data-a="voice"><span class="ic">${icon('play', 'sm')}</span><span class="grow">Voz no treino<div class="small muted">${Voice.cfg().on ? 'Ligada · ' + Voice.count() + ' de ' + Voice.OPTS.length + ' avisos' : 'Desligada · só os bipes'}</div></span>${icon('next', 'sm')}</button>
+          <button class="menu-item" data-a="gym"><span class="ic">${icon('dumbbell', 'sm')}</span><span class="grow">Minha academia<div class="small muted">Aparelhos que a sua academia tem · o app só sugere esses</div></span>${icon('next', 'sm')}</button>
           ${window.Android ? `<button class="menu-item" data-a="band"><span class="ic">${icon('timer', 'sm')}</span><span class="grow">Aviso na pulseira ou relógio<div class="small muted">Galaxy Fit, Galaxy Watch e outros: vibra no pulso quando o descanso acaba</div></span>${icon('next', 'sm')}</button>` : ''}
           ${sw('Série feita por voz', 'Diga “feito” para marcar a série · usa o microfone durante o treino' + (window.Android ? '' : ' · no iPhone pode não funcionar'), 'voiceDone')}
           ${sw('Vibração', 'Ao concluir séries e no fim do descanso', 'vibrate')}
@@ -715,6 +755,7 @@
         theme: (ds) => { Theme.apply(ds.v); Store.save(); Native.vibrate(8); UI.savedFlash(); refresh(); },
         sw: (ds) => { st()[ds.k] = !st()[ds.k]; Store.save(); document.body.classList.toggle('color-photos', !!st().colorPhotos); if (ds.k === 'reminder') { Screens.syncNative(); if (st().reminder) toast('Lembrete às ' + st().reminderTime + ' nos dias do plano'); else UI.savedFlash(); } else UI.savedFlash(); refresh(); },
         voice: () => push(Screens.VoiceSettings()),
+        gym: () => push(GymSetup()),
         avatar: () => Profile.sheet(UI.refresh),
         ws: (ds) => { st().weekStart = Number(ds.v); Store.save(); refresh(); UI.savedFlash(); },
         rtime: (ds, el) => { if (el.value) { st().reminderTime = el.value; Store.save(); Screens.syncNative(); toast('Lembrete às ' + el.value); } },
@@ -730,5 +771,5 @@
     };
   }
 
-  Object.assign(window.Screens, { lineChart, TechGuide, Library, ExerciseDetail, ExerciseForm, Plans, PlanEditor, WorkoutEditor, Progress, SessionDetail, Settings });
+  Object.assign(window.Screens, { GymSetup, lineChart, TechGuide, Library, ExerciseDetail, ExerciseForm, Plans, PlanEditor, WorkoutEditor, Progress, SessionDetail, Settings });
 })();

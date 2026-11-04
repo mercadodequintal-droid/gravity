@@ -162,7 +162,7 @@
   // Contagem 3, 2, 1: chame a cada quadro com os segundos restantes; toca o bipe quando o segundo muda.
   function countdown(state, left) {
     const s = Math.ceil(left);
-    if (s >= 1 && s <= 3 && state.last !== s) { state.last = s; beep('tick'); Native.vibrate(60); if (window.Voice) Voice.say(String(s), 1); }
+    if (s >= 1 && s <= 3 && state.last !== s) { state.last = s; beep('tick'); Native.vibrate(60); if (window.Voice) Voice.say(String(s), 'conta'); }
   }
 
   // ---------- comemoração de recorde ----------
@@ -338,7 +338,7 @@
     start(seconds, label) {
       this.dur = seconds; this.end = Date.now() + seconds * 1000; this.label = label || '';
       this.over = false; this.cd = {}; this.said10 = false;
-      if (seconds >= 20 && !/^Pausa/.test(this.label)) Voice.say('Descanso de ' + Voice.secs(seconds), 3, 0, true);
+      if (seconds >= 20 && !/^Pausa/.test(this.label)) Voice.say('Descanso de ' + Voice.secs(seconds), 'inicio', 0, true);
       // Descansos de 20 s ou mais também vão para a notificação do Android, com alarme alto no fim.
       this.native = !!(A && A.restStart) && seconds >= 20;
       if (this.native) { try { A.restStart(this.end, this.label, !!Store.state.settings.sound, !!Store.state.settings.vibrate); } catch (e) { this.native = false; } }
@@ -374,13 +374,13 @@
         // Com a notificação ativa, o próprio Android toca a contagem e o sinal final (mesmo com a tela bloqueada).
         if (!this.over && !this.native && this.dur >= 4) countdown(this.cd, this.left());
         // Sem a notificação (descansos curtos ou no navegador), a voz sai daqui; com ela, o Android fala.
-        if (!this.over && !this.native && this.dur >= 30 && !this.said10 && this.left() <= 10) { this.said10 = true; Voice.say('Faltam 10 segundos', 3); }
+        if (!this.over && !this.native && this.dur >= 30 && !this.said10 && this.left() <= 10) { this.said10 = true; Voice.say('Faltam 10 segundos', 'dez'); }
         if (!this.over && Date.now() >= this.end) {
           this.over = true; this.el.classList.add('over');
           if (!this.native) {
             Native.pattern([0, 700]); beep('go');
-            const next = Voice.cfg().level >= 2 && window.Live ? Live.phrase() : '';
-            Voice.say('Bora!' + (next ? ' ' + next : ''), 1, Store.state.settings.sound ? 850 : 0);
+            const next = Voice.isOn('proxima') && window.Live ? Live.phrase() : '';
+            Voice.say('Bora!' + (next ? ' ' + next : ''), 'conta', Store.state.settings.sound ? 850 : 0);
           }
           this.hideT = setTimeout(() => this.stop(), 6000);
         }

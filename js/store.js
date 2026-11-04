@@ -182,6 +182,12 @@
   function bodyWeight() { const e = ((S.body && S.body.entries) || []).filter((x) => Number(x.peso) > 0); return e.length ? Number(e[e.length - 1].peso) : 0; }
   // Carga que conta para volume e recordes: no peso do corpo, corpo + lastro (ou − ajuda).
   function loadOf(x) { const k = Number(x.kg) || 0; return isBodyweight(x.exId) ? Math.max(0, bodyWeight() + k) : k; }
+  // "Minha academia" (v0.29): aparelhos que a academia da pessoa não tem (settings.gymOff = { id: true }).
+  // Só máquinas, polias, Smith e trenó (e os marcados como máquina nova) podem ser escondidos.
+  const GYM_EQUIP = ['Máquina', 'Cabo', 'Smith', 'Trenó'];
+  function gymDependent(exOrId) { const e = typeof exOrId === 'string' ? exercise(exOrId) : exOrId; return !!e && (GYM_EQUIP.includes(e.equip) || e.tag === 'maquina'); }
+  function available(exOrId) { const id = typeof exOrId === 'string' ? exOrId : exOrId && exOrId.id; return !(S.settings.gymOff || {})[id]; }
+  function setAvailable(id, on) { S.settings.gymOff = S.settings.gymOff || {}; if (on) delete S.settings.gymOff[id]; else S.settings.gymOff[id] = true; save(); }
   function isCardio(exOrId) { const e = typeof exOrId === 'string' ? exercise(exOrId) : exOrId; return !!e && e.tipo === 'tempo' && e.grupo === 'Cardio'; }
   function exercise(id) { return libMap[id] || S.customExercises.find((e) => e.id === id) || { id, nome: 'Exercício removido', grupo: 'Outro', img: [], dicas: [], musculos: [] }; }
   const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
@@ -732,7 +738,7 @@
 
   window.Store = {
     load, save, get state() { return S; }, uid, PAIN_SPOTS, PAIN_LEVELS, addPain, painsFor, painAlert, snoozePain, sessionNeed, quickPlan, applyQuick, restFor, isUni, sideR, sideL, setSides, checkinLevel, applyCheckin, lightSession, isCardio, isBodyweight, bodyWeight, loadOf, repRange, rangeMode, applyRange, deloadActive, deloadProposal, startDeload, endDeload, snoozeDeload, stallOf, snoozeStall, stalledExercises, DELOAD,
-    WEEKDAYS, WEEKDAYS_LONG, GROUPS, TEMPLATES, DAY,
+    gymDependent, available, setAvailable, WEEKDAYS, WEEKDAYS_LONG, GROUPS, TEMPLATES, DAY,
     iso, parseISO, today, addDays, weekStartOf, weekRange, weeksBack,
     allExercises, exercise, findExerciseByName, videoUrl,
     activePlan, plan, findWorkout, planWeek, planFromTemplate,
