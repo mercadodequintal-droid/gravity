@@ -4,6 +4,9 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.29.2', date: '2026-11-05', items: [
+      { icon: 'sparkle', t: 'Ícone novo', d: 'O app tem um ícone novo na tela de aplicativos do celular: o G de metal sobre pedra escura com brilho dourado.' },
+    ] },
     { v: '0.29.1', date: '2026-11-04', items: [
       { icon: 'camera', t: 'Mapa com a sua foto corrigido', d: 'Na tela Músculos, a sua foto agora aparece com os músculos pintados, também no modo Recuperação.', go: 'myBody' },
     ] },

@@ -1,5 +1,5 @@
 // Gerado por tools/web.sh. Guarda o app no celular para abrir sem internet; versão nova troca o cache.
-const CACHE = 'gravity-0.29.1-20261104215655';
+const CACHE = 'gravity-0.29.2-20261105005950';
 const FILES = [
   './',
   "css/app.css",
