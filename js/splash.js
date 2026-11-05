@@ -1,5 +1,8 @@
-// Abertura do Gravity: mira de scouter trava no logo, barras enchem, "nível de poder" sobe.
-// Som sintetizado no estilo scouter (Arpejo, tom 60%, velocidade 180%, zumbido 160 Hz).
+// Abertura do Gravity (v0.30, identidade Obsidian Chrome): a foto da entrada já traz o logo.
+// Duas aberturas que se alternam a cada vez que o app abre:
+//  A · Eclipse: um anel de cobre acende, a foto surge do escuro e o nível de poder sobe até 9.001.
+//  C · Scouter cromado: a mira de titânio procura o atleta, trava em cobre e a leitura sobe até 9.001.
+// Som: A = zumbido grave + brilho metálico; C = scouter (arpejo, tom 60%, velocidade 180%, zumbido 160 Hz).
 (function () {
   'use strict';
 
@@ -53,100 +56,132 @@
     buzz(2.0 * TS, 2100 * P, 0.06, 0.12); buzz(2.09 * TS, 2100 * P, 0.3, 0.1);             // leitura concluída
   }
 
+  // Som da abertura A: zumbido grave que cresce, sopro e um "brilho" metálico no 9.001.
+  function playSoundA() {
+    try { ac = new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume(); } catch (e) { ac = null; return; }
+    tone(0, 55, 2.4, 'sine', 0.22, 82);
+    tone(0.05, 110, 2.2, 'triangle', 0.05, 164);
+    try {
+      const n = ac.sampleRate * 1.6, buf = ac.createBuffer(1, n, ac.sampleRate), d = buf.getChannelData(0);
+      for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.sin(Math.PI * i / n);
+      const src = ac.createBufferSource(), bp = ac.createBiquadFilter(), g = ac.createGain();
+      src.buffer = buf; bp.type = 'bandpass'; bp.frequency.setValueAtTime(400, ac.currentTime + 0.3); bp.frequency.exponentialRampToValueAtTime(3200, ac.currentTime + 1.9); bp.Q.value = 1.2;
+      g.gain.value = 0.06; src.connect(bp); bp.connect(g); g.connect(ac.destination); src.start(ac.currentTime + 0.3);
+    } catch (e) { /* sem ruído */ }
+    const hit = 2.25;
+    [[1760, 0.16], [2640, 0.09], [3520, 0.05], [880, 0.12]].forEach(([f, v]) => tone(hit, f, 1.3, 'sine', v));
+    tone(hit, 70, 0.6, 'sine', 0.3, 45);
+  }
+
   // Nível de poder: sempre 9.001 ("é mais de 8 mil!").
   const POWER = 9001;
-
   const anim = (el, frames, opts) => el.animate(frames, Object.assign({ fill: 'both', easing: 'cubic-bezier(.2,.8,.2,1)' }, opts));
+  const fmt = (n) => n.toLocaleString('pt-BR');
 
-  function run(root, done) {
-    // Fundo opcional (foto). Config: { img, pos, size, filter, shade, stackTop }.
-    const BG = window.SPLASH_BG || Object.assign({}, Splash.BG, { img: Splash.nextCover() });
-    if (BG && BG.stackTop) root.style.setProperty('--sp-top', BG.stackTop);
-    root.classList.toggle('has-bg', !!BG);
-    root.innerHTML = (BG ? `<div class="sp-bg" style="${BG.box ? 'top:auto;height:' + BG.box + ';' : ''}background-image:url('${BG.img}');background-position:${BG.pos || '50% 50%'};background-size:${BG.size || 'cover'};${BG.filter ? 'filter:' + BG.filter : ''}"></div><div class="sp-shade" style="background:${BG.shade || 'rgba(0,0,0,.5)'}"></div>` : '') + `<div class="sp-glow"></div><div class="sp-reticle"><i></i><i></i><i></i><i></i></div><div class="sp-scan"></div>
-      <div class="sp-power">Nível de poder<b>0</b></div>
-      <div class="sp-stack">${logoSVG()}<div class="sp-word">Gravity</div><div class="sp-tag">${TAGLINE}</div></div>
-      <button class="sp-go" type="button">Bora pro treino!</button>`;
-    const q = (s) => root.querySelector(s);
-    const svg = q('svg.sp-logo'), frame = q('.frame'), term = q('.term'), bars = [...svg.querySelectorAll('.bar')];
-    const orbit = q('.orbit'), front = q('.orbit-front'), planet = q('.planet');
-    const ret = q('.sp-reticle'), scan = q('.sp-scan'), pw = q('.sp-power'), num = pw.querySelector('b');
-    [term].concat(bars).forEach((p) => { p.style.transformBox = 'fill-box'; p.style.transformOrigin = '50% 100%'; });
-
-    anim(ret, [{ opacity: 0, transform: 'scale(1.6)' }, { opacity: 1, transform: 'scale(1)', offset: 0.6 }, { opacity: 0.4, transform: 'scale(1)' }, { opacity: 1, transform: 'scale(1)' }], { duration: T(450) });
-    const L = frame.getTotalLength();
-    frame.style.strokeDasharray = L;
-    anim(frame, [{ strokeDashoffset: L }, { strokeDashoffset: 0 }], { delay: T(250), duration: T(800), easing: 'cubic-bezier(.6,0,.2,1)' });
-    anim(term, [{ opacity: 0, transform: 'scaleY(0)' }, { opacity: 1, transform: 'scaleY(1)' }], { delay: T(1000), duration: T(200) });
-    // Órbita se desenha em volta da bateria e o planeta aparece no fim.
-    [orbit, front].forEach((o) => { const l = o.getTotalLength(); o.style.strokeDasharray = l; anim(o, [{ strokeDashoffset: l }, { strokeDashoffset: 0 }], { delay: T(1500), duration: T(700), easing: 'cubic-bezier(.5,0,.2,1)' }); });
-    planet.style.transformBox = 'fill-box'; planet.style.transformOrigin = '50% 50%';
-    anim(planet, [{ opacity: 0, transform: 'scale(0)' }, { opacity: 1, transform: 'scale(1.3)', offset: 0.7 }, { opacity: 1, transform: 'scale(1)' }], { delay: T(2050), duration: T(320) });
-    anim(scan, [{ opacity: 0, transform: 'translateY(-50px)' }, { opacity: 1, offset: 0.1 }, { transform: 'translateY(50px)', offset: 0.5 }, { transform: 'translateY(-50px)', opacity: 1, offset: 0.9 }, { opacity: 0 }], { delay: T(300), duration: T(1700), easing: 'ease-in-out' });
-    anim(pw, [{ opacity: 0 }, { opacity: 1 }], { delay: T(350), duration: T(200) });
-    // A foto de fundo aparece aos poucos, enquanto o scouter faz a leitura.
-    if (BG) anim(q('.sp-bg'), [{ opacity: 0, transform: 'scale(1.08)' }, { opacity: 1, transform: 'scale(1)' }], { delay: T(300), duration: T(2400), easing: 'ease-out' });
-    bars.forEach((b, i) => anim(b, [{ transform: 'scaleY(0)', opacity: 0.3 }, { transform: 'scaleY(1.12)', opacity: 1, offset: 0.7 }, { transform: 'scaleY(1)', opacity: 1 }], { delay: T(1250 + i * 230), duration: T(260) }));
-
-    const target = POWER, t0 = performance.now() + T(350), dur = T(1650);
-    let ff = false; // adiantado para o fim por um toque
+  // Contador do nível de poder (curva que acelera no fim). Devolve "adiantar para o fim".
+  function counter(el, t0, dur) {
+    let ff = false;
     (function tick(now) {
-      if (!root.isConnected) return;
+      if (!el.isConnected) return;
+      if (!ff && now < t0) { requestAnimationFrame(tick); return; } // ainda não começou: mantém o texto inicial
       const k = ff ? 1 : Math.min(1, Math.max(0, (now - t0) / dur));
-      num.textContent = (k < 1 ? Math.floor(target * k * k + Math.random() * target * 0.05 * (1 - k)) : target).toLocaleString('pt-BR');
+      el.textContent = k < 1 ? fmt(Math.floor(POWER * k * k + Math.random() * POWER * 0.04 * (1 - k))) : fmt(POWER);
       if (k < 1) requestAnimationFrame(tick);
     })(performance.now());
+    return () => { ff = true; el.textContent = fmt(POWER); };
+  }
 
-    anim(pw, [{ transform: 'scale(1)' }, { transform: 'scale(1.18)' }, { transform: 'scale(1)' }], { delay: T(2000), duration: T(300) });
-    anim(ret, [{ opacity: 1 }, { opacity: 0 }], { delay: T(2250), duration: T(400) });
-    anim(q('.sp-glow'), [{ opacity: 0, transform: 'translate(-50%,-50%) scale(.6)' }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1)', offset: 0.35 }, { opacity: 0.35, transform: 'translate(-50%,-50%) scale(1.05)' }], { delay: T(2000), duration: T(900) });
-    anim(svg, [{ filter: 'drop-shadow(0 0 0 rgba(150,64,252,0))' }, { filter: 'drop-shadow(0 0 16px rgba(150,64,252,.75))', offset: 0.4 }, { filter: 'drop-shadow(0 0 5px rgba(150,64,252,.35))' }], { delay: T(2000), duration: T(900) });
-    anim(q('.sp-word'), [{ opacity: 0, letterSpacing: '22px', filter: 'blur(4px)' }, { opacity: 1, letterSpacing: '10px', filter: 'blur(0)' }], { delay: T(2150), duration: T(700) });
-    anim(q('.sp-tag'), [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { delay: T(2400), duration: T(600) });
+  function run(root, done, mode, img) {
+    root.className = 'sp2 mode-' + mode;
+    root.innerHTML = `<div class="sp-photo" style="background-image:url('${img}')"></div><div class="sp-vig"></div>
+      ${mode === 'A' ? '<div class="sp-ring"></div><div class="sp-flare"></div>' : '<div class="sp-scope"><i></i><i></i><i></i><i></i><span class="sp-cross"></span></div><div class="sp-read"><small>Analisando…</small><b>– – – –</b></div>'}
+      <div class="sp-panel"><div class="sp-cap">Nível de poder</div><div class="sp-num">0</div><div class="sp-sub">Acima de 9.000</div>
+        <div class="sp-line"><i></i></div><button class="sp-go" type="button">Iniciar treino</button></div>`;
+    const q = (sel) => root.querySelector(sel);
+    const photo = q('.sp-photo'), num = q('.sp-num'), line = q('.sp-line i'), go = q('.sp-go'), sub = q('.sp-sub'), panel = q('.sp-panel');
+    let finish;
+    if (mode === 'A') {
+      // Eclipse: anel de cobre acende no escuro, a foto aparece com zoom lento e o anel se abre e some no arco da foto.
+      const ring = q('.sp-ring');
+      anim(ring, [{ opacity: 0, transform: 'translate(-50%,-50%) scale(.35) rotate(-40deg)' }, { opacity: 1, transform: 'translate(-50%,-50%) scale(.6) rotate(0)', offset: 0.35 }, { opacity: 0.9, transform: 'translate(-50%,-50%) scale(1.05)', offset: 0.75 }, { opacity: 0, transform: 'translate(-50%,-50%) scale(1.25)' }], { duration: 2300, easing: 'cubic-bezier(.3,.1,.2,1)' });
+      anim(photo, [{ opacity: 0, transform: 'scale(1.1)', filter: 'brightness(.4)' }, { opacity: 1, transform: 'scale(1)', filter: 'brightness(1)' }], { delay: 500, duration: 2300, easing: 'cubic-bezier(.2,.6,.2,1)' });
+      anim(q('.sp-flare'), [{ opacity: 0, transform: 'translateX(-60%) scaleX(.2)' }, { opacity: 1, transform: 'translateX(0) scaleX(1)', offset: 0.5 }, { opacity: 0, transform: 'translateX(40%) scaleX(.6)' }], { delay: 2150, duration: 900, easing: 'ease-out' });
+      anim(panel, [{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }], { delay: 900, duration: 600 });
+      anim(line, [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], { delay: 950, duration: 1350, easing: 'cubic-bezier(.5,0,.3,1)' });
+      finish = counter(num, performance.now() + 950, 1350);
+    } else {
+      // Scouter cromado: a foto aparece escurecida, a mira procura, trava em cobre e a leitura sobe.
+      const scope = q('.sp-scope'), read = q('.sp-read'), rb = read.querySelector('b'), rs = read.querySelector('small');
+      anim(photo, [{ opacity: 0, filter: 'brightness(.35) saturate(.5)' }, { opacity: 1, filter: 'brightness(.55) saturate(.6)', offset: 0.5 }, { opacity: 1, filter: 'brightness(1) saturate(1)' }], { duration: 2600, easing: 'ease-out' });
+      anim(scope, [
+        { opacity: 0, transform: 'translate(-50%,-50%) translate(-60px,40px) scale(1.5)' },
+        { opacity: 1, transform: 'translate(-50%,-50%) translate(-50px,30px) scale(1.35)', offset: 0.15 },
+        { transform: 'translate(-50%,-50%) translate(55px,-20px) scale(1.25)', offset: 0.4 },
+        { transform: 'translate(-50%,-50%) translate(-25px,-35px) scale(1.15)', offset: 0.6 },
+        { transform: 'translate(-50%,-50%) scale(1)', offset: 0.78 },
+        { opacity: 1, transform: 'translate(-50%,-50%) scale(1)' }], { duration: 1700, easing: 'cubic-bezier(.45,.05,.3,1)' });
+      setTimeout(() => { if (root.isConnected) { scope.classList.add('lock'); rs.textContent = 'Nível de poder'; } }, 1330);
+      anim(read, [{ opacity: 0 }, { opacity: 1 }], { delay: 200, duration: 300 });
+      const fr = counter(rb, performance.now() + 1350, 950);
+      anim(read, [{ opacity: 1 }, { opacity: 0 }], { delay: 2350, duration: 300 });
+      anim(scope, [{ opacity: 1 }, { opacity: 0 }], { delay: 2600, duration: 500 });
+      anim(panel, [{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }], { delay: 2300, duration: 500 });
+      anim(line, [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], { delay: 2300, duration: 500 });
+      num.textContent = fmt(POWER);
+      finish = fr;
+    }
+    // 9.001 em cobre, com um pulso; depois o botão.
+    const END = mode === 'A' ? 2300 : 2350;
+    setTimeout(() => { if (root.isConnected) root.classList.add('hit'); }, END);
+    anim(sub, [{ opacity: 0 }, { opacity: 1 }], { delay: END + 100, duration: 400 });
+    anim(go, [{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { delay: END + 350, duration: 450 });
 
-    // O nível de poder fica na tela e o botão aparece no fim; o app só abre ao tocar nele.
-    const go = q('.sp-go');
-    anim(go, [{ opacity: 0, transform: 'translate(-50%, 16px) scale(.96)' }, { opacity: 1, transform: 'translate(-50%, 0)' }], { delay: DURATION, duration: 500 });
-    setTimeout(() => go.classList.add('pulse'), DURATION + 500);
-
-    if (Store.state.settings.sound) playSound();
-    // Toque fora do botão: adianta a animação até o final (9.001 e o botão), sem entrar no app.
+    if (Store.state.settings.sound) (mode === 'A' ? playSoundA : playSound)();
+    // Toque fora do botão: adianta até o final (9.001 e o botão), sem entrar no app.
     root.addEventListener('click', (e) => {
       if (e.target.closest('.sp-go')) return;
-      ff = true; num.textContent = target.toLocaleString('pt-BR');
+      finish();
+      const rb = root.querySelector('.sp-read b'); if (rb) rb.textContent = fmt(POWER);
       root.getAnimations({ subtree: true }).forEach((a) => { try { a.finish(); } catch (err) { /* ignora */ } });
-      go.classList.add('pulse');
+      root.classList.add('hit'); const sc = root.querySelector('.sp-scope'); if (sc) sc.classList.add('lock');
     });
     go.addEventListener('click', done);
   }
 
   // Mostra a abertura ao abrir o app pelo ícone. Pela notificação do treino ou pelo widget, vai direto.
   let enter = null;
+  const pick = (key, list) => {
+    // Sorteia sem repetir: todas aparecem uma vez antes de recomeçar a fila, e a primeira da fila nova
+    // nunca é a última mostrada. A fila fica no aparelho (localStorage).
+    let st = null;
+    try { st = JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) { /* ignora */ }
+    const sig = list.join(',');
+    if (!st || !Array.isArray(st.bag) || st.sig !== sig) st = { sig, bag: [], last: 0 };
+    if (!st.bag.length) {
+      const bag = list.slice();
+      for (let i = bag.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [bag[i], bag[j]] = [bag[j], bag[i]]; }
+      if (bag.length > 1 && bag[0] === st.last) bag.push(bag.shift());
+      st.bag = bag;
+    }
+    st.last = st.bag.shift();
+    try { localStorage.setItem(key, JSON.stringify(st)); } catch (e) { /* ignora */ }
+    return st.last;
+  };
   window.Splash = {
-    // Fundo (opção 2 · Atleta embaixo): logo e nível de poder no preto, a foto embaixo.
-    // A foto muda a cada abertura (ver COVERS / nextCover).
-    BG: {
-      img: 'img/capas/capa-01.jpg', box: '68%', size: 'cover', pos: '50% 35%', stackTop: 'max(30%, 222px)',
-      shade: 'linear-gradient(180deg, #08080a 0%, #08080a 30%, rgba(8,8,10,.2) 48%, rgba(8,8,10,.12) 80%, rgba(8,8,10,.85) 100%)',
+    // Fotos da entrada: img/entrada/entrada-NN.jpg (900 px de largura, 9:16, com o logo já na arte).
+    // ATHLETE = as que têm atleta (a mira da abertura C precisa de alguém para "ler").
+    PHOTOS: 10,
+    ATHLETE: [1, 3, 4, 6, 7, 8, 9, 10],
+    // Alterna A e C a cada abertura.
+    nextMode() {
+      let m = 'C';
+      try { m = localStorage.getItem('gravity.entradaModo') === 'A' ? 'C' : 'A'; localStorage.setItem('gravity.entradaModo', m); } catch (e) { m = 'A'; }
+      return m;
     },
-    // Capas da abertura. Para incluir outra: salvar em img/capas/capa-NN.jpg (900 px de largura) e aumentar COVERS.
-    COVERS: 21,
-    // Sorteia sem repetir: todas as capas aparecem uma vez antes de recomeçar a fila, e a primeira
-    // da fila nova nunca é a última mostrada. A fila fica no aparelho (localStorage).
-    nextCover() {
-      const n = Splash.COVERS, KEY = 'gravity.capas';
-      let st = null;
-      try { st = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { /* ignora */ }
-      if (!st || !Array.isArray(st.bag) || st.n !== n) st = { n, bag: [], last: 0 };
-      if (!st.bag.length) {
-        const bag = Array.from({ length: n }, (_, i) => i + 1);
-        for (let i = bag.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [bag[i], bag[j]] = [bag[j], bag[i]]; }
-        if (n > 1 && bag[0] === st.last) bag.push(bag.shift());
-        st.bag = bag;
-      }
-      st.last = st.bag.shift();
-      try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) { /* ignora */ }
-      return 'img/capas/capa-' + String(st.last).padStart(2, '0') + '.jpg';
+    nextPhoto(mode) {
+      const all = Array.from({ length: Splash.PHOTOS }, (_, i) => i + 1);
+      const n = pick(mode === 'C' ? 'gravity.entradaC' : 'gravity.entradaA', mode === 'C' ? Splash.ATHLETE : all);
+      return 'img/entrada/entrada-' + String(n).padStart(2, '0') + '.jpg';
     },
     show() {
       const root = document.getElementById('splash');
@@ -157,14 +192,14 @@
       let closed = false;
       enter = () => {
         if (closed) return; closed = true; enter = null;
-        // Entrar: só uma vibração curta (sem bipe e sem voz).
         UI.Native.vibrate(40);
         root.classList.add('out');
         setTimeout(() => { root.remove(); if (ac) ac.close(); Theme.bars(); }, 450);
       };
-      run(root, enter);
+      const mode = window.SPLASH_MODE || Splash.nextMode();
+      run(root, enter, mode, window.SPLASH_IMG || Splash.nextPhoto(mode));
     },
-    // Botão voltar do Android na abertura = "Bora pro treino!".
+    // Botão voltar do Android na abertura = "Iniciar treino".
     back() { if (!enter) return false; enter(); return true; },
   };
 })();

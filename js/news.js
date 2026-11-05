@@ -4,6 +4,9 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.30.0', date: '2026-11-05', items: [
+      { icon: 'sparkle', t: 'Nova entrada', d: 'A abertura ganhou a identidade nova (Obsidian Chrome): 10 fotos novas e duas animações que se alternam, o Eclipse e o Scouter cromado. O nível de poder continua passando de 9.000.', img: 'img/news/0.30.0.jpg', main: true },
+    ] },
     { v: '0.29.4', date: '2026-11-05', items: [
       { icon: 'sparkle', t: 'Ícone ajustado', d: 'O ícone voltou a mostrar a pedra e o G de metal ocupando todo o espaço, sem a borda preta.' },
     ] },
@@ -165,11 +168,19 @@
   // Cada versão vira um cartão: a novidade principal (a primeira, ou main: true) com print da tela,
   // e as outras numa lista curta embaixo. Quem pulou versões vê no máximo as 3 mais novas.
   function cardsSince(v, max) {
-    return CHANGELOG.filter((c) => !v || cmp(c.v, v) > 0).map((c) => {
-      const its = c.items.filter(forMe); if (!its.length) return null;
-      const main = its.find((x) => x.main) || its[0];
-      return { v: c.v, main, rest: its.filter((x) => x !== main) };
-    }).filter(Boolean).slice(0, max || 3);
+    // As correções (0.29.1, 0.29.2…) entram no cartão da versão principal (0.29), para não esconderem as novidades grandes.
+    const groups = [];
+    CHANGELOG.filter((c) => !v || cmp(c.v, v) > 0).forEach((c) => {
+      const key = c.v.split('.').slice(0, 2).join('.');
+      let g = groups.find((x) => x.key === key);
+      if (!g) { g = { key, v: c.v, its: [] }; groups.push(g); }
+      // A versão principal (x.y.0) vem primeiro; as correções, depois.
+      if (/\.0$/.test(c.v)) { g.v = c.v; g.its = c.items.filter(forMe).concat(g.its); } else g.its.push(...c.items.filter(forMe));
+    });
+    return groups.filter((g) => g.its.length).map((g) => {
+      const main = g.its.find((x) => x.main) || g.its[0];
+      return { v: g.v, main, rest: g.its.filter((x) => x !== main) };
+    }).slice(0, max || 3);
   }
   function show(cards, title) {
     if (!cards.length) return;
