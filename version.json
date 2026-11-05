@@ -1,11 +1,11 @@
 {
- "versionCode": 35,
- "versionName": "0.29.2",
+ "versionCode": 36,
+ "versionName": "0.29.3",
  "date": "2026-11-05",
- "apk": "download/Gravity-v0.29.2.apk",
+ "apk": "download/Gravity-v0.29.3.apk",
  "notes": [
   {
-   "t": "Ícone novo"
+   "t": "Ícone com a moldura brilhante"
   }
  ]
 }

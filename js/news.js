@@ -4,6 +4,9 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.29.3', date: '2026-11-05', items: [
+      { icon: 'sparkle', t: 'Ícone com a moldura brilhante', d: 'O ícone novo agora mostra a arte inteira, com a moldura de metal e o brilho dourado em volta.' },
+    ] },
     { v: '0.29.2', date: '2026-11-05', items: [
       { icon: 'sparkle', t: 'Ícone novo', d: 'O app tem um ícone novo na tela de aplicativos do celular: o G de metal sobre pedra escura com brilho dourado.' },
     ] },
