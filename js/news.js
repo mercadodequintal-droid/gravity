@@ -4,6 +4,9 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.29.4', date: '2026-11-05', items: [
+      { icon: 'sparkle', t: 'Ícone ajustado', d: 'O ícone voltou a mostrar a pedra e o G de metal ocupando todo o espaço, sem a borda preta.' },
+    ] },
     { v: '0.29.3', date: '2026-11-05', items: [
       { icon: 'sparkle', t: 'Ícone com a moldura brilhante', d: 'O ícone novo agora mostra a arte inteira, com a moldura de metal e o brilho dourado em volta.' },
     ] },
