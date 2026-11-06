@@ -4,6 +4,9 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.30.2', date: '2026-11-06', items: [
+      { icon: 'camera', t: 'Fotos dos exercícios novos', d: '59 dos 134 exercícios novos ganharam foto, com as duas posições do movimento. Os outros chegam nas próximas versões.', go: 'libNew' },
+    ] },
     { v: '0.30.1', date: '2026-11-06', items: [
       { icon: 'bolt', t: 'É mais de 9.000!', d: 'Na entrada, embaixo do 9.001, agora aparece “É mais de 9.000!”.' },
     ] },

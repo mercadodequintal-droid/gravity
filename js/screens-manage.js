@@ -184,7 +184,7 @@
           <div class="card" style="margin-top:12px"><div class="small muted">Última vez · ${shortDate(last.date)}</div><div style="margin-top:6px;font-weight:600" class="num">${last.sets.map((x) => nf(x.kg) + ' kg × ' + x.reps).join('  ·  ')}</div></div>`
           : '<div class="card small muted">Você ainda não registrou este exercício. Os gráficos aparecem depois do primeiro treino.</div>'}
           ${(() => { const pl = Store.painsFor(exId).slice(-6).reverse(); return pl.length ? `<div class="section-title"><h2>Dores registradas</h2><span class="small muted">${Store.painsFor(exId).length}</span></div><div class="card">${pl.map((p) => `<div class="kv"><span>${p.date.split('-').reverse().slice(0, 2).join('/')} · ${esc(p.where)}</span><span class="small ${p.lvl === 2 ? 'late-txt' : 'muted'}">${Store.PAIN_LEVELS[p.lvl]}${p.note ? ' · ' + esc(p.note) : ''}</span></div>`).join('')}</div>` : ''; })()}
-          ${ex.img && ex.img.length && /^ex/.test(ex.id) ? '<div class="tiny faint" style="margin-top:18px">Imagens: Free Exercise DB (domínio público).</div>' : ''}</div>`;
+          ${ex.img && ex.img.length && (/^ex/.test(ex.id) || ex.foto === 'fedb') ? '<div class="tiny faint" style="margin-top:18px">Imagens: Free Exercise DB (domínio público).</div>' : ''}</div>`;
       },
       actions: {
         back: pop,
