@@ -717,7 +717,6 @@
           <button class="menu-item" data-a="voice"><span class="ic">${icon('play', 'sm')}</span><span class="grow">Voz no treino<div class="small muted">${Voice.cfg().on ? 'Ligada · ' + Voice.count() + ' de ' + Voice.OPTS.length + ' avisos' : 'Desligada · só os bipes'}</div></span>${icon('next', 'sm')}</button>
           <button class="menu-item" data-a="gym"><span class="ic">${icon('dumbbell', 'sm')}</span><span class="grow">Minha academia<div class="small muted">Aparelhos que a sua academia tem · o app só sugere esses</div></span>${icon('next', 'sm')}</button>
           ${window.Android ? `<button class="menu-item" data-a="band"><span class="ic">${icon('timer', 'sm')}</span><span class="grow">Aviso na pulseira ou relógio<div class="small muted">Galaxy Fit, Galaxy Watch e outros: vibra no pulso quando o descanso acaba</div></span>${icon('next', 'sm')}</button>` : ''}
-          ${sw('Série feita por voz', 'Diga “feito” para marcar a série · usa o microfone durante o treino' + (window.Android ? '' : ' · no iPhone pode não funcionar'), 'voiceDone')}
           ${sw('Vibração', 'Ao concluir séries e no fim do descanso', 'vibrate')}
           ${sw('Abertura animada', 'Scouter ao abrir o app (toque para pular)', 'splash')}
           ${sw('Fotos coloridas', 'Desligado: fotos no tom do tema', 'colorPhotos')}</div>

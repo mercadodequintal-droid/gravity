@@ -1,11 +1,11 @@
 {
- "versionCode": 41,
- "versionName": "0.30.3",
+ "versionCode": 42,
+ "versionName": "0.30.4",
  "date": "2026-11-07",
- "apk": "download/Gravity-v0.30.3.apk",
+ "apk": "download/Gravity-v0.30.4.apk",
  "notes": [
   {
-   "t": "\"Feito\" por voz sem apito"
+   "t": "Sem \"série feita por voz\""
   }
  ]
 }

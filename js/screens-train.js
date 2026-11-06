@@ -646,14 +646,6 @@
           }, 60);
         }, { passive: true });
         Native.keepOn(true);
-        // "Feito" por voz: marca a próxima série do exercício que está na tela.
-        window.onVoiceCmd = () => {
-          const page = el.querySelectorAll('.page')[idx];
-          const b = page && page.querySelector('.set:not(.done) [data-a="toggle"]');
-          if (b) { b.click(); toast('🎙 Série marcada'); } else toast('🎙 Nenhuma série pendente neste exercício');
-        };
-        const sLive = Store.session(sid);
-        Voice.listen(!!(sLive && !sLive.finished && Store.state.activeSessionId === sid));
         const s0 = Store.session(sid);
         if (s0 && s0.autoUp && s0.autoUp.length && !s0.autoUpShown) {
           s0.autoUpShown = true; Store.save();
@@ -662,7 +654,7 @@
         clearInterval(elapsedT);
         elapsedT = setInterval(() => { const e = el.querySelector('[data-elapsed]'); const s = Store.session(sid); if (e && s) e.textContent = clock(Date.now() - s.start); }, 1000);
       },
-      leave() { Metro.stop(); clearInterval(elapsedT); clearTimeout(rirT); Native.keepOn(false); Voice.listen(false); window.onVoiceCmd = null; },
+      leave() { Metro.stop(); clearInterval(elapsedT); clearTimeout(rirT); Native.keepOn(false); },
       actions: {
         back: pop,
         go: (ds) => go(Number(ds.i)),

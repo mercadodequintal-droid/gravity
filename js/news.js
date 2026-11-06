@@ -4,6 +4,9 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.30.4', date: '2026-11-07', items: [
+      { icon: 'play', t: 'Sem "série feita por voz"', d: 'A função de marcar a série dizendo "feito" saiu do app: o reconhecimento de voz do celular apitava toda vez que voltava a escutar. O app também não pede mais acesso ao microfone.' },
+    ] },
     { v: '0.30.3', date: '2026-11-07', items: [
       { icon: 'play', t: '"Feito" por voz sem apito', d: 'Com a tela bloqueada, o "feito" por voz agora pausa (antes ficava apitando) e volta sozinho quando você desbloqueia o celular no treino.' },
     ] },
