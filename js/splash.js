@@ -95,7 +95,7 @@
     root.className = 'sp2 mode-' + mode;
     root.innerHTML = `<div class="sp-photo" style="background-image:url('${img}')"></div><div class="sp-vig"></div>
       ${mode === 'A' ? '<div class="sp-ring"></div><div class="sp-flare"></div>' : '<div class="sp-scope"><i></i><i></i><i></i><i></i><span class="sp-cross"></span></div><div class="sp-read"><small>Analisando…</small><b>– – – –</b></div>'}
-      <div class="sp-panel"><div class="sp-cap">Nível de poder</div><div class="sp-num">0</div><div class="sp-sub">Acima de 9.000</div>
+      <div class="sp-panel"><div class="sp-cap">Nível de poder</div><div class="sp-num">0</div><div class="sp-sub">É mais de 9.000!</div>
         <div class="sp-line"><i></i></div><button class="sp-go" type="button">Iniciar treino</button></div>`;
     const q = (sel) => root.querySelector(sel);
     const photo = q('.sp-photo'), num = q('.sp-num'), line = q('.sp-line i'), go = q('.sp-go'), sub = q('.sp-sub'), panel = q('.sp-panel');

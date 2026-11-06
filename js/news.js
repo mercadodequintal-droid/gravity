@@ -4,6 +4,9 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.30.1', date: '2026-11-06', items: [
+      { icon: 'bolt', t: 'É mais de 9.000!', d: 'Na entrada, embaixo do 9.001, agora aparece “É mais de 9.000!”.' },
+    ] },
     { v: '0.30.0', date: '2026-11-05', items: [
       { icon: 'sparkle', t: 'Nova entrada', d: 'A abertura ganhou a identidade nova (Obsidian Chrome): 10 fotos novas e duas animações que se alternam, o Eclipse e o Scouter cromado. O nível de poder continua passando de 9.000.', img: 'img/news/0.30.0.jpg', main: true },
     ] },
