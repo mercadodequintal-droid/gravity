@@ -4,6 +4,9 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.30.3', date: '2026-11-07', items: [
+      { icon: 'play', t: '"Feito" por voz sem apito', d: 'Com a tela bloqueada, o "feito" por voz agora pausa (antes ficava apitando) e volta sozinho quando você desbloqueia o celular no treino.' },
+    ] },
     { v: '0.30.2', date: '2026-11-06', items: [
       { icon: 'camera', t: 'Fotos dos exercícios novos', d: '59 dos 134 exercícios novos ganharam foto, com as duas posições do movimento. Os outros chegam nas próximas versões.', go: 'libNew' },
     ] },
