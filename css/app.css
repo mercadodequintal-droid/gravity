@@ -880,17 +880,45 @@ body.live-out .rest-pill { visibility: hidden !important; pointer-events: none !
   --acc-rgb: 205, 211, 219; --acc2-rgb: 241, 244, 247; --fg-rgb: 255, 255, 255; --bg-rgb: 11, 12, 14; --shadow-rgb: 0, 0, 0;
   --photo-filter: grayscale(1) contrast(1.15) brightness(0.86);
 }
-[data-theme="branco"] {
-  --bg: #f6f5fa; --bg-2: #eeecf5; --card-a: #ffffff; --card-b: #fbfaff;
-  --glass: rgba(40,20,80,.035); --glass-2: rgba(150,64,252,.08); --line: rgba(110,70,180,.14); --line-2: rgba(150,64,252,.4);
-  --text: #18141f; --text-2: #635c72; --text-3: #a59fb3;
-  --gold: #8a3ff0; --gold-2: #7a2fe6; --gold-3: #b896f5; --gold-grad: linear-gradient(135deg, #b98cff 0%, #9640fc 50%, #6a22d8 100%);
-  --lime: #9640fc; --lime-ink: #ffffff; --blue: #8a3ff0; --blue-2: #b896f5; --violet: #8f7bb5; --amber: #d07a2e; --red: #d4473a;
-  --acc-rgb: 150, 64, 252; --acc2-rgb: 122, 47, 230; --fg-rgb: 40, 20, 80; --bg-rgb: 246, 245, 250; --shadow-rgb: 70, 40, 130; --nav-rgb: 255, 255, 255;
-  --logo-ink: #1b1526; --sheet-a: #ffffff; --scrim: rgba(28, 18, 48, 0.42); --nav-text: #7a7390; --ghost-rgb: 255, 255, 255; --img-bg: #e9e6f0; --map-ideal: #a45cff; --map-low: rgba(164,92,255,.4);
-  --photo-filter: grayscale(1) contrast(1.06) brightness(1.03);
+/* Azul (v0.31): azul-marinho #0B1733 e azul elétrico, botões de cantos retos, logo G na pedra. Substituiu o tema Branco. */
+[data-theme="azul"] {
+  --bg: #0B1733; --bg-2: #0E1C3D; --card-a: #172548; --card-b: #111D3C;
+  --glass: rgba(120,160,255,.05); --glass-2: rgba(47,123,255,.12); --line: rgba(120,160,255,.15); --line-2: rgba(80,140,255,.38);
+  --text: #EEF3FF; --text-2: #93A1C2; --text-3: #5D6A8A;
+  --gold: #3D8BFF; --gold-2: #7FB2FF; --gold-3: #1E4FB8; --gold-grad: linear-gradient(135deg, #5AA2FF 0%, #2F7BFF 50%, #1A55E0 100%);
+  --lime: #2F7BFF; --lime-ink: #FFFFFF; --blue: #3D8BFF; --blue-2: #1E4FB8; --violet: #8FA6D8; --amber: #FFB547; --red: #FF5D6C;
+  --acc-rgb: 47, 123, 255; --acc2-rgb: 127, 178, 255; --fg-rgb: 220, 232, 255; --bg-rgb: 11, 23, 51; --shadow-rgb: 0, 4, 20;
+  --sheet-a: #14213F; --map-ideal: #3D8BFF; --map-low: rgba(61,139,255,.4);
+  --photo-filter: grayscale(1) contrast(1.12) brightness(0.86);
 }
-[data-theme="branco"] #splash { --logo-ink: #fcf6e8; --bg: #08080a; --text: #eee8da; }
+[data-theme="azul"] body, [data-theme="azul"] .screen { background-color: #0B1733; }
+[data-theme="azul"] #splash { --bg: #08080a; }
+[data-theme="azul"] .card { background: linear-gradient(180deg, rgba(27,42,80,.92), rgba(18,30,62,.92)); border: 1px solid rgba(120,160,255,.15); box-shadow: 0 12px 30px rgba(0,4,20,.45), inset 0 1px 0 rgba(160,190,255,.06); }
+[data-theme="azul"] .card.hero { background: radial-gradient(120% 90% at 90% 0%, rgba(47,123,255,.28), transparent 60%), linear-gradient(180deg, #1A2A55, #111D3C); border-color: rgba(80,140,255,.45); }
+[data-theme="azul"] .nav { background: rgba(14,26,56,.95); border-color: rgba(120,160,255,.16); }
+[data-theme="azul"] .live-bar, [data-theme="azul"] .rest-pill { background: rgba(16,28,60,.97); border-radius: 12px; }
+/* botões: cantos retos (opção B) */
+[data-theme="azul"] .btn { border-radius: 8px; }
+[data-theme="azul"] .btn.sm { border-radius: 6px; }
+[data-theme="azul"] .btn.lime, [data-theme="azul"] .btn.primary, [data-theme="azul"] .live-bar .lb-btn { background: linear-gradient(180deg, #3D8BFF, #1F63F0); color: #fff; border: 0; letter-spacing: 1.6px; box-shadow: 0 8px 22px rgba(31,99,240,.4), inset 0 1px 0 rgba(255,255,255,.22); }
+[data-theme="azul"] .live-bar .lb-btn { border-radius: 8px; box-shadow: 0 4px 14px rgba(31,99,240,.4), inset 0 1px 0 rgba(255,255,255,.22); }
+[data-theme="azul"] .btn .arrow { border-radius: 6px; width: 30px; height: 30px; margin-right: -8px; }
+[data-theme="azul"] .btn.primary .arrow, [data-theme="azul"] .btn.lime .arrow { background: rgba(255,255,255,.16); color: #fff; border: 0; }
+[data-theme="azul"] .btn.ghost { background: rgba(17,29,60,.92); border: 1px solid rgba(120,160,255,.2); color: var(--text); }
+[data-theme="azul"] .filter.on, [data-theme="azul"] .seg button.on { background: linear-gradient(180deg, #3D8BFF, #1F63F0); color: #fff; box-shadow: 0 0 14px rgba(47,123,255,.4); border-color: transparent; }
+[data-theme="azul"] .player-img .tools button, [data-theme="azul"] .quick-row button { border-radius: 8px; }
+[data-theme="azul"] .chip { border-radius: 6px; }
+[data-theme="azul"] .search, [data-theme="azul"] .toast { border-radius: 10px; }
+[data-theme="azul"] .icon-btn { border-radius: 10px; }
+[data-theme="azul"] .filter, [data-theme="azul"] .seg button { border-radius: 6px; }
+[data-theme="azul"] .seg { border-radius: 9px; }
+/* série feita: certinho verde */
+[data-theme="azul"] .set.done .check { background: #2FB36B; border-color: #2FB36B; color: #06130B; box-shadow: 0 0 14px rgba(47,179,107,.4); }
+/* logo G na pedra (botão Treinar e perfil) */
+.g-emb { display: block; border-radius: 50%; object-fit: cover; }
+[data-theme="azul"] .g-emb { box-shadow: 0 0 0 1px rgba(110,160,255,.5), 0 0 14px rgba(47,123,255,.4); }
+[data-theme="azul"] .nav .emblem-btn .core { padding: 0; overflow: hidden; background: #000; box-shadow: 0 0 0 1.5px rgba(110,160,255,.6), 0 0 0 6px rgba(11,23,51,.95), 0 0 24px rgba(47,123,255,.5); }
+[data-theme="azul"] .nav .emblem-btn .core .g-emb { width: 100%; height: 100%; box-shadow: none; }
 
 /* equilíbrio empurrar × puxar, quadríceps × posterior */
 .bal-row { padding: 4px 0 12px; }

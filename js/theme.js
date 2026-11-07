@@ -6,9 +6,10 @@
     { id: 'dourado', nome: 'Dourado', desc: 'Preto e dourado', bar: '#08080a', light: false, sw: ['#08080a', '#161618', '#d9b25f', '#f3d48c'] },
     { id: 'galaxia', nome: 'Galáxia', desc: 'Preto com o roxo do logo', bar: '#07060b', light: false, sw: ['#07060b', '#16131f', '#a875ff', '#d6bfff'] },
     { id: 'titanio', nome: 'Titânio', desc: 'Grafite e prata', bar: '#0b0c0e', light: false, sw: ['#0b0c0e', '#191b1e', '#cdd3db', '#f1f4f7'] },
-    { id: 'branco', nome: 'Branco', desc: 'Branco com o roxo do logo', bar: '#f6f5fa', light: true, sw: ['#f6f5fa', '#ffffff', '#9640fc', '#18141f'] },
+    { id: 'azul', nome: 'Azul', desc: 'Azul-marinho e azul elétrico', bar: '#0B1733', light: false, sw: ['#0B1733', '#172548', '#2F7BFF', '#7FB2FF'] },
   ];
-  const get = (id) => LIST.find((t) => t.id === id) || LIST[0];
+  // O tema Branco saiu na v0.31; quem usava passa para o Azul.
+  const get = (id) => LIST.find((t) => t.id === (id === 'branco' ? 'azul' : id)) || LIST[0];
   const current = () => get((Store.state.settings || {}).theme);
 
   // Barras do Android (status e navegação). dark = força escuro (durante a abertura).
@@ -22,6 +23,9 @@
     document.documentElement.dataset.theme = t.id;
     const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = t.bar;
     bars(!!document.getElementById('splash'));
+    // O logo do botão Treinar muda com o tema (no Azul é o G na pedra).
+    const core = document.querySelector('.nav [data-train] .core');
+    if (core && window.Screens && Screens.emblem) core.innerHTML = Screens.emblem(36);
   }
 
   window.Theme = { LIST, get, current, apply, bars };

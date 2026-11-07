@@ -48,6 +48,8 @@
   // Logo do Gravity em vetor: bateria em tom champanhe com barras de progresso.
   // Logo do Gravity no círculo da tela inicial e no botão Treinar (desenho em js/logo.js).
   function emblem(size) {
+    // Tema Azul: o G de metal na pedra, com a ponta de baixo no centro do círculo.
+    if (window.Theme && Theme.current().id === 'azul') { const px = Math.round(size * 1.15); return `<img class="g-emb" src="img/g-tile.png" alt="" style="width:${px}px;height:${px}px">`; }
     return Logo.svg({ style: `width:${Math.round(size * 1.25)}px;height:auto;overflow:visible` });
   }
 

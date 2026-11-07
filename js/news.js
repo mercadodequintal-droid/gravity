@@ -4,6 +4,9 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.31.0', date: '2026-11-07', items: [
+      { icon: 'sparkle', t: 'Tema Azul', d: 'Tema novo em Configurações › Aparência: azul-marinho com azul elétrico, botões de cantos retos e o logo G na pedra no botão Treinar. Ele entra no lugar do tema Branco; quem usava o Branco já passa para o Azul.', go: 'theme', img: 'img/news/0.31.0.jpg', main: true },
+    ] },
     { v: '0.30.4', date: '2026-11-07', items: [
       { icon: 'play', t: 'Sem "série feita por voz"', d: 'A função de marcar a série dizendo "feito" saiu do app: o reconhecimento de voz do celular apitava toda vez que voltava a escutar. O app também não pede mais acesso ao microfone.' },
     ] },
@@ -110,6 +113,7 @@
     compare: () => { UI.switchTab('progress', true); setTimeout(() => { const b = document.querySelector('.screen [data-a="body"]'); if (b) b.click(); setTimeout(() => spotlight('[data-a="compare"]', 'Comparar fotos'), 500); }, 250); },
     power: () => { UI.switchTab('home', true); setTimeout(() => spotlight('.pw-card', 'Seu nível de poder'), 250); },
     settingsUpdate: () => { UI.push(Screens.Settings()); setTimeout(() => spotlight('[data-a="checkUpdate"]', 'Verificar atualizações'), 350); },
+    theme: () => { UI.push(Screens.Settings()); setTimeout(() => spotlight('.theme-grid', 'Escolha o tema'), 350); },
     news: () => { UI.push(Screens.Settings()); setTimeout(() => spotlight('[data-a="news"]', 'Todas as novidades'), 350); },
   };
 
