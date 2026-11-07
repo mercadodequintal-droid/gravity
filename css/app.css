@@ -1075,6 +1075,26 @@ h1, h2, h3, h4, .card b { overflow-wrap: break-word; hyphens: auto; -webkit-hyph
 [data-theme="luana"] .btn.ghost { background: #FFF7F9 !important; }
 [data-theme="luana"] .set.done .check { background: #D9577F !important; border-color: #D9577F !important; color: #fff !important; box-shadow: none !important; }
 
+/* Atelier (v0.35): tema claro creme e ameixa (cores tiradas da referência "Gravity Atelier" de 07/11). */
+[data-theme="atelier"] {
+  --bg: #F5EDE7; --bg-2: #EFE4DC; --card-a: #FBF6F2; --card-b: #FBF6F2; --bg-rgb: 245, 237, 231; --nav-rgb: 251, 246, 242; --sheet-a: #FBF6F2; --img-bg: #EDE1D7;
+  --glass: rgba(107,61,80,.04); --glass-2: rgba(107,61,80,.08); --line: rgba(107,61,80,.13); --line-2: rgba(107,61,80,.34);
+  --text: #3A1F26; --text-2: #84736E; --text-3: #B9AAA4;
+  --gold: #6B3D50; --gold-2: #6B3D50; --gold-3: #C9A3AE; --gold-grad: #6B3D50;
+  --lime: #6B3D50; --lime-ink: #FFFFFF; --blue: #6B3D50; --blue-2: #C9A3AE; --violet: #A88F96; --amber: #C98A4B; --red: #B84A4A;
+  --acc-rgb: 107, 61, 80; --acc2-rgb: 107, 61, 80; --fg-rgb: 80, 50, 60; --shadow-rgb: 120, 90, 80;
+  --hero-a: #FBF6F2; --hero-b: #EFE3D9; --logo-ink: #3A1F26; --scrim: rgba(58, 31, 38, .4); --nav-text: #82756C; --ghost-rgb: 251, 246, 242;
+  --map-ideal: #8E5A6E; --map-low: rgba(142,90,110,.35);
+  --photo-filter: grayscale(1) sepia(.35) hue-rotate(320deg) saturate(.9) contrast(1.02) brightness(1.06);
+}
+[data-theme="atelier"] #splash { --logo-ink: #fcf6e8; --bg: #08080a; --text: #eee8da; }
+[data-theme="atelier"] .seg { background: #EFE4DC; border-color: transparent; }
+[data-theme="atelier"] .btn.ghost { background: #FBF6F2; border-color: rgba(107,61,80,.22); }
+[data-theme="atelier"] .btn.lime { background: #6B3D50 !important; color: #fff; border-color: #6B3D50; }
+[data-theme="atelier"] .btn.lime .arrow { background: rgba(255,255,255,.16); color: #fff; border: 0; }
+[data-theme="atelier"] .set.done .check { background: #6B3D50 !important; border-color: #6B3D50 !important; color: #fff !important; }
+[data-theme="atelier"] .toast { background: #FBF6F2; }
+
 /* ===== Botões de cantos retos em todos os temas (v0.32; nasceu no tema Azul, v0.31) =====
    Grandes 8 px; pequenos, chips, filtros e abas 6 px; ícones, busca e avisos 10–12 px.
    Números das séries, logo e medalhas continuam redondos. */
@@ -1092,7 +1112,8 @@ h1, h2, h3, h4, .card b { overflow-wrap: break-word; hyphens: auto; -webkit-hyph
 .seg { border-radius: 9px; }
 
 /* ===== Tela inicial por tema (v0.33): A "Hoje em foco" (Titânio) e B "Painel" (Azul) ===== */
-.screen .content.home2 { padding-top: calc(26px + env(safe-area-inset-top, 0px)); }
+.screen .content.home2 { padding-top: 6px; }
+.home2 .update-card { margin: 0 0 12px; }
 .hB > .card { margin-top: 10px; }
 .h2-top { display: flex; align-items: center; gap: 10px; padding: 6px 0 14px; }
 .h2-av { width: 42px; height: 42px; border-radius: 50%; overflow: hidden; flex: none; display: grid; place-items: center; background: radial-gradient(circle at 50% 35%, var(--card-a), var(--bg) 75%); box-shadow: 0 0 0 1.5px rgba(var(--acc2-rgb), .7); }
@@ -1147,3 +1168,29 @@ h1, h2, h3, h4, .card b { overflow-wrap: break-word; hyphens: auto; -webkit-hyph
 .h2-bar { height: 5px; border-radius: 3px; background: rgba(var(--fg-rgb), .07); margin-top: 4px; overflow: hidden; } .h2-bar i { display: block; height: 100%; border-radius: 3px; background: var(--gold); }
 .h2-tile.mini b { font-family: var(--display, Oswald); font-weight: 400; font-size: 22px; display: block; margin-top: 8px; color: var(--text); } .h2-tile.mini small { font-size: 11px; color: var(--text-2); }
 .h2-tile.mini .ic { width: 30px; height: 30px; border-radius: 8px; background: rgba(var(--acc-rgb), .1); color: var(--gold-2); display: grid; place-items: center; }
+
+/* ===== Fosco em todos os temas (v0.35): sem brilho, sem halo, sem degradê metálico =====
+   Botões e destaques em cor lisa; sombras só de profundidade (nunca da cor do tema). A abertura não muda. */
+:root[data-theme] { --gold-grad: var(--gold) !important; }
+.backdrop::before, .backdrop::after { display: none; }
+.screen.pushed::before { background: var(--bg) !important; }
+.screen *, .sheet *, .nav *, .live-bar *, .rest-pill * { text-shadow: none !important; }
+.ring circle, .nav button.on svg { filter: none !important; }
+.btn.lime { background: rgba(var(--acc-rgb), 0.08) !important; box-shadow: none !important; }
+.btn.lime:active { box-shadow: none !important; }
+.btn.primary, .live-bar .lb-btn { background: var(--gold) !important; box-shadow: none !important; }
+[data-theme="azul"] .btn.lime, [data-theme="azul"] .btn.primary, [data-theme="azul"] .live-bar .lb-btn,
+[data-theme="azul"] .filter.on, [data-theme="azul"] .seg button.on { background: #2F7BFF !important; color: #fff !important; box-shadow: none !important; }
+.filter.on, .seg button.on { box-shadow: none !important; }
+.emblem-ring { box-shadow: 0 0 0 1.5px rgba(var(--acc2-rgb), 0.85) !important; }
+.nav .emblem-btn .core, .nav .emblem-btn:active .core { box-shadow: 0 0 0 1.5px var(--gold), 0 0 0 6px rgba(var(--bg-rgb), 0.95) !important; }
+.g-emb { box-shadow: 0 0 0 1px rgba(var(--acc2-rgb), 0.6) !important; }
+.quote-card .halo { box-shadow: none !important; border-color: rgba(var(--acc2-rgb), 0.5); }
+[data-theme="azul"] .card.hero { background: linear-gradient(180deg, #1A2A55, #111D3C) !important; }
+.day.today, .ex-card.sel, .tech-opt.on, .update-card, .dots i.on, .cal i.l3, .cl.l3, .medal.on, .medal.on .mi, .letter.done,
+.roadmap .st.cur .dot, .set.done .check, .h2-d.today, .toast, .celebrate .badge, .pr-card, .news-ic, .theme-opt.on { box-shadow: none !important; }
+.theme-opt.on { box-shadow: 0 0 0 1px var(--gold) !important; }
+.card { box-shadow: 0 6px 16px rgba(var(--shadow-rgb), 0.18) !important; }
+.live-bar, .rest-pill { box-shadow: 0 10px 26px rgba(var(--shadow-rgb), 0.35) !important; }
+.pw-num { text-shadow: none !important; }
+.live-bar .lb-dot { animation: none !important; }

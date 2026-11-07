@@ -1,11 +1,17 @@
 {
- "versionCode": 48,
- "versionName": "0.34.1",
+ "versionCode": 49,
+ "versionName": "0.35.0",
  "date": "2026-11-07",
- "apk": "download/Gravity-v0.34.1.apk",
+ "apk": "download/Gravity-v0.35.0.apk",
  "notes": [
   {
-   "t": "Luana mais suave"
+   "t": "Tema Atelier"
+  },
+  {
+   "t": "Todos os temas foscos"
+  },
+  {
+   "t": "Tela inicial ajustada"
   }
  ]
 }

@@ -8,6 +8,7 @@
     { id: 'titanio', nome: 'Titânio', desc: 'Grafite e prata', bar: '#0b0c0e', light: false, sw: ['#0b0c0e', '#191b1e', '#cdd3db', '#f1f4f7'] },
     { id: 'azul', nome: 'Azul', desc: 'Azul-marinho e azul elétrico', bar: '#0B1733', light: false, sw: ['#0B1733', '#172548', '#2F7BFF', '#7FB2FF'] },
     { id: 'luana', nome: 'Luana', desc: 'Rosa e branco', bar: '#FBE4EA', light: true, sw: ['#FBE4EA', '#FFF7F9', '#F27A9E', '#221A1E'] },
+    { id: 'atelier', nome: 'Atelier', desc: 'Creme e ameixa', bar: '#F5EDE7', light: true, sw: ['#F5EDE7', '#FBF6F2', '#6B3D50', '#3A1F26'] },
   ];
   // O tema Branco saiu na v0.31; quem usava passa para o Azul.
   const get = (id) => LIST.find((t) => t.id === (id === 'branco' ? 'azul' : id)) || LIST[0];

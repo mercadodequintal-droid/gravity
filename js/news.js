@@ -4,6 +4,11 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.35.0', date: '2026-11-07', items: [
+      { icon: 'sparkle', t: 'Tema Atelier', d: 'Sexto tema em Configurações › Aparência: Atelier, claro, em creme e ameixa.', img: 'img/news/0.35.0.jpg', main: true, go: 'theme' },
+      { icon: 'check', t: 'Todos os temas foscos', d: 'Sem brilho, sem halo e sem degradê metálico: botões e destaques em cor lisa, mais confortáveis na tela do celular.' },
+      { icon: 'home', t: 'Tela inicial ajustada', d: 'Titânio e Azul voltaram a ter o nome GRAVITY no topo, e o aviso de versão nova aparece em cima, em destaque. A Luana ganhou o painel em blocos do Azul.' },
+    ] },
     { v: '0.34.1', date: '2026-11-07', items: [
       { icon: 'sparkle', t: 'Luana mais suave', d: 'O tema Luana ficou fosco: sem brilho e sem degradê, fundo rosa pastel, quadros quase brancos e a série feita em rosa escuro no lugar do verde.', go: 'theme' },
     ] },

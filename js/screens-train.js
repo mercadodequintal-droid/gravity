@@ -152,9 +152,9 @@
         const deloadCard = dl ? `<div class="card deload-card appear"><div class="row"><span class="dl-ic">${icon('sparkle', 'sm')}</span><div class="grow"><b>Semana leve em andamento</b><small>Até ${dl.end.split('-').reverse().slice(0, 2).join('/')} · menos séries e 10% menos carga</small></div><button class="small muted" data-a="deloadEnd">Encerrar</button></div></div>`
           : dp ? `<div class="card deload-card appear"><div class="row" style="align-items:flex-start"><span class="dl-ic">${icon('sparkle', 'sm')}</span><div class="grow"><b>Hora de uma semana leve?</b><small>${dp.hard ? 'Muitas séries no limite nas últimas 2 semanas' : dp.weeks + ' semanas seguidas de treino'}. Uma semana com ~60% das séries e 10% menos carga ajuda o corpo a recuperar e voltar mais forte.</small></div></div>
             <div class="btn-row" style="margin-top:12px"><button class="btn ghost sm" data-a="deloadNo">Agora não</button><button class="btn lime sm" data-a="deloadYes">Fazer semana leve</button></div></div>` : '';
-        // Tela inicial ligada ao tema (v0.33): Titânio = "Hoje em foco" (A), Azul = "Painel" (B). Os outros temas ficam como antes.
-        const hs = Theme.current().id === 'titanio' ? 'A' : Theme.current().id === 'azul' ? 'B' : '';
-        if (hs) return homeStyled(hs, { S, p, list, range, t, dow, cta, done, partial, late, pct, setsW, vol, mins, level, extra: Updater.card() + backupCard + deloadCard });
+        // Tela inicial ligada ao tema (v0.33): Titânio = "Hoje em foco" (A); Azul e Luana (v0.35) = "Painel" (B). Os outros temas ficam como antes.
+        const tid = Theme.current().id, hs = tid === 'titanio' ? 'A' : tid === 'azul' || tid === 'luana' ? 'B' : '';
+        if (hs) return head + homeStyled(hs, { S, p, list, range, t, dow, cta, done, partial, late, pct, setsW, vol, mins, level, upd: Updater.card(), extra: backupCard + deloadCard });
         return head + `<div class="content">${who}${Updater.card()}${overall}${backupCard}${deloadCard}${quoteCard}${sched}${Screens.muscleCard()}${Screens.strengthCard()}${streakCard}${mission}
           <div class="section-title"><h2>Esta semana</h2><button class="link" data-a="progress">Ver evolução</button></div>${tiles}</div>`;
       },
@@ -206,7 +206,7 @@
     const { S, p, list, range, t, dow, cta, done, partial, late, pct, setsW, vol, mins, level } = c;
     const top = `<div class="h2-top"><button class="h2-av press" data-a="avatar" aria-label="Foto do perfil">${Profile.avatarHTML(26)}</button>
       <div class="h2-hi"><small>${greeting()}${kind === 'A' ? ' · ' + Store.WEEKDAYS_LONG[dow].toLowerCase() + ', ' + t.getDate() + ' ' + ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'][t.getMonth()] : ''}</small><b class="ellipsis">${esc(S.settings.name || 'Atleta')}</b></div>
-      <button class="h2-lvl" data-a="medals">Nível ${level}</button><button class="icon-btn" data-a="settings" aria-label="Configurações">${icon('gear')}</button></div>`;
+      <button class="h2-lvl" data-a="medals">Nível ${level}</button></div>${c.upd || ''}`;
     const st = Analytics.strength();
     const power = st.power != null ? Math.round(st.power).toLocaleString('pt-BR') : '—';
     const w = cta && cta.w, items = w ? w.items : [];
