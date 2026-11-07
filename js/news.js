@@ -4,6 +4,9 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.34.0', date: '2026-11-07', items: [
+      { icon: 'sparkle', t: 'Tema Luana', d: 'Quinto tema em Configurações › Aparência: Luana, claro, em rosa e branco, com botões e destaques em rosa chiclete.', img: 'img/news/0.34.0.jpg', main: true, go: 'theme' },
+    ] },
     { v: '0.33.0', date: '2026-11-07', items: [
       { icon: 'sparkle', t: 'Tela inicial nova no Titânio e no Azul', d: 'No tema Titânio, a tela inicial abre direto no treino do dia, com a faixa da semana em cima e os atrasados numa linha. No tema Azul, ela vira um painel em blocos: semana, treino do dia, nível de poder, músculos, volume e tempo. Dourado e Galáxia continuam como antes.', img: 'img/news/0.33.0.jpg', main: true, go: 'theme' },
     ] },

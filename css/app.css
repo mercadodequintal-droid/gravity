@@ -1018,6 +1018,41 @@ h1, h2, h3, h4, .card b { overflow-wrap: break-word; hyphens: auto; -webkit-hyph
   font-family: Inter, system-ui, sans-serif; font-size: 15px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; opacity: 0; animation: none; }
 #splash.sp2 .sp-go:active { transform: scale(.98); background: var(--gelo); }
 
+/* Luana (v0.34): tema claro, rosa chiclete #FE7DA3 sobre branco quente #FCF8F9 (cores tiradas da referência de 07/11). */
+[data-theme="luana"] {
+  --gold: #E8157F; --gold-2: #D6106F; --gold-3: #F7A3CB; --gold-grad: linear-gradient(135deg, #FF7AB8 0%, #FF2D95 50%, #D6106F 100%);
+  --lime: #FF2D95; --lime-ink: #FFFFFF; --blue: #E8157F; --blue-2: #F7A3CB; --violet: #B07A98; --amber: #E0862F; --red: #D93F4C;
+  --acc-rgb: 255, 45, 149; --acc2-rgb: 214, 16, 111; --fg-rgb: 90, 20, 60; --shadow-rgb: 150, 30, 90;
+  --text: #2B0F1F; --text-2: #7A5468; --text-3: #B996A9;
+  --hero-a: #FFFFFF; --hero-b: #FCE3EE; --logo-ink: #2B0F1F; --sheet-a: #FFFFFF; --scrim: rgba(60, 10, 35, .4); --nav-text: #9C7088; --ghost-rgb: 255, 255, 255;
+  --map-ideal: #FF2D95; --map-low: rgba(255,45,149,.35);
+  --photo-filter: grayscale(1) sepia(.18) hue-rotate(290deg) saturate(1.5) contrast(1.05) brightness(1.04);
+}
+[data-theme="luana"] #splash { --logo-ink: #fcf6e8; --bg: #08080a; --text: #eee8da; }
+[data-theme="luana"] .card { box-shadow: 0 8px 24px rgba(200, 40, 120, .08); }
+[data-theme="luana"] .btn.lime, [data-theme="luana"] .btn.primary, [data-theme="luana"] .live-bar .lb-btn { background: linear-gradient(180deg, #FF4FA8, #E0167A); color: #fff; border: 0; box-shadow: 0 8px 20px rgba(224,22,122,.3), inset 0 1px 0 rgba(255,255,255,.3); }
+[data-theme="luana"] .btn.primary .arrow, [data-theme="luana"] .btn.lime .arrow { background: rgba(255,255,255,.22); color: #fff; border: 0; }
+[data-theme="luana"] .btn.ghost { background: #fff; border: 1px solid rgba(232,21,127,.25); color: var(--text); }
+[data-theme="luana"] .filter.on, [data-theme="luana"] .seg button.on { background: linear-gradient(180deg, #FF4FA8, #E0167A); color: #fff; border-color: transparent; box-shadow: 0 4px 12px rgba(224,22,122,.3); }
+[data-theme="luana"] .set.done .check { background: #2FB36B; border-color: #2FB36B; color: #fff; }
+[data-theme="luana"] .toast { background: #fff; }
+/* Opção 3: tons da referência (rosa chiclete #FE7DA3 sobre branco quente #FCF8F9) */
+[data-theme="luana"] {
+  --bg: #FCF7F9; --bg-2: #FDEEF2; --card-a: #FFFFFF; --card-b: #FFFBFC; --bg-rgb: 252, 247, 249; --nav-rgb: 255, 255, 255; --img-bg: #FDE6EC;
+  --glass: rgba(254,125,163,.06); --glass-2: rgba(254,125,163,.12); --line: rgba(240,110,150,.16); --line-2: rgba(240,110,150,.42);
+  --gold: #F2709A; --gold-2: #E2557F; --gold-3: #FDC3D3; --gold-grad: linear-gradient(135deg, #FFA3BF 0%, #FE7DA3 55%, #F0628E 100%);
+  --lime: #FE7DA3; --lime-ink: #FFFFFF; --blue: #F2709A; --blue-2: #FDC3D3; --violet: #B9A3D9;
+  --acc-rgb: 254, 125, 163; --acc2-rgb: 226, 85, 127; --fg-rgb: 80, 40, 55; --shadow-rgb: 240, 110, 150;
+  --text: #221A1E; --text-2: #8A7780; --text-3: #C2B3BA;
+  --map-ideal: #FE7DA3; --map-low: rgba(254,125,163,.38);
+  --photo-filter: grayscale(1) sepia(.12) hue-rotate(300deg) saturate(1.3) contrast(1.02) brightness(1.06);
+}
+[data-theme="luana"] .card { border-color: rgba(240,110,150,.12); box-shadow: 0 6px 20px rgba(240,110,150,.08); }
+[data-theme="luana"] .btn.lime, [data-theme="luana"] .btn.primary, [data-theme="luana"] .live-bar .lb-btn { background: linear-gradient(180deg, #FF8DB0, #F96F98); box-shadow: 0 8px 18px rgba(249,111,152,.32), inset 0 1px 0 rgba(255,255,255,.35); }
+[data-theme="luana"] .filter.on, [data-theme="luana"] .seg button.on { background: #FE7DA3; box-shadow: 0 4px 12px rgba(254,125,163,.35); }
+[data-theme="luana"] .btn.ghost { border-color: rgba(240,110,150,.25); }
+[data-theme="luana"] .seg { background: #F9F2F4; border-color: transparent; }
+
 /* ===== Botões de cantos retos em todos os temas (v0.32; nasceu no tema Azul, v0.31) =====
    Grandes 8 px; pequenos, chips, filtros e abas 6 px; ícones, busca e avisos 10–12 px.
    Números das séries, logo e medalhas continuam redondos. */
