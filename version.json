@@ -1,11 +1,11 @@
 {
- "versionCode": 50,
- "versionName": "0.36.0",
+ "versionCode": 51,
+ "versionName": "0.37.0",
  "date": "2026-11-07",
- "apk": "download/Gravity-v0.36.0.apk",
+ "apk": "download/Gravity-v0.37.0.apk",
  "notes": [
   {
-   "t": "Logo novo"
+   "t": "Tela inicial em blocos em todos os temas"
   }
  ]
 }

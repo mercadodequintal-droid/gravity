@@ -4,6 +4,9 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.37.0', date: '2026-11-07', items: [
+      { icon: 'home', t: 'Tela inicial em blocos em todos os temas', d: 'O painel do tema Azul agora vale para todos: semana, treino do dia, nível de poder, músculos, volume e tempo. Toque no bloco Semana para ver a agenda.', img: 'img/news/0.37.0.jpg', main: true },
+    ] },
     { v: '0.36.0', date: '2026-11-07', items: [
       { icon: 'sparkle', t: 'Logo novo', d: 'O Gravity tem um logo novo: o G de metal sobre a pedra escura. Ele aparece no ícone do app, no botão Treinar, no perfil e nas imagens de compartilhar, em todos os temas.', img: 'img/news/0.36.0.jpg', main: true },
     ] },
