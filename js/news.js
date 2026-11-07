@@ -4,6 +4,9 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.32.0', date: '2026-11-07', items: [
+      { icon: 'sparkle', t: 'Botões de cantos retos', d: 'Os botões de cantos retos do tema Azul agora valem em todos os temas: Dourado, Galáxia e Titânio também. As cores de cada tema não mudam.', img: 'img/news/0.32.0.jpg', main: true },
+    ] },
     { v: '0.31.0', date: '2026-11-07', items: [
       { icon: 'sparkle', t: 'Tema Azul', d: 'Tema novo em Configurações › Aparência: azul-marinho com azul elétrico, botões de cantos retos e o logo G na pedra no botão Treinar. Ele entra no lugar do tema Branco; quem usava o Branco já passa para o Azul.', go: 'theme', img: 'img/news/0.31.0.jpg', main: true },
     ] },

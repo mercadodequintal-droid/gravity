@@ -896,22 +896,12 @@ body.live-out .rest-pill { visibility: hidden !important; pointer-events: none !
 [data-theme="azul"] .card { background: linear-gradient(180deg, rgba(27,42,80,.92), rgba(18,30,62,.92)); border: 1px solid rgba(120,160,255,.15); box-shadow: 0 12px 30px rgba(0,4,20,.45), inset 0 1px 0 rgba(160,190,255,.06); }
 [data-theme="azul"] .card.hero { background: radial-gradient(120% 90% at 90% 0%, rgba(47,123,255,.28), transparent 60%), linear-gradient(180deg, #1A2A55, #111D3C); border-color: rgba(80,140,255,.45); }
 [data-theme="azul"] .nav { background: rgba(14,26,56,.95); border-color: rgba(120,160,255,.16); }
-[data-theme="azul"] .live-bar, [data-theme="azul"] .rest-pill { background: rgba(16,28,60,.97); border-radius: 12px; }
-/* botões: cantos retos (opção B) */
-[data-theme="azul"] .btn { border-radius: 8px; }
-[data-theme="azul"] .btn.sm { border-radius: 6px; }
+[data-theme="azul"] .live-bar, [data-theme="azul"] .rest-pill { background: rgba(16,28,60,.97); }
 [data-theme="azul"] .btn.lime, [data-theme="azul"] .btn.primary, [data-theme="azul"] .live-bar .lb-btn { background: linear-gradient(180deg, #3D8BFF, #1F63F0); color: #fff; border: 0; letter-spacing: 1.6px; box-shadow: 0 8px 22px rgba(31,99,240,.4), inset 0 1px 0 rgba(255,255,255,.22); }
-[data-theme="azul"] .live-bar .lb-btn { border-radius: 8px; box-shadow: 0 4px 14px rgba(31,99,240,.4), inset 0 1px 0 rgba(255,255,255,.22); }
-[data-theme="azul"] .btn .arrow { border-radius: 6px; width: 30px; height: 30px; margin-right: -8px; }
+[data-theme="azul"] .live-bar .lb-btn { box-shadow: 0 4px 14px rgba(31,99,240,.4), inset 0 1px 0 rgba(255,255,255,.22); }
 [data-theme="azul"] .btn.primary .arrow, [data-theme="azul"] .btn.lime .arrow { background: rgba(255,255,255,.16); color: #fff; border: 0; }
 [data-theme="azul"] .btn.ghost { background: rgba(17,29,60,.92); border: 1px solid rgba(120,160,255,.2); color: var(--text); }
 [data-theme="azul"] .filter.on, [data-theme="azul"] .seg button.on { background: linear-gradient(180deg, #3D8BFF, #1F63F0); color: #fff; box-shadow: 0 0 14px rgba(47,123,255,.4); border-color: transparent; }
-[data-theme="azul"] .player-img .tools button, [data-theme="azul"] .quick-row button { border-radius: 8px; }
-[data-theme="azul"] .chip { border-radius: 6px; }
-[data-theme="azul"] .search, [data-theme="azul"] .toast { border-radius: 10px; }
-[data-theme="azul"] .icon-btn { border-radius: 10px; }
-[data-theme="azul"] .filter, [data-theme="azul"] .seg button { border-radius: 6px; }
-[data-theme="azul"] .seg { border-radius: 9px; }
 /* série feita: certinho verde */
 [data-theme="azul"] .set.done .check { background: #2FB36B; border-color: #2FB36B; color: #06130B; box-shadow: 0 0 14px rgba(47,179,107,.4); }
 /* logo G na pedra (botão Treinar e perfil) */
@@ -1027,3 +1017,19 @@ h1, h2, h3, h4, .card b { overflow-wrap: break-word; hyphens: auto; -webkit-hyph
 #splash.sp2 .sp-go { position: static; transform: none; display: block; width: 100%; height: 54px; margin-top: 20px; padding: 0; border: 0; border-radius: 16px; background: var(--tit); color: #0b0e12; box-shadow: 0 8px 24px rgba(0,0,0,.45);
   font-family: Inter, system-ui, sans-serif; font-size: 15px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; opacity: 0; animation: none; }
 #splash.sp2 .sp-go:active { transform: scale(.98); background: var(--gelo); }
+
+/* ===== Botões de cantos retos em todos os temas (v0.32; nasceu no tema Azul, v0.31) =====
+   Grandes 8 px; pequenos, chips, filtros e abas 6 px; ícones, busca e avisos 10–12 px.
+   Números das séries, logo e medalhas continuam redondos. */
+.btn { border-radius: 8px; }
+.btn.sm { border-radius: 6px; }
+.btn .arrow { border-radius: 6px; width: 30px; height: 30px; margin-right: -8px; }
+.btn.primary .arrow { background: rgba(var(--bg-rgb), 0.18); color: var(--lime-ink); }
+.live-bar, .rest-pill { border-radius: 12px; }
+.live-bar .lb-btn { border-radius: 8px; }
+.player-img .tools button, .quick-row button { border-radius: 8px; }
+.chip { border-radius: 6px; }
+.search, .toast { border-radius: 10px; }
+.icon-btn { border-radius: 10px; }
+.filter, .seg button { border-radius: 6px; }
+.seg { border-radius: 9px; }
