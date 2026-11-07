@@ -4,6 +4,9 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.32.1', date: '2026-11-07', items: [
+      { icon: 'check', t: 'Foto do perfil inteira', d: 'Na tela inicial, o círculo da foto do perfil não fica mais cortado pelo cabeçalho.' },
+    ] },
     { v: '0.32.0', date: '2026-11-07', items: [
       { icon: 'sparkle', t: 'Botões de cantos retos', d: 'Os botões de cantos retos do tema Azul agora valem em todos os temas: Dourado, Galáxia e Titânio também. As cores de cada tema não mudam.', img: 'img/news/0.32.0.jpg', main: true },
     ] },

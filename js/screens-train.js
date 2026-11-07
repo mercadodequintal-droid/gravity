@@ -71,7 +71,7 @@
         const done_ = completedSessions();
         const level = 1 + Math.floor(done_.length / 10);
         const head = `<div class="topbar"><span class="icon-btn plain" style="visibility:hidden"></span><h1 style="text-align:center;letter-spacing:7px;padding-left:7px;color:var(--gold-2);font-family:var(--display);font-size:17px;font-weight:400">Gravity</h1><button class="icon-btn plain" data-a="settings" aria-label="Configurações">${icon('gear')}</button></div>`;
-        const who = `<div class="row appear" style="margin:2px 2px 16px"><button class="emblem-ring avatar press" style="width:50px;height:50px;margin:0" data-a="avatar" aria-label="Foto do perfil">${Profile.avatarHTML(30)}</button>
+        const who = `<div class="row appear" style="margin:12px 2px 16px"><button class="emblem-ring avatar press" style="width:50px;height:50px;margin:0" data-a="avatar" aria-label="Foto do perfil">${Profile.avatarHTML(30)}</button>
           <div class="grow"><div class="caps" style="font-size:10px">${greeting()}</div><div class="display" style="font-size:20px;letter-spacing:3px;text-transform:uppercase">${esc(S.settings.name || 'Atleta')}</div></div><button class="level" style="margin:0" data-a="medals">Nível ${level}</button></div>`;
         if (!p) {
           return head + `<div class="content">${who}<div class="card empty appear"><div class="ic">${icon('plans', 'lg')}</div><h3>Nenhum plano ativo</h3><p>Escolha um modelo pronto ou monte o seu plano de treino.</p><button class="btn lime" data-a="plans">Ver planos</button></div></div>`;
