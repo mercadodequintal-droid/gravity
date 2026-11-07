@@ -1,11 +1,11 @@
 {
- "versionCode": 47,
- "versionName": "0.34.0",
+ "versionCode": 48,
+ "versionName": "0.34.1",
  "date": "2026-11-07",
- "apk": "download/Gravity-v0.34.0.apk",
+ "apk": "download/Gravity-v0.34.1.apk",
  "notes": [
   {
-   "t": "Tema Luana"
+   "t": "Luana mais suave"
   }
  ]
 }

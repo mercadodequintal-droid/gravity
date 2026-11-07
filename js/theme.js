@@ -7,7 +7,7 @@
     { id: 'galaxia', nome: 'Galáxia', desc: 'Preto com o roxo do logo', bar: '#07060b', light: false, sw: ['#07060b', '#16131f', '#a875ff', '#d6bfff'] },
     { id: 'titanio', nome: 'Titânio', desc: 'Grafite e prata', bar: '#0b0c0e', light: false, sw: ['#0b0c0e', '#191b1e', '#cdd3db', '#f1f4f7'] },
     { id: 'azul', nome: 'Azul', desc: 'Azul-marinho e azul elétrico', bar: '#0B1733', light: false, sw: ['#0B1733', '#172548', '#2F7BFF', '#7FB2FF'] },
-    { id: 'luana', nome: 'Luana', desc: 'Rosa e branco', bar: '#FCF7F9', light: true, sw: ['#FCF7F9', '#FFFFFF', '#FE7DA3', '#221A1E'] },
+    { id: 'luana', nome: 'Luana', desc: 'Rosa e branco', bar: '#FBE4EA', light: true, sw: ['#FBE4EA', '#FFF7F9', '#F27A9E', '#221A1E'] },
   ];
   // O tema Branco saiu na v0.31; quem usava passa para o Azul.
   const get = (id) => LIST.find((t) => t.id === (id === 'branco' ? 'azul' : id)) || LIST[0];

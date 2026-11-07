@@ -1053,6 +1053,28 @@ h1, h2, h3, h4, .card b { overflow-wrap: break-word; hyphens: auto; -webkit-hyph
 [data-theme="luana"] .btn.ghost { border-color: rgba(240,110,150,.25); }
 [data-theme="luana"] .seg { background: #F9F2F4; border-color: transparent; }
 
+/* Luana fosco (v0.34.1): sem brilho nem degradê, fundo rosa pastel #FBE4EA, quadros #FFF7F9, série feita em rosa escuro #D9577F. */
+/* comum às opções foscas: sem brilho, sem degradê, sem sombra colorida */
+[data-theme="luana"] .btn.lime, [data-theme="luana"] .btn.primary, [data-theme="luana"] .live-bar .lb-btn { background: var(--lz-btn) !important; box-shadow: none !important; }
+[data-theme="luana"] .filter.on, [data-theme="luana"] .seg button.on { background: var(--lz-btn) !important; box-shadow: none !important; }
+[data-theme="luana"] .card { box-shadow: none !important; }
+[data-theme="luana"] .nav, [data-theme="luana"] .live-bar, [data-theme="luana"] .rest-pill { box-shadow: 0 2px 10px rgba(60,30,40,.06) !important; }
+[data-theme="luana"] .nav .emblem-btn .core { box-shadow: 0 0 0 1.5px var(--gold), 0 0 0 6px var(--bg) !important; }
+[data-theme="luana"] .ring svg, [data-theme="luana"] .ring circle { filter: none !important; }
+[data-theme="luana"] .ring [style*="drop-shadow"], [data-theme="luana"] svg[style*="drop-shadow"] { filter: none !important; }
+[data-theme="luana"] .emblem-ring { box-shadow: 0 0 0 1.5px var(--gold) !important; }
+[data-theme="luana"] .emblem-ring::after { display: none; }
+[data-theme="luana"] .screen.pushed::before { background: var(--bg) !important; }
+[data-theme="luana"] .level, [data-theme="luana"] .set .idx { box-shadow: none !important; }
+[data-theme="luana"] * { text-shadow: none !important; }
+[data-theme="luana"] .btn.ghost { background: var(--card-a) !important; }
+/* M1 · Mesmo rosa, fosco: tira brilho e degradês; fundo um pouco menos branco */
+[data-theme="luana"] { --lz-btn: #F27A9E; --bg: #F6F0F2; --bg-2: #F1E8EB; --card-a: #FDFAFB; --card-b: #FDFAFB; --bg-rgb: 246, 240, 242; --nav-rgb: 253, 250, 251; --sheet-a: #FDFAFB; --gold-grad: #F27A9E; }
+[data-theme="luana"] { --lz-btn: #F27A9E; --gold-grad: #F27A9E; --bg: #FBE4EA; --bg-2: #FBE4EA; --bg-rgb: 251, 228, 234; --card-a: #FFF7F9; --card-b: #FFF7F9; --nav-rgb: 255, 247, 249; --sheet-a: #FFF7F9; --img-bg: #FBE4EA; }
+[data-theme="luana"] .seg { background: rgba(242,122,158,.08) !important; }
+[data-theme="luana"] .btn.ghost { background: #FFF7F9 !important; }
+[data-theme="luana"] .set.done .check { background: #D9577F !important; border-color: #D9577F !important; color: #fff !important; box-shadow: none !important; }
+
 /* ===== Botões de cantos retos em todos os temas (v0.32; nasceu no tema Azul, v0.31) =====
    Grandes 8 px; pequenos, chips, filtros e abas 6 px; ícones, busca e avisos 10–12 px.
    Números das séries, logo e medalhas continuam redondos. */

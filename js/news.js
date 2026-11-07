@@ -4,6 +4,9 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.34.1', date: '2026-11-07', items: [
+      { icon: 'sparkle', t: 'Luana mais suave', d: 'O tema Luana ficou fosco: sem brilho e sem degradê, fundo rosa pastel, quadros quase brancos e a série feita em rosa escuro no lugar do verde.', go: 'theme' },
+    ] },
     { v: '0.34.0', date: '2026-11-07', items: [
       { icon: 'sparkle', t: 'Tema Luana', d: 'Quinto tema em Configurações › Aparência: Luana, claro, em rosa e branco, com botões e destaques em rosa chiclete.', img: 'img/news/0.34.0.jpg', main: true, go: 'theme' },
     ] },
