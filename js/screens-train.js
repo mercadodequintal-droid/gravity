@@ -152,6 +152,9 @@
         const deloadCard = dl ? `<div class="card deload-card appear"><div class="row"><span class="dl-ic">${icon('sparkle', 'sm')}</span><div class="grow"><b>Semana leve em andamento</b><small>Até ${dl.end.split('-').reverse().slice(0, 2).join('/')} · menos séries e 10% menos carga</small></div><button class="small muted" data-a="deloadEnd">Encerrar</button></div></div>`
           : dp ? `<div class="card deload-card appear"><div class="row" style="align-items:flex-start"><span class="dl-ic">${icon('sparkle', 'sm')}</span><div class="grow"><b>Hora de uma semana leve?</b><small>${dp.hard ? 'Muitas séries no limite nas últimas 2 semanas' : dp.weeks + ' semanas seguidas de treino'}. Uma semana com ~60% das séries e 10% menos carga ajuda o corpo a recuperar e voltar mais forte.</small></div></div>
             <div class="btn-row" style="margin-top:12px"><button class="btn ghost sm" data-a="deloadNo">Agora não</button><button class="btn lime sm" data-a="deloadYes">Fazer semana leve</button></div></div>` : '';
+        // Tela inicial ligada ao tema (v0.33): Titânio = "Hoje em foco" (A), Azul = "Painel" (B). Os outros temas ficam como antes.
+        const hs = Theme.current().id === 'titanio' ? 'A' : Theme.current().id === 'azul' ? 'B' : '';
+        if (hs) return homeStyled(hs, { S, p, list, range, t, dow, cta, done, partial, late, pct, setsW, vol, mins, level, extra: Updater.card() + backupCard + deloadCard });
         return head + `<div class="content">${who}${Updater.card()}${overall}${backupCard}${deloadCard}${quoteCard}${sched}${Screens.muscleCard()}${Screens.strengthCard()}${streakCard}${mission}
           <div class="section-title"><h2>Esta semana</h2><button class="link" data-a="progress">Ver evolução</button></div>${tiles}</div>`;
       },
@@ -173,9 +176,79 @@
         deloadNo: () => { Store.snoozeDeload(); toast('Tudo bem. Pergunto de novo em uma semana.'); UI.refresh(); },
         deloadEnd: () => { Store.endDeload(); toast('Semana leve encerrada'); UI.refresh(); },
         open: (ds) => push(WorkoutScreen(ds.id)),
+        agenda: () => agendaSheet(),
+        day: (ds) => { if (ds.id) push(WorkoutScreen(ds.id)); else agendaSheet(); },
+        rest: () => trainNow(),
         resume: (ds) => { const s = Store.session(ds.id); push(Player(s.id, firstOpenIndex(s))); },
       },
     };
+  }
+
+
+  // ---------- Tela inicial por tema (v0.33) ----------
+  // Foto do cartão do treino: as fotos de atleta da entrada, uma por dia (o recorte esconde o logo da arte).
+  const HOME_PH = [1, 3, 4, 6, 7, 8, 9, 10];
+  function homePhoto(d) { const n = HOME_PH[Math.floor(d / 86400000) % HOME_PH.length]; return 'img/entrada/entrada-' + String(n).padStart(2, '0') + '.jpg'; }
+  function workoutSets(w) { return w.items.reduce((a, it) => a + (Number(it.sets) || 0), 0); }
+  // Agenda da semana numa folha (usada pelos atalhos das telas A e B).
+  function agendaSheet() {
+    const S = Store.state, p = Store.activePlan(); if (!p) return;
+    const dow = Store.today().getDay(), order = (w) => (w.days.length ? (w.days[0] - S.settings.weekStart + 7) % 7 : 9);
+    const rows = p.workouts.map((w) => ({ w, st: Store.workoutStatus(w) })).sort((a, b) => order(a.w) - order(b.w)).map(({ w, st }) => {
+      const sub = st.status === 'done' ? 'Concluído' : st.status === 'partial' ? 'Incompleto · ' + st.p.complete + ' de ' + st.p.total : st.status === 'late' ? 'Atrasado' : w.items.length + ' exercícios';
+      return `<div class="srow press ${w.days.includes(dow) ? 'today' : ''}" data-a="go" data-id="${w.id}"><span class="chk ${STATUS[st.status].cls}">${st.status === 'done' ? icon('check') : ''}</span>
+        <div class="nm ellipsis">Treino ${esc(w.letter)} · ${esc(w.name)}<small>${sub}</small></div><div class="tm">${w.days.includes(dow) ? '<span class="gold">HOJE</span>' : w.days.map((d) => Store.WEEKDAYS[d].toUpperCase()).join(' ') || '—'}</div></div>`;
+    }).join('');
+    sheet({ render: () => `<h3>Agenda da semana</h3><div class="sched">${rows}</div><div class="btn-row" style="margin-top:14px"><button class="btn ghost" data-a="edit">Editar plano</button><button class="btn lime" data-a="ok">Fechar</button></div>`,
+      actions: { go: (ds) => { closeSheet(); setTimeout(() => push(WorkoutScreen(ds.id)), 250); }, edit: () => { closeSheet(); setTimeout(() => push(Screens.PlanEditor(p.id)), 250); }, ok: closeSheet } });
+  }
+  function homeStyled(kind, c) {
+    const { S, p, list, range, t, dow, cta, done, partial, late, pct, setsW, vol, mins, level } = c;
+    const top = `<div class="h2-top"><button class="h2-av press" data-a="avatar" aria-label="Foto do perfil">${Profile.avatarHTML(26)}</button>
+      <div class="h2-hi"><small>${greeting()}${kind === 'A' ? ' · ' + Store.WEEKDAYS_LONG[dow].toLowerCase() + ', ' + t.getDate() + ' ' + ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'][t.getMonth()] : ''}</small><b class="ellipsis">${esc(S.settings.name || 'Atleta')}</b></div>
+      <button class="h2-lvl" data-a="medals">Nível ${level}</button><button class="icon-btn" data-a="settings" aria-label="Configurações">${icon('gear')}</button></div>`;
+    const st = Analytics.strength();
+    const power = st.power != null ? Math.round(st.power).toLocaleString('pt-BR') : '—';
+    const w = cta && cta.w, items = w ? w.items : [];
+    const meta = w ? `<div class="h2-meta"><span>${items.length} exercícios</span><span>${workoutSets(w)} séries</span><span>~${estMinutes(w)} min</span></div>` : '';
+    const short = { 'Entrar no treino': 'Começar', 'Continuar treino': 'Continuar', 'Abrir treino': 'Abrir' };
+    const btn = (cls) => cta ? `<button class="btn primary block ${cls || ''}" data-a="${cta.a}" data-id="${cta.id}">${kind === 'B' ? short[cta.btn] || cta.btn : cta.btn}<span class="arrow">${icon('play', 'sm')}</span></button>`
+      : `<button class="btn ghost block" data-a="rest">Treinar mesmo assim</button>`;
+    const title = w ? `Treino ${esc(w.letter)}<br>${esc(w.name)}` : (list.some((x) => x.w.days.includes(dow)) ? 'Treino de hoje<br>concluído' : 'Semana<br>completa');
+    const tag = cta ? esc(kind === 'B' ? ({ 'Treino de hoje': 'Hoje', 'Dia livre · adiantar?': 'Adiantar?', 'Treino em andamento': 'Em andamento' }[cta.k] || cta.k) : cta.k) : 'Descanse';
+    const photo = `<div class="h2-ph" style="background-image:url('${homePhoto(t.getTime())}')"></div>`;
+    if (kind === 'A') {
+      // Faixa da semana: marca de cada dia pela situação dos treinos daquele dia.
+      const rank = { late: 4, partial: 3, pending: 2, done: 1 };
+      const days = [0, 1, 2, 3, 4, 5, 6].map((i) => {
+        const d = Store.addDays(range.start, i), wd = d.getDay(), ws = list.filter((x) => x.w.days.includes(wd));
+        const worst = ws.reduce((a, x) => (!a || rank[x.st.status] > rank[a] ? x.st.status : a), null);
+        const m = worst === 'done' ? 'ok' : worst === 'late' ? 'late' : worst === 'partial' ? 'part' : ws.length ? 'plan' : '';
+        const isT = Store.iso(d) === Store.iso(t), pick = ws.find((x) => x.st.status !== 'done') || ws[0];
+        return `<button class="h2-d ${isT ? 'today' : ''}" data-a="day" data-id="${pick ? pick.w.id : ''}">${Store.WEEKDAYS[wd][0]}<b>${d.getDate()}</b><span class="m ${m}"></span></button>`;
+      }).join('');
+      const thumbs = items.slice(0, 4).map((it) => { const e = Store.exercise(it.exId); const im = e && e.img && e.img[0]; return im ? `<div style="background-image:url('${im}')"></div>` : `<div class="no">${icon('dumbbell', 'sm')}</div>`; }).join('') + (items.length > 4 ? `<div class="more">+${items.length - 4}</div>` : '');
+      const lateL = list.filter((x) => x.st.status === 'late');
+      const alert = lateL.length ? `<div class="card h2-alert press" data-a="agenda"><div class="ic">${icon('alert', 'sm')}</div><div class="t">${lateL.length} ${lateL.length === 1 ? 'treino atrasado' : 'treinos atrasados'}<small class="ellipsis">${lateL.map((x) => 'Treino ' + esc(x.w.letter) + ' · ' + esc(x.w.name)).join(', ')}</small></div><span class="h2-chip">Ver</span></div>` : '';
+      return `<div class="content home2 hA">${top}<div class="h2-wk">${days}</div>
+        <div class="h2-hero appear">${photo}<div class="in"><span class="h2-tag">● ${tag}</span><h2>${title}</h2>${meta}${items.length ? `<div class="h2-th">${thumbs}</div>` : ''}${btn()}</div></div>
+        ${alert}${c.extra}
+        <div class="card h2-trio press" data-a="progress"><div><b class="num">${volume(vol)}</b><small>Volume</small></div><div><b class="num">${setsW}</b><small>Séries</small></div><div><b class="num">${power}</b><small>Nível de poder</small></div></div></div>`;
+    }
+    // B: painel em blocos
+    const vd = Screens.volumeData ? Screens.volumeData().st : [];
+    const ranked = vd.filter((r) => r.alvo).map((r) => ({ r, k: r.n / Math.max(1, r.alvo[0]) })).sort((a, b) => a.k - b.k);
+    const bars = (vd.some((r) => r.n > 0) ? ranked.slice(0, 3) : ranked.slice(0, 3)).map(({ r }) => `<div><div class="r"><span class="ellipsis">${esc(r.nome)}</span><b class="num">${nf(r.n)}/${r.alvo[0]}</b></div><div class="h2-bar"><i style="width:${Math.min(100, r.n / Math.max(1, r.alvo[0]) * 100)}%;${r.st === 'pouco' || r.st === 'zero' ? 'background:var(--amber)' : r.st === 'alto' ? 'background:#d0803e' : ''}"></i></div></div>`).join('');
+    const gaugeLen = 188.5, g = st.power != null ? Math.min(1, st.power / 9001) : 0;
+    return `<div class="content home2 hB">${top}<div class="h2-bento">
+      <div class="card h2-tile press" data-a="agenda"><div class="caps">Semana</div>${ring(104, 9, pct / 100, 'gold', `<b class="num">${pct}%</b>`)}
+        <div class="h2-cnt"><span><i style="background:#2FB36B"></i>${done}/${list.length}</span><span><i style="background:var(--amber)"></i>${partial}</span><span><i style="background:var(--red)"></i>${late}</span></div></div>
+      <div class="card h2-tile h2-next">${photo}<div class="in"><span class="h2-tag">${tag}</span><h3>${title}</h3>${w ? `<div class="h2-meta"><span>${items.length} ex</span><span>~${estMinutes(w)} min</span></div>` : ''}${btn('sm')}</div></div>
+      <div class="card h2-tile press" data-a="pwOpen"><div class="caps">Nível de poder</div><svg class="h2-gauge" viewBox="0 0 140 78"><path d="M10 70 A60 60 0 0 1 130 70" stroke="rgba(var(--fg-rgb),.08)" stroke-width="8" fill="none" stroke-linecap="round"/><path d="M10 70 A60 60 0 0 1 130 70" stroke="var(--gold)" stroke-width="8" fill="none" stroke-linecap="round" stroke-dasharray="${(g * gaugeLen).toFixed(1)} 400"/><text x="70" y="64" text-anchor="middle" fill="var(--text)" font-family="Oswald" font-size="26">${power}</text></svg><div class="h2-sub">${st.power != null ? 'de 9.001 · ' + esc(st.level) : 'Registre os básicos'}</div></div>
+      <div class="card h2-tile wide press" data-a="muscles"><div class="h2-mus"><div class="h2-body">${(() => { const mp = Screens.volumeData().map; return Screens.bodySVG((k) => Screens.VCOL[(mp[k] || {}).st || 'zero'], 104); })()}</div><div class="h2-bars"><div class="caps">Músculos da semana</div>${bars}</div></div></div>
+      <div class="card h2-tile mini press" data-a="progress"><div class="ic">${icon('weight', 'sm')}</div><b class="num">${volume(vol)}</b><small>Volume da semana</small></div>
+      <div class="card h2-tile mini press" data-a="progress"><div class="ic">${icon('clock', 'sm')}</div><b class="num">${mins} min</b><small>Tempo treinando</small></div>
+    </div>${c.extra}</div>`;
   }
 
   // Botão central da barra: vai direto para o treino que faz sentido agora.

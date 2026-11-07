@@ -4,6 +4,9 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.33.0', date: '2026-11-07', items: [
+      { icon: 'sparkle', t: 'Tela inicial nova no Titânio e no Azul', d: 'No tema Titânio, a tela inicial abre direto no treino do dia, com a faixa da semana em cima e os atrasados numa linha. No tema Azul, ela vira um painel em blocos: semana, treino do dia, nível de poder, músculos, volume e tempo. Dourado e Galáxia continuam como antes.', img: 'img/news/0.33.0.jpg', main: true, go: 'theme' },
+    ] },
     { v: '0.32.1', date: '2026-11-07', items: [
       { icon: 'check', t: 'Foto do perfil inteira', d: 'Na tela inicial, o círculo da foto do perfil não fica mais cortado pelo cabeçalho.' },
     ] },

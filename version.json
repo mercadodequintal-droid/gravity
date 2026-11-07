@@ -1,11 +1,11 @@
 {
- "versionCode": 45,
- "versionName": "0.32.1",
+ "versionCode": 46,
+ "versionName": "0.33.0",
  "date": "2026-11-07",
- "apk": "download/Gravity-v0.32.1.apk",
+ "apk": "download/Gravity-v0.33.0.apk",
  "notes": [
   {
-   "t": "Foto do perfil inteira"
+   "t": "Tela inicial nova no Titânio e no Azul"
   }
  ]
 }

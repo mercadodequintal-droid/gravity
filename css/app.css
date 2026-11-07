@@ -1033,3 +1033,60 @@ h1, h2, h3, h4, .card b { overflow-wrap: break-word; hyphens: auto; -webkit-hyph
 .icon-btn { border-radius: 10px; }
 .filter, .seg button { border-radius: 6px; }
 .seg { border-radius: 9px; }
+
+/* ===== Tela inicial por tema (v0.33): A "Hoje em foco" (Titânio) e B "Painel" (Azul) ===== */
+.screen .content.home2 { padding-top: calc(26px + env(safe-area-inset-top, 0px)); }
+.hB > .card { margin-top: 10px; }
+.h2-top { display: flex; align-items: center; gap: 10px; padding: 6px 0 14px; }
+.h2-av { width: 42px; height: 42px; border-radius: 50%; overflow: hidden; flex: none; display: grid; place-items: center; background: radial-gradient(circle at 50% 35%, var(--card-a), var(--bg) 75%); box-shadow: 0 0 0 1.5px rgba(var(--acc2-rgb), .7); }
+.h2-av svg { width: 30px; height: auto; } .h2-av img, .h2-av .avatar-img, .h2-av .g-emb { width: 100% !important; height: 100% !important; border-radius: 50%; object-fit: cover; box-shadow: none; }
+.h2-hi { flex: 1; min-width: 0; line-height: 1.2; } .h2-hi small { display: block; font-size: 11px; color: var(--text-2); }
+.h2-hi b { display: block; font-size: 16px; font-weight: 600; color: var(--text); }
+.h2-lvl { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; padding: 0 10px; height: 30px; border-radius: 6px; border: 1px solid var(--line-2); color: var(--gold-2); flex: none; }
+.h2-wk { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; margin-bottom: 14px; }
+.h2-d { height: 62px; border-radius: 12px; border: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; font-size: 10px; letter-spacing: 1px; color: var(--text-2); text-transform: uppercase; }
+.h2-d b { font-family: var(--display, Oswald); font-size: 17px; font-weight: 400; color: var(--text); letter-spacing: 0; }
+.h2-d .m { height: 4px; width: 14px; border-radius: 2px; background: transparent; }
+.h2-d .m.plan { background: var(--line-2); } .h2-d .m.ok { background: #2FB36B; } .h2-d .m.late { background: var(--red); } .h2-d .m.part { background: var(--amber); }
+.h2-d.today { background: var(--gold-grad); border-color: transparent; color: var(--lime-ink); box-shadow: 0 6px 18px rgba(var(--acc-rgb), .25); }
+.h2-d.today b { color: var(--lime-ink); } .h2-d.today .m { background: rgba(0, 0, 0, .25); }
+.h2-hero { position: relative; min-height: 372px; border-radius: 20px; overflow: hidden; border: 1px solid var(--line-2); display: flex; flex-direction: column; justify-content: flex-end; }
+.h2-ph { position: absolute; inset: 0; background-size: auto 175%; background-position: center 92%; filter: var(--photo-filter); }
+.h2-hero::after, .h2-next::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(var(--bg-rgb), .05) 0%, rgba(var(--bg-rgb), .55) 42%, rgba(var(--bg-rgb), .97) 78%); }
+.h2-hero .in, .h2-next .in { position: relative; z-index: 2; padding: 18px; }
+.h2-tag { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 9px; border-radius: 6px; background: rgba(var(--bg-rgb), .6); border: 1px solid var(--line-2); font-size: 10px; letter-spacing: 1.6px; color: var(--gold-2); text-transform: uppercase; }
+.h2-hero h2 { font-family: var(--display, Oswald); font-weight: 500; font-size: 34px; line-height: 1; margin: 10px 0 6px; text-transform: uppercase; letter-spacing: .5px; color: var(--text); }
+.h2-meta { font-size: 12.5px; color: var(--text-2); display: flex; gap: 12px; flex-wrap: wrap; }
+.h2-th { display: flex; gap: 6px; margin: 14px 0 2px; }
+.h2-th div { width: 46px; height: 46px; border-radius: 8px; background-size: cover; background-position: center; filter: var(--photo-filter); border: 1px solid var(--line); flex: none; }
+.h2-th .more, .h2-th .no { display: grid; place-items: center; filter: none; font-size: 12px; color: var(--text-2); background: rgba(var(--fg-rgb), .05); }
+.h2-hero .btn { margin-top: 14px; justify-content: space-between; padding: 0 10px 0 22px; height: 54px; }
+.h2-alert { display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin-top: 12px; }
+.h2-alert .ic { width: 34px; height: 34px; flex: none; border-radius: 8px; display: grid; place-items: center; background: rgba(200, 87, 75, .12); color: var(--red); }
+.h2-alert .t { flex: 1; min-width: 0; font-size: 13px; color: var(--text); } .h2-alert .t small { display: block; color: var(--text-2); font-size: 11.5px; margin-top: 2px; }
+.h2-chip { height: 32px; padding: 0 12px; border-radius: 6px; border: 1px solid var(--line-2); display: grid; place-items: center; font-size: 10.5px; letter-spacing: 1.4px; color: var(--gold-2); text-transform: uppercase; flex: none; }
+.home2 > .card { margin-top: 12px; }
+.h2-trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 14px 0; }
+.h2-trio div { text-align: center; border-left: 1px solid var(--line); } .h2-trio div:first-child { border: 0; }
+.h2-trio b { font-family: var(--display, Oswald); font-weight: 400; font-size: 22px; display: block; color: var(--text); } .h2-trio small { font-size: 10.5px; color: var(--text-2); }
+.h2-bento { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 2px; }
+.h2-tile { padding: 14px; position: relative; overflow: hidden; margin: 0 !important; }
+.h2-tile.wide { grid-column: span 2; }
+.h2-tile .ring { margin: 10px auto 6px; } .h2-tile .ring b { font-family: var(--display, Oswald); font-weight: 400; font-size: 28px; }
+.h2-cnt { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-2); }
+.h2-cnt i { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+.h2-next { grid-row: span 2; padding: 0; display: flex; flex-direction: column; justify-content: flex-end; min-height: 300px; }
+.h2-next .in { padding: 14px; }
+.h2-next h3 { font-family: var(--display, Oswald); font-weight: 500; font-size: 22px; line-height: 1.05; margin: 8px 0 4px; text-transform: uppercase; color: var(--text); }
+.h2-next .h2-meta { font-size: 11.5px; }
+.h2-next .btn { margin-top: 12px; height: 44px; justify-content: space-between; padding: 0 8px 0 14px; font-size: 10.5px; letter-spacing: 1.4px; }
+.h2-next .btn .arrow { width: 26px; height: 26px; margin-right: 0; }
+.h2-gauge { display: block; width: 140px; max-width: 100%; margin: 8px auto 0; }
+.h2-sub { text-align: center; font-size: 10.5px; color: var(--text-2); }
+.h2-mus { display: flex; gap: 12px; align-items: center; }
+.h2-body { flex: 0 0 120px; overflow: hidden; display: grid; place-items: center; } .h2-body svg { max-width: 120px; height: auto; }
+.h2-bars { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 9px; font-size: 12px; }
+.h2-bars .r { display: flex; justify-content: space-between; gap: 6px; color: var(--text-2); } .h2-bars .r b { color: var(--text); font-weight: 500; }
+.h2-bar { height: 5px; border-radius: 3px; background: rgba(var(--fg-rgb), .07); margin-top: 4px; overflow: hidden; } .h2-bar i { display: block; height: 100%; border-radius: 3px; background: var(--gold); }
+.h2-tile.mini b { font-family: var(--display, Oswald); font-weight: 400; font-size: 22px; display: block; margin-top: 8px; color: var(--text); } .h2-tile.mini small { font-size: 11px; color: var(--text-2); }
+.h2-tile.mini .ic { width: 30px; height: 30px; border-radius: 8px; background: rgba(var(--acc-rgb), .1); color: var(--gold-2); display: grid; place-items: center; }

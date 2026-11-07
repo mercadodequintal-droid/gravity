@@ -492,5 +492,5 @@
     Native.widget(JSON.stringify({ line1, line2, done, total }));
   }
 
-  Object.assign(window.Screens, { balanceCard, balanceWarnHTML, balanceAlertsHTML, volumeAlertsHTML, metaSheet, MonthSummary, shareMonth, PhotoCompare, strengthCard, syncNative, MuscleMap, muscleCard, bodySVG, Records, recordsTable, Body, Medals, calendarCard, shareSession, measureSheet });
+  Object.assign(window.Screens, { volumeData, VCOL, balanceCard, balanceWarnHTML, balanceAlertsHTML, volumeAlertsHTML, metaSheet, MonthSummary, shareMonth, PhotoCompare, strengthCard, syncNative, MuscleMap, muscleCard, bodySVG, Records, recordsTable, Body, Medals, calendarCard, shareSession, measureSheet });
 })();
