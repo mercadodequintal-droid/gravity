@@ -147,7 +147,7 @@
     g.fillStyle = glow; g.fillRect(0, 0, W, H);
     g.strokeStyle = 'rgba(243,212,140,.55)'; g.lineWidth = 3; g.beginPath(); g.arc(W - 120, 160, 260, 0, Math.PI * 2); g.stroke();
     const logo = await Logo.image();
-    if (logo) g.drawImage(logo, 64, 66, 170, 107);
+    if (logo) { g.save(); g.beginPath(); g.roundRect ? g.roundRect(80, 52, 130, 130, 26) : g.rect(80, 52, 130, 130); g.clip(); g.drawImage(logo, 80, 52, 130, 130); g.restore(); }
     g.fillStyle = GOLD2; g.font = '400 44px Oswald, sans-serif'; g.fillText('G R A V I T Y', 250, 135);
     g.textAlign = 'right'; g.fillStyle = TXT; g.font = '400 34px Oswald, sans-serif'; g.fillText((S().settings.name || 'Atleta').toUpperCase().slice(0, 18), W - 80, 135); g.textAlign = 'left';
     g.fillStyle = MUTED; g.font = '500 30px Montserrat, sans-serif'; g.fillText('RESUMO DO MÊS', 80, 270);
@@ -422,7 +422,7 @@
     g.strokeStyle = 'rgba(243,212,140,.55)'; g.lineWidth = 3; g.beginPath(); g.arc(W - 120, 160, 260, 0, Math.PI * 2); g.stroke();
     // logo
     const logo = await Logo.image();
-    if (logo) g.drawImage(logo, 64, 66, 170, 107);
+    if (logo) { g.save(); g.beginPath(); g.roundRect ? g.roundRect(80, 52, 130, 130, 26) : g.rect(80, 52, 130, 130); g.clip(); g.drawImage(logo, 80, 52, 130, 130); g.restore(); }
     g.fillStyle = GOLD2; g.font = '400 44px Oswald, sans-serif'; g.fillText('G R A V I T Y', 250, 135);
     // foto e nome no canto superior direito
     const name = (S().settings.name || 'Atleta').toUpperCase(), ph = Profile.photo();

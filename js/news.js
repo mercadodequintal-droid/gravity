@@ -4,6 +4,9 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.36.0', date: '2026-11-07', items: [
+      { icon: 'sparkle', t: 'Logo novo', d: 'O Gravity tem um logo novo: o G de metal sobre a pedra escura. Ele aparece no ícone do app, no botão Treinar, no perfil e nas imagens de compartilhar, em todos os temas.', img: 'img/news/0.36.0.jpg', main: true },
+    ] },
     { v: '0.35.0', date: '2026-11-07', items: [
       { icon: 'sparkle', t: 'Tema Atelier', d: 'Sexto tema em Configurações › Aparência: Atelier, claro, em creme e ameixa.', img: 'img/news/0.35.0.jpg', main: true, go: 'theme' },
       { icon: 'check', t: 'Todos os temas foscos', d: 'Sem brilho, sem halo e sem degradê metálico: botões e destaques em cor lisa, mais confortáveis na tela do celular.' },

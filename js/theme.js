@@ -27,7 +27,7 @@
     bars(!!document.getElementById('splash'));
     // O logo do botão Treinar muda com o tema (no Azul é o G na pedra).
     const core = document.querySelector('.nav [data-train] .core');
-    if (core && window.Screens && Screens.emblem) core.innerHTML = Screens.emblem(36);
+    if (core && window.Screens && Screens.emblem) core.innerHTML = Screens.emblem(36, 'nav');
   }
 
   window.Theme = { LIST, get, current, apply, bars };

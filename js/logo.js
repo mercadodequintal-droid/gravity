@@ -40,7 +40,7 @@
     return new Promise((res) => {
       const img = new Image();
       img.onload = () => res(img); img.onerror = () => res(null);
-      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg().replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" width="1060" height="670" '));
+      img.src = 'img/g-logo.png'; // logo novo (v0.36): G de metal sobre pedra, quadrado
     });
   }
 

@@ -1194,3 +1194,18 @@ h1, h2, h3, h4, .card b { overflow-wrap: break-word; hyphens: auto; -webkit-hyph
 .live-bar, .rest-pill { box-shadow: 0 10px 26px rgba(var(--shadow-rgb), 0.35) !important; }
 .pw-num { text-shadow: none !important; }
 .live-bar .lb-dot { animation: none !important; }
+
+/* ===== Logo novo (v0.36): G de metal sobre pedra escura, em todos os temas =====
+   Sempre num círculo escuro (img/g-tile.png), centralizado e ocupando o espaço todo. */
+.g-emb { display: block; border-radius: 50%; object-fit: cover; }
+.nav .emblem-btn .core { padding: 0 !important; overflow: hidden; background: #050506 !important; }
+.nav .emblem-btn .core .g-emb { width: 100% !important; height: 100% !important; }
+.emblem-ring.avatar { overflow: hidden !important; background: #050506 !important; }
+.emblem-ring .g-emb, .h2-av .g-emb { width: 100% !important; height: 100% !important; }
+.h2-av { background: #050506 !important; }
+/* Botão Treinar com o G recortado sobre o tom claro do tema (v0.36): Azul, Luana e Atelier. */
+[data-theme="azul"] .nav .emblem-btn .core { background: #172548 !important; }
+[data-theme="luana"] .nav .emblem-btn .core { background: #FFF7F9 !important; }
+[data-theme="atelier"] .nav .emblem-btn .core { background: #FBF6F2 !important; }
+.nav .emblem-btn .core:has(.g-cut) { display: grid !important; place-items: center; }
+.nav .emblem-btn .core .g-emb.g-cut { width: 82% !important; height: 82% !important; border-radius: 0 !important; box-shadow: none !important; object-fit: contain; }

@@ -489,7 +489,7 @@
     document.querySelector('.sheet-bg').addEventListener('click', closeSheet);
     document.querySelectorAll('.nav button[data-tab]').forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.tab)));
     document.querySelector('.nav [data-train]').addEventListener('click', () => { Native.vibrate(15); Screens.trainNow(); });
-    document.querySelector('.nav [data-train] .core').innerHTML = Screens.emblem(36);
+    document.querySelector('.nav [data-train] .core').innerHTML = Screens.emblem(36, 'nav');
   }
 
   window.appBack = function () {

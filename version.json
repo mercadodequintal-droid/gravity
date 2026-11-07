@@ -1,17 +1,11 @@
 {
- "versionCode": 49,
- "versionName": "0.35.0",
+ "versionCode": 50,
+ "versionName": "0.36.0",
  "date": "2026-11-07",
- "apk": "download/Gravity-v0.35.0.apk",
+ "apk": "download/Gravity-v0.36.0.apk",
  "notes": [
   {
-   "t": "Tema Atelier"
-  },
-  {
-   "t": "Todos os temas foscos"
-  },
-  {
-   "t": "Tela inicial ajustada"
+   "t": "Logo novo"
   }
  ]
 }
