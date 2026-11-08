@@ -213,6 +213,7 @@
     const t = top();
     document.querySelector('.nav').classList.toggle('hidden', !!(t && t.hideNav));
     document.querySelectorAll('.nav button[data-tab]').forEach((b) => b.classList.toggle('on', b.dataset.tab === R.tab));
+    if (window.NavFx) NavFx.update(R.tab);
   }
 
   function push(def) {

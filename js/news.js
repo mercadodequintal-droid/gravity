@@ -4,6 +4,9 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.38.0', date: '2026-11-08', items: [
+      { icon: 'sparkle', t: 'Barra de baixo líquida', d: 'Ao trocar de aba, o item escolhido sobe numa bolinha e a barra "escorre" como líquido até ele. Funciona em todos os temas.', img: 'img/news/0.38.0.jpg', main: true },
+    ] },
     { v: '0.37.0', date: '2026-11-07', items: [
       { icon: 'home', t: 'Tela inicial em blocos em todos os temas', d: 'O painel do tema Azul agora vale para todos: semana, treino do dia, nível de poder, músculos, volume e tempo. Toque no bloco Semana para ver a agenda.', img: 'img/news/0.37.0.jpg', main: true },
     ] },

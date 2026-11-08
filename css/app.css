@@ -1209,3 +1209,19 @@ h1, h2, h3, h4, .card b { overflow-wrap: break-word; hyphens: auto; -webkit-hyph
 [data-theme="atelier"] .nav .emblem-btn .core { background: #FBF6F2 !important; }
 .nav .emblem-btn .core:has(.g-cut) { display: grid !important; place-items: center; }
 .nav .emblem-btn .core .g-emb.g-cut { width: 82% !important; height: 82% !important; border-radius: 0 !important; box-shadow: none !important; object-fit: contain; }
+
+/* ===== Barra de baixo "líquida" (v0.38) ===== */
+.nav.liquid { background: transparent !important; border-color: transparent !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+.nav-liquid { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; overflow: visible; pointer-events: none; z-index: 0;
+  filter: drop-shadow(0 -1px 0 rgba(var(--acc-rgb), 0.55)) drop-shadow(0 -4px 12px rgba(var(--shadow-rgb), 0.3)); }
+.nav-liquid rect, .nav-liquid ellipse { fill: rgb(var(--nav-rgb, 18, 18, 20)); }
+[data-theme="azul"] .nav-liquid rect, [data-theme="azul"] .nav-liquid ellipse { fill: rgb(16, 28, 60); }
+.nav.liquid > button { position: relative; z-index: 1; }
+.nav.liquid button[data-tab] svg.i { position: relative; z-index: 2; transition: transform 380ms cubic-bezier(.34, 1.56, .64, 1), color 200ms; }
+.nav.liquid button[data-tab]::before { content: ""; position: absolute; left: 50%; top: -14px; width: 46px; height: 46px; margin-left: -23px; border-radius: 50%;
+  background: rgba(var(--nav-rgb, 18, 18, 20), 1); box-shadow: inset 0 -3px 0 var(--gold), 0 4px 12px rgba(var(--shadow-rgb), 0.25);
+  transform: translateY(18px) scale(0.3); opacity: 0; transition: transform 380ms cubic-bezier(.34, 1.56, .64, 1), opacity 200ms; z-index: 1; }
+[data-theme="azul"] .nav.liquid button[data-tab]::before { background: rgb(16, 28, 60); }
+.nav.liquid button[data-tab].on::before { transform: none; opacity: 1; transition-delay: 420ms; }
+.nav.liquid button[data-tab].on svg.i { transform: translateY(-23px); transition-delay: 420ms; color: var(--gold-2); }
+.nav.liquid button[data-tab].on { color: var(--gold-2); }
