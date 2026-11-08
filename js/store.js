@@ -530,7 +530,33 @@
   // ---------- métricas ----------
   const e1rm = (kg, reps) => (reps > 0 ? kg * (1 + reps / 30) : 0);
   function sessionVolume(s) { return s.sets.filter((x) => x.done && !x.warm && !x.time).reduce((a, x) => a + loadOf(x) * (Number(x.reps) || 0), 0); }
-  function sessionDuration(s) { return s.end ? Math.round((s.end - s.start) / 60000) : Math.round((Date.now() - s.start) / 60000); }
+  // Tempo ativo do treino (v0.38.1): pausas não contam.
+  // - Ao continuar um treino já salvo (ou parado há mais de 20 min), o intervalo parado é guardado em s.pauses e não conta.
+  // - Entre duas séries feitas, um intervalo acima de 20 min conta só 20 min (esqueceu o app aberto).
+  const IDLE_CAP = 20 * 60000;
+  function lastActivity(s) { return Math.max(s.start, s.end || 0, ...(s.pauses || []).map((p) => p[1]), ...s.sets.filter((x) => x.done && x.at).map((x) => x.at)); }
+  function resumeSession(s) {
+    const from = s.end || lastActivity(s), now = Date.now();
+    if (now - from > 60000) s.pauses = (s.pauses || []).concat([[from, now]]);
+    s.end = null; s.finished = false; S.activeSessionId = s.id; save();
+  }
+  function activeMs(s, now) {
+    const endT = s.end || now || Date.now(), pauses = s.pauses || [];
+    const ats = s.sets.filter((x) => x.done && x.at).map((x) => x.at);
+    if (!ats.length && !pauses.length) return Math.max(0, endT - s.start); // treinos antigos sem horário das séries
+    const pts = [...new Set([s.start, endT, ...ats, ...pauses.flat()])].filter((t) => t >= s.start && t <= endT).sort((a, b) => a - b);
+    let ms = 0;
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1], b = pts[i];
+      if (pauses.some((p) => a >= p[0] && b <= p[1])) continue;
+      ms += Math.min(b - a, IDLE_CAP);
+    }
+    return ms;
+  }
+  // Base do cronômetro do Android: agora − base = tempo ativo (arredondada ao segundo para não mudar a cada chamada).
+  function clockBase(s) { return Math.round((Date.now() - activeMs(s)) / 1000) * 1000; }
+  function sessionDuration(s) { return Math.round(activeMs(s) / 60000); }
+
 
   function exerciseHistory(exId) {
     return S.sessions.filter((s) => s.sets.some((x) => x.exId === exId && x.done && !x.warm))
@@ -744,7 +770,7 @@
     activePlan, plan, findWorkout, planWeek, planFromTemplate,
     itemProgress, sessionProgress, workoutStatus,
     startSession, session, toggleSet, addSet, finishSession, swapExercise, exOf, addWarmups, MEASURES, addBody, photos, addPhoto, deletePhoto, deleteSession, lastSetsFor, repsTarget,
-    e1rm, sessionVolume, sessionDuration, exerciseHistory, loadSuggestion, sessionRecords,
+    e1rm, sessionVolume, sessionDuration, activeMs, clockBase, lastActivity, resumeSession, exerciseHistory, loadSuggestion, sessionRecords,
     importPlanCSV, exportPlanCSV, exportBackup, backupDue, autoBackup, backupDone, snoozeBackup, importBackup, reset, seedDemo, clearDemo,
   };
 })();

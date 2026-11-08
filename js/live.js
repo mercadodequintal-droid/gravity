@@ -10,7 +10,7 @@
   // Sessão rodando agora (começada há menos de 12 h e não finalizada).
   function active() {
     const st = S(), s = st.activeSessionId && Store.session(st.activeSessionId);
-    if (!s || s.finished || Date.now() - s.start > 12 * 3600000) return null;
+    if (!s || s.finished || Date.now() - Store.lastActivity(s) > 12 * 3600000) return null;
     const fw = Store.findWorkout(s.workoutId);
     return fw ? { s, w: fw.workout, items: fw.workout.items } : null;
   }
@@ -81,7 +81,7 @@
     const p = progress(a), R = UI.Rest;
     const resting = R.end && !R.over;
     bar.querySelector('[data-t]').textContent = 'Treino ' + a.w.letter + ' · ' + a.w.name;
-    bar.querySelector('[data-s]').textContent = resting ? 'Descanso · ' + clock(R.left() * 1000 + 999) : p.done + ' de ' + p.total + ' exercícios · ' + clock(Date.now() - a.s.start);
+    bar.querySelector('[data-s]').textContent = resting ? 'Descanso · ' + clock(R.left() * 1000 + 999) : p.done + ' de ' + p.total + ' exercícios · ' + clock(Store.activeMs(a.s));
     bar.classList.toggle('resting', !!resting);
   }
 
@@ -95,7 +95,7 @@
       title: 'Treino ' + a.w.letter + ' · ' + a.w.name + ' (' + p.done + '/' + p.total + ')',
       text: t ? t.text : 'Todos os exercícios feitos · toque em Encerrar',
       next: t ? t.ex : '', rest: n ? restAfter(a, n) : 0, allDone: !n,
-      start: a.s.start, sound: !!S().settings.sound, vibrate: !!S().settings.vibrate,
+      start: Store.clockBase(a.s), sound: !!S().settings.sound, vibrate: !!S().settings.vibrate,
       say: phrase(a),
     };
     const sig = JSON.stringify(o);

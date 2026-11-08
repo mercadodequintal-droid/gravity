@@ -296,6 +296,8 @@
         if (!fw) return `<div class="topbar"><button class="icon-btn" data-a="back">${icon('back')}</button><h1>Treino</h1></div><div class="content"><div class="empty">Treino não encontrado.</div></div>`;
         const w = fw.workout, st = Store.workoutStatus(w), cur = currentSession(w);
         const s = cur || (st.status === 'done' ? st.session : null);
+        // "Rodando" = treino aberto agora (não finalizado). Um treino incompleto já salvo deixa trocar de treino.
+        const running = cur && !cur.finished && Store.state.activeSessionId === cur.id;
         def.footer = true;
         const rows = w.items.map((it, i) => {
           const ex = Store.exercise(it.exId);
@@ -318,8 +320,8 @@
           <div class="content"><div class="row appear" style="margin:4px 0 6px;gap:14px"><div class="letter ${STATUS[st.status].cls}" style="width:64px;height:64px;font-size:28px;border-radius:20px">${esc(w.letter)}</div>
           <div class="grow"><div style="font-size:22px;font-weight:700;letter-spacing:-.3px">${esc(w.name)}</div><div class="small muted">${daysText(w.days)} · ${w.items.length} exercícios · ~${estMinutes(w)} min</div></div></div>
           <div style="margin:10px 0 14px">${statusChip(st)}</div>
-          ${!cur && w.items.length && estMinutes(w) > 25 ? `<button class="quick-link" data-a="quick">${icon('timer', 'sm')}Pouco tempo hoje?</button>` : ''}
-          ${!cur && fw.plan.workouts.length > 1 ? `<button class="switch-w press" data-a="switchW">${icon('repeat', 'sm')}<span class="grow"><b>Trocar de treino</b><small>Fazer outro treino do plano hoje</small></span>${icon('next', 'sm')}</button>` : ''}
+          ${!running && w.items.length && estMinutes(w) > 25 ? `<button class="quick-link" data-a="quick">${icon('timer', 'sm')}Pouco tempo hoje?</button>` : ''}
+          ${!running && fw.plan.workouts.length > 1 ? `<button class="switch-w press" data-a="switchW">${icon('repeat', 'sm')}<span class="grow"><b>Trocar de treino</b><small>Fazer outro treino do plano hoje</small></span>${icon('next', 'sm')}</button>` : ''}
           <div class="list">${rows || '<div class="card empty">Nenhum exercício. Toque no lápis para montar o treino.</div>'}</div></div>
           <div class="footer">${footer}</div>`;
       },
@@ -333,11 +335,11 @@
           beginWorkout(wid, null);
         },
         quick: () => quickSheet(wid),
-        continue: () => { const s = currentSession(Store.findWorkout(wid).workout); s.finished = false; Store.state.activeSessionId = s.id; Store.save(); push(Player(s.id, firstOpenIndex(s))); },
+        continue: () => { const s = currentSession(Store.findWorkout(wid).workout); if (s.finished || Date.now() - Store.lastActivity(s) > 20 * 60000) Store.resumeSession(s); else { Store.state.activeSessionId = s.id; Store.save(); } push(Player(s.id, firstOpenIndex(s))); },
         summary: () => { const st = Store.workoutStatus(Store.findWorkout(wid).workout); push(Screens.SessionDetail(st.session.id)); },
         item: (ds) => {
           const w = Store.findWorkout(wid).workout, cur = currentSession(w);
-          if (cur) push(Player(cur.id, Number(ds.i)));
+          if (cur) { if (cur.finished || Date.now() - Store.lastActivity(cur) > 20 * 60000) Store.resumeSession(cur); push(Player(cur.id, Number(ds.i))); }
           else push(Screens.ExerciseDetail(w.items[Number(ds.i)].exId));
         },
       },
@@ -708,7 +710,7 @@
       render() {
         const { w, items, s } = ctx();
         return `<div class="topbar"><button class="icon-btn" data-a="back">${icon('back')}</button>
-          <div class="grow"><h1>Treino ${esc(w.letter)}</h1><div class="timer-pill">${icon('clock', 'sm')}<span class="num" data-elapsed>${clock(Date.now() - s.start)}</span></div></div>
+          <div class="grow"><h1>Treino ${esc(w.letter)}</h1><div class="timer-pill">${icon('clock', 'sm')}<span class="num" data-elapsed>${clock(Store.activeMs(s))}</span></div></div>
           <button class="btn sm lime" data-a="finish">Finalizar</button></div>
           <div class="session-head"><div class="segs" style="display:flex;gap:4px">${segs()}</div></div>
           <div class="pager">${items.map((_, i) => `<div class="page">${pageHTML(i)}</div>`).join('')}</div>
@@ -732,7 +734,7 @@
           setTimeout(() => toast(s0.autoUp.length === 1 ? 'Faixa completa: ' + Store.exercise(s0.autoUp[0].exId).nome + ' subiu para ' + kg(s0.autoUp[0].to) + ' × ' + s0.autoUp[0].lo : s0.autoUp.length + ' exercícios subiram de carga (faixa de repetições completa)'), 600);
         }
         clearInterval(elapsedT);
-        elapsedT = setInterval(() => { const e = el.querySelector('[data-elapsed]'); const s = Store.session(sid); if (e && s) e.textContent = clock(Date.now() - s.start); }, 1000);
+        elapsedT = setInterval(() => { const e = el.querySelector('[data-elapsed]'); const s = Store.session(sid); if (e && s) e.textContent = clock(Store.activeMs(s)); }, 1000);
       },
       leave() { Metro.stop(); clearInterval(elapsedT); clearTimeout(rirT); Native.keepOn(false); },
       actions: {
@@ -878,7 +880,7 @@
         const pr = Store.sessionProgress(s);
         const missing = pr.total - pr.complete;
         return `<h3>Finalizar treino</h3><div class="desc">${missing ? `Faltam <b>${missing}</b> exercício${missing > 1 ? 's' : ''}. O treino fica como <b style="color:var(--amber)">incompleto</b> e você pode continuar depois.` : 'Todos os exercícios concluídos. Mandou bem!'}</div>
-          <div class="tiles"><div class="card tile"><div class="v num">${clock(Date.now() - s.start)}</div><div class="l">Duração</div></div><div class="card tile"><div class="v num">${pr.setsDone}<small>/${pr.setsTotal}</small></div><div class="l">Séries</div></div><div class="card tile"><div class="v num">${volume(Store.sessionVolume(s))}</div><div class="l">Volume</div></div></div>
+          <div class="tiles"><div class="card tile"><div class="v num">${clock(Store.activeMs(s))}</div><div class="l">Duração</div></div><div class="card tile"><div class="v num">${pr.setsDone}<small>/${pr.setsTotal}</small></div><div class="l">Séries</div></div><div class="card tile"><div class="v num">${volume(Store.sessionVolume(s))}</div><div class="l">Volume</div></div></div>
           <div class="field"><label>Como foi o treino?</label><div class="feel">${FEEL.map(([v, l]) => `<button class="${String(feel) === v ? 'on' : ''}" data-a="feel" data-v="${v}"><b>${v}</b>${l}</button>`).join('')}</div></div>
           <div class="field"><label>Observação geral (opcional)</label><textarea class="note-field" data-in="note" placeholder="Ex.: dormi mal, treino rendeu menos">${esc(note)}</textarea></div>
           <div class="btn-row" style="margin-top:16px"><button class="btn ghost" data-a="no">Voltar</button><button class="btn lime" data-a="ok">Salvar treino</button></div>

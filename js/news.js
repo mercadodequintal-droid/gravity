@@ -4,6 +4,9 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.38.1', date: '2026-11-08', items: [
+      { icon: 'clock', t: 'Tempo do treino corrigido', d: 'Continuar um treino de outro dia não soma mais as horas paradas: conta só o tempo treinando. Treinos antigos se corrigem sozinhos. Treino incompleto já salvo volta a mostrar "Trocar de treino".' },
+    ] },
     { v: '0.38.0', date: '2026-11-08', items: [
       { icon: 'sparkle', t: 'Barra de baixo líquida', d: 'Ao trocar de aba, o item escolhido sobe numa bolinha e a barra "escorre" como líquido até ele. Funciona em todos os temas.', img: 'img/news/0.38.0.jpg', main: true },
     ] },
