@@ -286,6 +286,7 @@
     R.stack = [def];
     setNav();
     requestAnimationFrame(() => requestAnimationFrame(() => el.classList.remove('fade-in')));
+    if (window.TabSwipe) TabSwipe.cascade(el);
   }
 
   // ---------- folha inferior ----------
@@ -585,5 +586,5 @@
       actions: { ok: closeSheet },
     });
   }
-  window.UI = { installHint, sortable, moveIn, editable, savedFlash, replace, onSwipe, countdown, prBurst, icon, esc, nf, kg, secs, restLabel, clock, volume, shortDate, MONTHS, imgHTML, thumb, ring, Native, beep, toast, R, push, pop, popTo, switchTab, refresh, rerender, top, sheet, sheetRefresh, closeSheet, confirmSheet, numberSheet, Rest, bind, setNav };
+  window.UI = { build, installHint, sortable, moveIn, editable, savedFlash, replace, onSwipe, countdown, prBurst, icon, esc, nf, kg, secs, restLabel, clock, volume, shortDate, MONTHS, imgHTML, thumb, ring, Native, beep, toast, R, push, pop, popTo, switchTab, refresh, rerender, top, sheet, sheetRefresh, closeSheet, confirmSheet, numberSheet, Rest, bind, setNav };
 })();

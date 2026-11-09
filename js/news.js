@@ -4,6 +4,11 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.40.0', date: '2026-11-09', items: [
+      { icon: 'repeat', t: 'Deslize entre as abas', d: 'Arraste a tela para o lado: Semana, Planos, Exercícios e Progresso, com a barra escorrendo junto. O Treinar continua no toque.', main: true, img: 'img/news/0.40.0.jpg' },
+      { icon: 'info', t: 'Você sabia?', d: 'Uma função por dia, numa carta colecionável ou com um holofote na própria tela. Veja a coleção em Configurações › Você sabia?' },
+      { icon: 'sparkle', t: 'Abertura nova', d: 'Fotos novas na abertura, com o logo oficial.' },
+    ] },
     { v: '0.39.1', date: '2026-11-09', items: [
       { icon: 'sparkle', t: 'Ícone centralizado', d: 'O símbolo do ícone do app desceu um pouco e ficou mais centralizado.' },
     ] },

@@ -93,7 +93,9 @@
 
   function run(root, done, mode, img) {
     root.className = 'sp2 mode-' + mode;
-    root.innerHTML = `<div class="sp-photo" style="background-image:url('${img}')"></div><div class="sp-vig"></div>
+    // Fotos só com o logo (sem atleta): a arte desce o nome GRAVITY até onde fica o nível de poder; sobem um pouco.
+    const nImg = Number((String(img).match(/entrada-(\d+)/) || [])[1]), logoOnly = nImg && !Splash.ATHLETE.includes(nImg);
+    root.innerHTML = `<div class="sp-photo${logoOnly ? ' logo-only' : ''}" style="background-image:url('${img}')"></div><div class="sp-vig"></div>
       ${mode === 'A' ? '<div class="sp-ring"></div><div class="sp-flare"></div>' : '<div class="sp-scope"><i></i><i></i><i></i><i></i><span class="sp-cross"></span></div><div class="sp-read"><small>Analisando…</small><b>– – – –</b></div>'}
       <div class="sp-panel"><div class="sp-cap">Nível de poder</div><div class="sp-num">0</div><div class="sp-sub">É mais de 9.000!</div>
         <div class="sp-line"><i></i></div><button class="sp-go" type="button">Iniciar treino</button></div>`;
@@ -157,6 +159,7 @@
     try { st = JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) { /* ignora */ }
     const sig = list.join(',');
     if (!st || !Array.isArray(st.bag) || st.sig !== sig) st = { sig, bag: [], last: 0 };
+    st.bag = (st.bag || []).filter((n) => list.includes(n)); // fotos que saíram (ex.: troca de fotos na v0.40)
     if (!st.bag.length) {
       const bag = list.slice();
       for (let i = bag.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [bag[i], bag[j]] = [bag[j], bag[i]]; }
@@ -170,8 +173,9 @@
   window.Splash = {
     // Fotos da entrada: img/entrada/entrada-NN.jpg (900 px de largura, 9:16, com o logo já na arte).
     // ATHLETE = as que têm atleta (a mira da abertura C precisa de alguém para "ler").
-    PHOTOS: 10,
-    ATHLETE: [1, 3, 4, 6, 7, 8, 9, 10],
+    // v0.40: 9 fotos com o logo oficial (manual da marca); 1–7 com atleta, 8 e 9 só com o logo.
+    PHOTOS: 9,
+    ATHLETE: [1, 2, 3, 4, 5, 6, 7],
     // Alterna A e C a cada abertura.
     nextMode() {
       let m = 'C';

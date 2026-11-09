@@ -59,5 +59,15 @@
   // Chamado pelo UI a cada troca de aba.
   function update(tab) { const anim = last != null && last !== tab; last = tab; set(tab, anim); }
 
-  window.NavFx = { update, init };
+  // Arrasto entre abas (v0.40): a gota acompanha o dedo; p = 0 na aba atual … 1 na aba de destino.
+  function drag(from, to, p) {
+    if (!nav) init();
+    const a = centerOf(from), b = centerOf(to); if (a == null || b == null) return;
+    cancelAnimationFrame(raf); nav.classList.add('nav-moving');
+    nav.querySelectorAll('button[data-tab]').forEach((x) => x.classList.toggle('on', x.dataset.tab === (p > 0.5 ? to : from)));
+    draw(a + (b - a) * p, Math.sin(Math.PI * Math.max(0, Math.min(1, p))));
+  }
+  // Fim do arrasto: fixa a gota na aba final sem animar de novo.
+  function settle(tab) { if (!nav) init(); nav.classList.remove('nav-moving'); last = tab; cur = centerOf(tab); draw(cur, 0); }
+  window.NavFx = { update, init, drag, settle };
 })();

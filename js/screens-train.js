@@ -160,6 +160,8 @@
         return head + `<div class="content">${who}${Updater.card()}${overall}${backupCard}${deloadCard}${quoteCard}${sched}${Screens.muscleCard()}${Screens.strengthCard()}${streakCard}${mission}
           <div class="section-title"><h2>Esta semana</h2><button class="link" data-a="progress">Ver evolução</button></div>${tiles}</div>`;
       },
+      // Uma dica do "Você sabia?" por dia, depois de a tela inicial aparecer.
+      after(el, re) { if (!re && window.TipsFx) TipsFx.maybe(); },
       actions: {
         settings: () => push(Screens.Settings()),
         plans: () => UI.switchTab('plans'),
