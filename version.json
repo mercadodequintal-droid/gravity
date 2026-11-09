@@ -1,14 +1,11 @@
 {
- "versionCode": 54,
- "versionName": "0.39.0",
+ "versionCode": 55,
+ "versionName": "0.39.1",
  "date": "2026-11-09",
- "apk": "download/Gravity-v0.39.0.apk",
+ "apk": "download/Gravity-v0.39.1.apk",
  "notes": [
   {
-   "t": "Logo do manual da marca"
-  },
-  {
-   "t": "Compartilhar no Android"
+   "t": "Ícone centralizado"
   }
  ]
 }

@@ -4,6 +4,9 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.39.1', date: '2026-11-09', items: [
+      { icon: 'sparkle', t: 'Ícone centralizado', d: 'O símbolo do ícone do app desceu um pouco e ficou mais centralizado.' },
+    ] },
     { v: '0.39.0', date: '2026-11-09', items: [
       { icon: 'sparkle', t: 'Logo do manual da marca', d: 'O símbolo oficial (G branco com a barra cobre) agora está no ícone do app, no botão Treinar, no perfil e nas imagens de compartilhar, em todos os temas. Ícone novo com o brilho cobre nos cantos.', img: 'img/news/0.39.0.jpg', main: true },
       { icon: 'check', t: 'Compartilhar no Android', d: 'A imagem de compartilhar (resumo do mês e treino feito) voltou a funcionar no Android.' },
