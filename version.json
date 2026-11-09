@@ -1,11 +1,14 @@
 {
- "versionCode": 53,
- "versionName": "0.38.1",
- "date": "2026-11-08",
- "apk": "download/Gravity-v0.38.1.apk",
+ "versionCode": 54,
+ "versionName": "0.39.0",
+ "date": "2026-11-09",
+ "apk": "download/Gravity-v0.39.0.apk",
  "notes": [
   {
-   "t": "Tempo do treino corrigido"
+   "t": "Logo do manual da marca"
+  },
+  {
+   "t": "Compartilhar no Android"
   }
  ]
 }

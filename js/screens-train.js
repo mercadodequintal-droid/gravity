@@ -50,7 +50,8 @@
   function emblem(size, where) {
     // Logo novo (v0.36): o G de metal sobre a pedra escura, centralizado, preenchendo o círculo.
     // No botão Treinar dos temas Azul, Luana e Atelier, só o G recortado sobre o tom claro do tema (fundo no CSS).
-    if (where === 'nav' && window.Theme && ['azul', 'luana', 'atelier'].includes(Theme.current().id)) return `<img class="g-emb g-cut" src="img/g-recorte.png" alt="Gravity">`;
+    // Logo v0.39 (manual da marca): símbolo branco com a barra cobre; versão escura nos fundos claros.
+    if (where === 'nav' && window.Theme && ['azul', 'luana', 'atelier'].includes(Theme.current().id)) return `<img class="g-emb g-cut" src="img/${Theme.current().id === 'azul' ? 'g-mark' : 'g-mark-dark'}.png" alt="Gravity">`;
     const px = Math.round(size * 1.6); return `<img class="g-emb" src="img/g-tile.png" alt="Gravity" style="width:${px}px;height:${px}px">`;
   }
 

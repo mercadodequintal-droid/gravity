@@ -1208,7 +1208,7 @@ h1, h2, h3, h4, .card b { overflow-wrap: break-word; hyphens: auto; -webkit-hyph
 [data-theme="luana"] .nav .emblem-btn .core { background: #FFF7F9 !important; }
 [data-theme="atelier"] .nav .emblem-btn .core { background: #FBF6F2 !important; }
 .nav .emblem-btn .core:has(.g-cut) { display: grid !important; place-items: center; }
-.nav .emblem-btn .core .g-emb.g-cut { width: 82% !important; height: 82% !important; border-radius: 0 !important; box-shadow: none !important; object-fit: contain; }
+.nav .emblem-btn .core .g-emb.g-cut { width: 64% !important; height: auto !important; border-radius: 0 !important; box-shadow: none !important; object-fit: contain; }
 
 /* ===== Barra de baixo "líquida" (v0.38) ===== */
 .nav.liquid { background: transparent !important; border-color: transparent !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
@@ -1225,3 +1225,4 @@ h1, h2, h3, h4, .card b { overflow-wrap: break-word; hyphens: auto; -webkit-hyph
 .nav.liquid button[data-tab].on::before { transform: none; opacity: 1; transition-delay: 420ms; }
 .nav.liquid button[data-tab].on svg.i { transform: translateY(-23px); transition-delay: 420ms; color: var(--gold-2); }
 .nav.liquid button[data-tab].on { color: var(--gold-2); }
+.nav .emblem-btn .core .g-emb.g-cut { transform: translateY(5%); }

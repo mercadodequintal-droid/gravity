@@ -40,7 +40,7 @@
     return new Promise((res) => {
       const img = new Image();
       img.onload = () => res(img); img.onerror = () => res(null);
-      img.src = 'img/g-logo.png'; // logo novo (v0.36): G de metal sobre pedra, quadrado
+      img.src = window.GRAVITY_LOGO_PNG || 'img/g-logo.png'; // logo (v0.39), embutido: não contamina o canvas no Android
     });
   }
 

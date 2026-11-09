@@ -4,6 +4,10 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.39.0', date: '2026-11-09', items: [
+      { icon: 'sparkle', t: 'Logo do manual da marca', d: 'O símbolo oficial (G branco com a barra cobre) agora está no ícone do app, no botão Treinar, no perfil e nas imagens de compartilhar, em todos os temas. Ícone novo com o brilho cobre nos cantos.', img: 'img/news/0.39.0.jpg', main: true },
+      { icon: 'check', t: 'Compartilhar no Android', d: 'A imagem de compartilhar (resumo do mês e treino feito) voltou a funcionar no Android.' },
+    ] },
     { v: '0.38.1', date: '2026-11-08', items: [
       { icon: 'clock', t: 'Tempo do treino corrigido', d: 'Continuar um treino de outro dia não soma mais as horas paradas: conta só o tempo treinando. Treinos antigos se corrigem sozinhos. Treino incompleto já salvo volta a mostrar "Trocar de treino".' },
     ] },
