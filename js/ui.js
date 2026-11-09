@@ -286,7 +286,6 @@
     R.stack = [def];
     setNav();
     requestAnimationFrame(() => requestAnimationFrame(() => el.classList.remove('fade-in')));
-    if (window.TabSwipe) TabSwipe.cascade(el);
   }
 
   // ---------- folha inferior ----------

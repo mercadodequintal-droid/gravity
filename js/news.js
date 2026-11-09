@@ -4,6 +4,9 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.40.1', date: '2026-11-09', items: [
+      { icon: 'check', t: 'Telas mais calmas', d: 'Ao trocar de aba, a tela chega inteira de uma vez, sem os blocos aparecendo um por um.' },
+    ] },
     { v: '0.40.0', date: '2026-11-09', items: [
       { icon: 'repeat', t: 'Deslize entre as abas', d: 'Arraste a tela para o lado: Semana, Planos, Exercícios e Progresso, com a barra escorrendo junto. O Treinar continua no toque.', main: true, img: 'img/news/0.40.0.jpg' },
       { icon: 'info', t: 'Você sabia?', d: 'Uma função por dia, numa carta colecionável ou com um holofote na própria tela. Veja a coleção em Configurações › Você sabia?' },

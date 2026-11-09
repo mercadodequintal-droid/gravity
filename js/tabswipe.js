@@ -1,7 +1,7 @@
 // Trocar de aba deslizando o dedo (v0.40): Semana ⇄ Planos ⇄ Exercícios ⇄ Progresso (o Treinar fica de fora).
 // A tela acompanha o dedo; ao soltar, segue com a velocidade do gesto e assenta com mola. Efeitos combinados:
 // profundidade (a tela que sai afunda e escurece), borda líquida (a borda da tela que entra curva como uma gota),
-// blocos em cascata ao chegar, elástico nas pontas e a gota da barra de baixo no mesmo ritmo.
+// elástico nas pontas e a gota da barra de baixo no mesmo ritmo. (A cascata dos blocos saiu na v0.40.1: incomodava a vista.)
 // No Progresso, deslizar para a esquerda continua abrindo as seções (Músculos…), como antes.
 (function () {
   'use strict';
@@ -113,7 +113,6 @@
       clean(cur.inEl);
       if (window.NavFx) NavFx.settle(cur.to);
       UI.setNav();
-      cascade(cur.inEl);
       if (window.TipsFx) TipsFx.markUsed('swipe');
       UI.Native && UI.Native.vibrate && UI.Native.vibrate(8);
     } else {
@@ -123,14 +122,6 @@
       UI.setNav();
     }
   }
-  // Blocos em cascata: os cartões da tela que chegou aparecem um depois do outro, com um pequeno quique.
-  function cascade(el) {
-    if (!el || reduce()) return;
-    const items = [...el.querySelectorAll('.content > .card, .content > .h2-top, .h2-bento > .card, .content > .list > *, .content > .section-title, .content > .grid > *')].slice(0, 12);
-    items.forEach((x, i) => { x.style.setProperty('--ci', i); x.classList.remove('casc'); void x.offsetWidth; x.classList.add('casc'); });
-    setTimeout(() => items.forEach((x) => x.classList.remove('casc')), 1200);
-  }
-
   function init() {
     const app = document.getElementById('app'); if (!app || reduce()) return;
     app.addEventListener('touchstart', start, { passive: true });
@@ -138,6 +129,6 @@
     app.addEventListener('touchend', end, { passive: true });
     app.addEventListener('touchcancel', end, { passive: true });
   }
-  window.TabSwipe = { init, cascade, TABS };
+  window.TabSwipe = { init, TABS };
   if (document.readyState !== 'loading') init(); else document.addEventListener('DOMContentLoaded', init);
 })();
