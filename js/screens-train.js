@@ -161,7 +161,17 @@
           <div class="section-title"><h2>Esta semana</h2><button class="link" data-a="progress">Ver evolução</button></div>${tiles}</div>`;
       },
       // Uma dica do "Você sabia?" por dia, depois de a tela inicial aparecer.
-      after(el, re) { if (!re && window.TipsFx) TipsFx.maybe(); },
+      after(el, re) {
+        if (re) return;
+        const st = Store.state.settings;
+        if (st.swapHint) {
+          st.swapHint = false; st.swapAskAt = Date.now(); Store.save();
+          const nv = (Number(st.restSwap) || 0) + 60;
+          setTimeout(() => UI.confirmSheet('Mais tempo na troca?', 'Nas últimas trocas de exercício você quase sempre pediu mais tempo. Quer aumentar a <b>troca de exercício</b> para <b>+' + UI.restLabel(nv) + '</b>? Dá para mudar em Configurações › Treino.', 'Aumentar', () => { st.restSwap = nv; Store.save(); UI.toast('Troca de exercício: +' + UI.restLabel(nv)); }), 600);
+          return;
+        }
+        if (window.TipsFx) TipsFx.maybe();
+      },
       actions: {
         settings: () => push(Screens.Settings()),
         plans: () => UI.switchTab('plans'),
@@ -281,8 +291,14 @@
     return parts.length ? `<div class="chip-row" style="margin-top:6px;gap:5px">${parts.join('')}</div>` : '';
   }
 
+  // " · troca 2:30" na lista do treino (não no último exercício nem no meio de um bi-set).
+  function swapTxt(items, i) {
+    if (i === items.length - 1) return '';
+    const g = TECH.groupOf(items, i); if (g && i < g.end) return '';
+    const b = Store.swapBase(items[i]); return b ? ` <span class="swap-txt">· troca ${UI.restLabel(b)}</span>` : '';
+  }
   function estMinutes(w) {
-    return Math.max(10, Math.round(w.items.reduce((a, it) => a + (Store.isCardio(it.exId) ? it.sets * (Number(it.reps) || 1200) : it.sets * ((Number(it.rest) || 60) + 45)), 0) / 60));
+    return Math.max(10, Math.round(w.items.reduce((a, it) => a + (Store.isCardio(it.exId) ? it.sets * (Number(it.reps) || 1200) : it.sets * ((Number(it.rest) || 60) + 45)), 0) / 60 + Store.swapExtra(w) / 60));
   }
   function firstOpenIndex(s) {
     const fw = Store.findWorkout(s.workoutId);
@@ -307,7 +323,7 @@
           const pr = s ? Store.itemProgress(s, it) : null;
           const dots = s ? `<div class="dots">${s.sets.filter((x) => x.itemId === it.id).map((x) => `<i class="${x.done ? 'on' : ''}"></i>`).join('')}</div>` : '';
           return `<div class="card ex-row press appear" data-a="item" data-i="${i}">${thumb(ex)}<div class="grow"><h4 class="ellipsis">${esc(ex.nome)}</h4>
-            <div class="meta">${Tools.repsText(it, ex)}${Tools.loadText(it.kg, ex) ? ' · ' + Tools.loadText(it.kg, ex) : ''}${Store.isCardio(ex) ? '' : ' · ' + restLabel(it.rest)}</div>${techChips(w.items, i)}${dots}</div>
+            <div class="meta">${Tools.repsText(it, ex)}${Tools.loadText(it.kg, ex) ? ' · ' + Tools.loadText(it.kg, ex) : ''}${Store.isCardio(ex) ? '' : ' · ' + restLabel(it.rest)}${swapTxt(w.items, i)}</div>${techChips(w.items, i)}${dots}</div>
             <div class="state ${pr && pr.complete ? 'done' : ''}">${pr && pr.complete ? icon('check', 'sm') : '<span class="tiny num">' + (i + 1) + '</span>'}</div></div>`;
         }).join('');
         let footer;
@@ -698,6 +714,19 @@
         return;
       }
       if (Store.isCardio(exIdOf(s, it))) { Rest.stop(); if (!wasComplete && Store.itemProgress(s, it).complete) toast('Cardio concluído'); return; }
+      // Troca de exercício: depois da última série (do exercício, ou do grupo inteiro num bi-set), descanso maior.
+      const doneNow = !wasComplete && Store.itemProgress(s, it).complete;
+      const groupDone = !g || [...Array(g.size).keys()].every((k) => Store.itemProgress(s, items[g.start + k]).complete);
+      const swap = doneNow && groupDone ? Store.swapFor(s, it) : 0;
+      if (swap) {
+        const nx = [...items.keys()].filter((k) => k > i).concat([...items.keys()].filter((k) => k < i)).find((k) => !Store.itemProgress(s, items[k]).complete);
+        if (nx != null) {
+          const nextName = Store.exercise(exIdOf(s, items[nx])).nome;
+          Rest.start(swap, exName, { swap: true, next: nextName });
+          if (!rec) toast('Exercício concluído');
+          return;
+        }
+      }
       Rest.start(Store.restFor(s, it), exName);
       if (g && i === g.end) {
         const back = [...Array(g.size).keys()].map((k) => g.start + k).find((k) => !Store.itemProgress(s, items[k]).complete);

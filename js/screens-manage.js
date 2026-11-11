@@ -397,6 +397,12 @@
   }
 
   // ====================== EDITOR DE TREINO ======================
+  // " · troca 2:30" (v0.41): descanso maior depois da última série; não no último exercício nem no meio de um bi-set.
+  function swapTxt(items, i) {
+    if (i === items.length - 1) return '';
+    const g = TECH.groupOf(items, i); if (g && i < g.end) return '';
+    const b = Store.swapBase(items[i]); return b ? ` <span class="swap-txt">· troca ${restLabel(b)}</span>` : '';
+  }
   function WorkoutEditor(pid, wid) {
     const W = () => Store.plan(pid).workouts.find((w) => w.id === wid);
     const def = {
@@ -409,7 +415,7 @@
           <div class="field"><label>Dias da semana</label><div class="days-pick">${[0, 1, 2, 3, 4, 5, 6].map((d) => `<button class="${w.days.includes(d) ? 'on' : ''}" data-a="day" data-d="${d}">${Store.WEEKDAYS[d]}</button>`).join('')}</div></div>
           <div class="section-title"><h2>Exercícios</h2><span class="small muted">${w.items.length} · ~${Screens.estMinutes(w)} min</span></div>
           ${w.items.length > 1 ? '<div class="sort-hint">Segure um exercício e arraste para mudar a ordem</div>' : ''}
-          <div class="list" data-sort>${w.items.map((it, i) => { const ex = Store.exercise(it.exId); const g = TECH.groupOf(w.items, i); return `${g && g.pos === 1 ? `<div class="group-label">${icon('repeat', 'sm')}${esc(g.tech.nome)} · ${g.size} exercícios sem descanso entre eles</div>` : ''}<div class="card edit-item press ${g ? 'grouped' : ''}" data-a="item" data-i="${i}">${thumb(ex)}<div class="grow"><h4 class="ellipsis">${esc(ex.nome)}</h4><div class="meta num">${ex.tipo === 'tempo' ? Tools.repsText(it, ex) : it.sets + ' × ' + esc(it.reps)}${Tools.loadText(it.kg, ex) ? ' · ' + Tools.loadText(it.kg, ex) : ''}${Store.isCardio(ex) ? ' · sem descanso' : ' · ' + restLabel(it.rest)}</div>${it.tech && TECH.get(it.tech.id) ? `<div class="chip-row" style="margin-top:6px"><span class="chip blue tchip">${icon('flame', 'sm')}${esc(TECH.chip(it))}</span></div>` : ''}</div>
+          <div class="list" data-sort>${w.items.map((it, i) => { const ex = Store.exercise(it.exId); const g = TECH.groupOf(w.items, i); return `${g && g.pos === 1 ? `<div class="group-label">${icon('repeat', 'sm')}${esc(g.tech.nome)} · ${g.size} exercícios sem descanso entre eles</div>` : ''}<div class="card edit-item press ${g ? 'grouped' : ''}" data-a="item" data-i="${i}">${thumb(ex)}<div class="grow"><h4 class="ellipsis">${esc(ex.nome)}</h4><div class="meta num">${ex.tipo === 'tempo' ? Tools.repsText(it, ex) : it.sets + ' × ' + esc(it.reps)}${Tools.loadText(it.kg, ex) ? ' · ' + Tools.loadText(it.kg, ex) : ''}${Store.isCardio(ex) ? ' · sem descanso' : ' · ' + restLabel(it.rest)}${swapTxt(w.items, i)}</div>${it.tech && TECH.get(it.tech.id) ? `<div class="chip-row" style="margin-top:6px"><span class="chip blue tchip">${icon('flame', 'sm')}${esc(TECH.chip(it))}</span></div>` : ''}</div>
             <div class="ord"><button data-a="mv" data-i="${i}" data-d="-1">${icon('up', 'sm')}</button><button data-a="mv" data-i="${i}" data-d="1">${icon('down', 'sm')}</button></div></div>`; }).join('') || '<div class="card small muted">Nenhum exercício ainda.</div>'}</div>
           <button class="btn blue block" style="margin-top:14px" data-a="add">${icon('plus', 'sm')}Adicionar exercícios</button>
           <button class="btn danger block sm" style="margin-top:24px" data-a="del">${icon('trash', 'sm')}Excluir treino</button></div>`;
@@ -454,6 +460,15 @@
         <div class="small muted" style="margin:6px 2px 0">${bwMode() === 'menos' ? 'Ajuda do graviton ou do elástico: o quanto ele tira do seu peso.' : bwMode() === 'mais' ? 'Lastro: cinto com anilha, colete ou halter entre as pernas.' : 'Só o peso do corpo.'} ${bw ? `Conta como <b>${nf(Math.max(0, bw + (Number(it.kg) || 0)))} kg</b> no volume e nos recordes (seu peso: ${nf(bw)} kg).` : 'Registre seu peso em Progresso → Corpo para ele contar no volume.'}</div></div>`;
     };
     const bwStep = () => `<div class="field"><label>${bwMode() === 'menos' ? 'Ajuda (kg)' : 'Peso extra (kg)'}</label><div class="stepper big"><button data-a="bwst" data-d="-1">${icon('minus')}</button><div class="val" data-a="bwed"><b class="num">${nf(Math.abs(Number(it.kg) || 0))}</b></div><button data-a="bwst" data-d="1">${icon('plus')}</button></div></div>`;
+    // Troca de exercício (v0.41): descanso maior só depois da última série deste exercício.
+    const swapHTML = () => {
+      const on = Number(it.restLast) > 0, add = Number(S().settings.restSwap) || 0;
+      const sub = on ? 'Tempo para trocar de aparelho antes do próximo exercício'
+        : add ? 'Usando o padrão das Configurações: ' + restLabel((Number(it.rest) || S().settings.restDefault) + add) : 'Tempo para trocar de aparelho antes do próximo exercício';
+      return `<div class="switch-row" data-a="swapOn" style="margin-top:6px"><div class="grow">Descanso maior depois da última série<div class="small muted">${sub}</div></div><div class="switch ${on ? 'on' : ''}"></div></div>
+        ${on ? `<div class="field"><label>Depois da última série</label><div class="filters" style="flex-wrap:wrap;margin:0 0 10px">${[120, 150, 180, 240].map((o) => `<button class="filter ${Number(it.restLast) === o ? 'on' : ''}" data-a="swapSet" data-v="${o}">${restLabel(o)}</button>`).join('')}</div>
+          <div class="stepper big"><button data-a="st" data-k="restLast" data-d="-15">${icon('minus')}</button><div class="val" data-a="ed" data-k="restLast"><b class="num">${restLabel(Number(it.restLast))}</b></div><button data-a="st" data-k="restLast" data-d="15">${icon('plus')}</button></div></div>` : ''}`;
+    };
     // Parâmetros ajustáveis de cada técnica
     const PL = { qtd: ['Quantas vezes', 1, 1], pct: ['Redução de carga (%)', 5, 0], pausa: ['Pausa (s)', 5, 3], reps: ['Repetições', 1, 1], seg: ['Segundos', 1, 1], extra: ['Repetições a mais', 1, 0] };
     const techHTML = () => {
@@ -476,14 +491,16 @@
           ? `<div class="form-row">${step('Séries', 'sets', 1)}<div class="field"><label>Tempo (minutos)</label><div class="stepper big"><button data-a="mins" data-d="-5">${icon('minus')}</button><div class="val" data-a="minsEd"><b class="num">${Tools.minText(Number(it.reps) || 1200)}</b></div><button data-a="mins" data-d="5">${icon('plus')}</button></div></div></div>
             <div class="small muted" style="margin:-2px 2px 4px">Cardio não tem descanso: o treino segue direto para o próximo exercício.</div>`
           : `<div class="form-row">${step('Séries', 'sets', 1)}<div class="field"><label>${ex.tipo === 'tempo' ? 'Tempo (segundos)' : 'Repetições'}</label><input class="input num" style="height:54px;text-align:center;font-size:19px;font-weight:700" data-in="reps" value="${esc(it.reps)}" placeholder="10 ou 8-12"></div></div>
-        ${Store.isBodyweight(ex) ? bwHTML() : ''}<div class="form-row">${Store.isBodyweight(ex) ? (Number(it.kg) ? bwStep() : '') : step('Carga sugerida (kg)', 'kg', S().settings.incKg || 1)}${step('Descanso', 'rest', 15, restLabel)}</div>`}
+        ${Store.isBodyweight(ex) ? bwHTML() : ''}<div class="form-row">${Store.isBodyweight(ex) ? (Number(it.kg) ? bwStep() : '') : step('Carga sugerida (kg)', 'kg', S().settings.incKg || 1)}${step('Descanso', 'rest', 15, restLabel)}</div>${swapHTML()}`}
         ${ex.tipo === 'tempo' ? '' : `<div class="switch-row" data-a="uni" style="margin-top:6px"><div class="grow">Unilateral<div class="small muted">Conta as repetições do lado direito e do esquerdo separadas</div></div><div class="switch ${Store.isUni(it, ex) ? 'on' : ''}"></div></div>`}
         ${techHTML()}
         <div class="field"><label>Observação</label><input class="input" data-in="note" value="${esc(it.note || '')}" placeholder="Ex.: pegada fechada"></div>
         <div class="btn-row" style="margin-top:18px"><button class="btn danger" style="flex:0 0 56px;padding:0" data-a="rm">${icon('trash')}</button><button class="btn ghost" style="flex:0 0 auto" data-a="info">${icon('info', 'sm')}</button><button class="btn lime" data-a="ok">Salvar</button></div>`,
       actions: {
-        st: (ds) => { const min = ds.k === 'sets' ? 1 : ds.k === 'rest' ? 5 : 0; it[ds.k] = Math.max(min, Math.round((Number(it[ds.k]) + Number(ds.d)) * 100) / 100); Store.save(); Native.vibrate(6); sheetRefresh(); },
-        ed: (ds) => numberSheet(ds.k === 'kg' ? 'Carga (kg)' : ds.k === 'rest' ? 'Descanso (segundos)' : 'Séries', it[ds.k], 1, (v) => { it[ds.k] = Math.max(0, v); Store.save(); refresh(); setTimeout(() => itemSheet(w, i), 380); }),
+        st: (ds) => { const min = ds.k === 'sets' ? 1 : ds.k === 'rest' ? 5 : ds.k === 'restLast' ? 30 : 0; it[ds.k] = Math.max(min, Math.round((Number(it[ds.k]) + Number(ds.d)) * 100) / 100); Store.save(); Native.vibrate(6); sheetRefresh(); },
+        swapOn: () => { if (Number(it.restLast) > 0) delete it.restLast; else it.restLast = Math.max(120, Math.ceil(((Number(it.rest) || S().settings.restDefault) + 60) / 30) * 30); Store.save(); Native.vibrate(6); sheetRefresh(); },
+        swapSet: (ds) => { it.restLast = Number(ds.v); Store.save(); Native.vibrate(6); sheetRefresh(); },
+        ed: (ds) => numberSheet(ds.k === 'kg' ? 'Carga (kg)' : ds.k === 'rest' ? 'Descanso (segundos)' : ds.k === 'restLast' ? 'Depois da última série (segundos)' : 'Séries', it[ds.k], 1, (v) => { it[ds.k] = Math.max(0, v); Store.save(); refresh(); setTimeout(() => itemSheet(w, i), 380); }),
         reps: (ds, el) => { it.reps = el.value.trim() || '10'; Store.save(); },
         uni: () => { it.uni = !Store.isUni(it, ex); Store.save(); Native.vibrate(6); sheetRefresh(); },
         bw: (ds) => { const m = Math.abs(Number(it.kg) || 0) || 5; it.kg = ds.v === 'corpo' ? 0 : ds.v === 'mais' ? m : -m; Store.save(); Native.vibrate(6); sheetRefresh(); },
@@ -690,7 +707,7 @@
   // ====================== CONFIGURAÇÕES ======================
   function Settings() {
     const st = () => S().settings;
-    const stepRow = (label, sub, key, d, fmt, min) => `<div class="switch-row"><div class="grow"><div>${label}</div><div class="small muted">${sub}</div></div><div class="stepper" style="width:150px"><button data-a="st" data-k="${key}" data-d="${-d}" data-min="${min}">${icon('minus', 'sm')}</button><div class="val"><b class="num" style="font-size:15px">${fmt(st()[key])}</b></div><button data-a="st" data-k="${key}" data-d="${d}" data-min="${min}">${icon('plus', 'sm')}</button></div></div>`;
+    const stepRow = (label, sub, key, d, fmt, min) => `<div class="switch-row ${key === 'restSwap' ? 'swap-row' : ''}"><div class="grow"><div>${label}</div><div class="small muted">${sub}</div></div><div class="stepper" style="width:150px"><button data-a="st" data-k="${key}" data-d="${-d}" data-min="${min}">${icon('minus', 'sm')}</button><div class="val"><b class="num" style="font-size:15px">${fmt(st()[key])}</b></div><button data-a="st" data-k="${key}" data-d="${d}" data-min="${min}">${icon('plus', 'sm')}</button></div></div>`;
     const sw = (label, sub, key) => `<div class="switch-row" data-a="sw" data-k="${key}"><div class="grow"><div>${label}</div><div class="small muted">${sub}</div></div><div class="switch ${st()[key] ? 'on' : ''}"></div></div>`;
     return {
       hideNav: true,
@@ -705,6 +722,7 @@
         <div class="section-title"><h2>Treino</h2></div><div class="card" style="padding:4px 16px">
           ${stepRow('Descanso padrão', 'Para exercícios novos', 'restDefault', 15, restLabel, 15)}
           ${stepRow('Ajuste do timer', 'Botões +/− do descanso', 'restStep', 5, (v) => v + ' s', 5)}
+          ${stepRow('Troca de exercício', 'A mais no descanso depois da última série de cada exercício', 'restSwap', 30, (v) => (Number(v) ? '+' + restLabel(Number(v)) : 'Igual'), 0)}
           ${stepRow('Incremento de carga', 'Botões +/− e sugestões', 'incKg', 0.5, (v) => nf(v) + ' kg', 0.5)}
           ${stepRow('Peso da barra', 'Para a calculadora de anilhas', 'bar', 2.5, (v) => nf(v) + ' kg', 5)}
           <div class="switch-row"><div class="grow"><div>Semana começa</div></div><div class="seg" style="width:170px"><button class="${st().weekStart === 1 ? 'on' : ''}" data-a="ws" data-v="1">Segunda</button><button class="${st().weekStart === 0 ? 'on' : ''}" data-a="ws" data-v="0">Domingo</button></div></div>

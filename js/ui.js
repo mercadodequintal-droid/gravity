@@ -336,10 +336,13 @@
   // ---------- timer de descanso ----------
   const Rest = {
     end: 0, dur: 0, label: '', tick: null, el: null, hideT: null,
-    start(seconds, label) {
+    start(seconds, label, opt) {
+      this.logSwap();
       this.dur = seconds; this.end = Date.now() + seconds * 1000; this.label = label || '';
       this.over = false; this.cd = {}; this.said10 = false;
-      if (seconds >= 20 && !/^Pausa/.test(this.label)) Voice.say('Descanso de ' + Voice.secs(seconds), 'inicio', 0, true);
+      this.swap = !!(opt && opt.swap); this.next = (opt && opt.next) || ''; this.swapExt = false;
+      if (this.swap) { this.label = 'próximo: ' + this.next; Voice.say('Troca de exercício: ' + Voice.secs(seconds) + '. Próximo: ' + this.next + '.', 'inicio', 0, true); }
+      else if (seconds >= 20 && !/^Pausa/.test(this.label)) Voice.say('Descanso de ' + Voice.secs(seconds), 'inicio', 0, true);
       // Descansos de 20 s ou mais também vão para a notificação do Android, com alarme alto no fim.
       this.native = !!(A && A.restStart) && seconds >= 20;
       if (this.native) { try { A.restStart(this.end, this.label, !!Store.state.settings.sound, !!Store.state.settings.vibrate); } catch (e) { this.native = false; } }
@@ -348,8 +351,10 @@
       this.el.classList.remove('over'); this.el.classList.add('show');
       this.loop();
     },
-    add(d) { if (!this.end) return; if (this.native && !this.over) { try { A.restAdd(d * 1000); } catch (e) { /* ignora */ } } this.end += d * 1000; this.dur = Math.max(5, this.dur + d); if (this.over && this.end > Date.now()) { this.over = false; this.el.classList.remove('over'); } this.paint(); sheetDef && sheetDef.rest && sheetRefresh(); },
-    stop() { if (this.native && A) { try { A.restStop(); } catch (e) { /* ignora */ } } this.native = false; this.end = 0; clearInterval(this.tick); this.tick = null; this.el.classList.remove('show', 'over'); if (sheetDef && sheetDef.rest) closeSheet(); },
+    add(d) { if (!this.end) return; if (this.swap && d > 0) this.swapExt = true; if (this.native && !this.over) { try { A.restAdd(d * 1000); } catch (e) { /* ignora */ } } this.end += d * 1000; this.dur = Math.max(5, this.dur + d); if (this.over && this.end > Date.now()) { this.over = false; this.el.classList.remove('over'); } this.paint(); sheetDef && sheetDef.rest && sheetRefresh(); },
+    // Guarda, uma vez por troca, se a pessoa pediu mais tempo (para sugerir aumentar o padrão).
+    logSwap() { if (this.swap && this.end) { this.swap = false; try { Store.swapLog(this.swapExt); } catch (e) { /* ignora */ } } },
+    stop() { this.logSwap(); if (this.native && A) { try { A.restStop(); } catch (e) { /* ignora */ } } this.native = false; this.end = 0; clearInterval(this.tick); this.tick = null; this.el.classList.remove('show', 'over'); if (sheetDef && sheetDef.rest) closeSheet(); },
     left() { return Math.max(0, (this.end - Date.now()) / 1000); },
     // Ao voltar para o app: aplica +15s/Pular que tenham sido tocados na notificação.
     sync() {
@@ -391,7 +396,7 @@
       const left = this.left();
       const b = this.el.querySelector('b'), sm = this.el.querySelector('small');
       b.textContent = this.over ? 'Bora!' : clock(left * 1000 + 999);
-      sm.textContent = this.over ? 'Descanso acabou' : 'Descanso · ' + this.label;
+      sm.textContent = this.over ? (this.swap ? 'Troca acabou' : 'Descanso acabou') : (this.swap ? 'Troca · ' : 'Descanso · ') + this.label;
       const ringEl = this.el.querySelector('.ring .bar');
       if (ringEl) { const c = parseFloat(ringEl.getAttribute('stroke-dasharray')); ringEl.setAttribute('stroke-dashoffset', c * (1 - left / this.dur)); }
       const big = document.querySelector('[data-bigrest]');
@@ -403,11 +408,14 @@
     openSheet() {
       sheet({
         rest: true,
-        render: () => `<h3 style="text-align:center">Descanso</h3><div class="desc" style="text-align:center">${esc(this.label)}</div>
+        render: () => (this.swap
+          ? `<h3 style="text-align:center">Troca de exercício</h3><div class="desc" style="text-align:center">Próximo: <b style="color:var(--text)">${esc(this.next)}</b><div class="small muted" style="margin-top:4px">Descanso maior para trocar de aparelho</div></div>`
+          : `<h3 style="text-align:center">Descanso</h3><div class="desc" style="text-align:center">${esc(this.label)}</div>`) + `
           <div class="big-ring" data-bigrest>${ring(230, 14, this.left() / this.dur, 'var(--lime)', '<b class="num">' + clock(this.left() * 1000 + 999) + '</b><span>de ' + secs(this.dur) + '</span>')}</div>
-          <div class="btn-row"><button class="btn ghost" data-a="m">−${Store.state.settings.restStep}s</button><button class="btn ghost" data-a="p">+${Store.state.settings.restStep}s</button></div>
-          <button class="btn lime block" style="margin-top:10px" data-a="skip">Pular descanso</button>`,
-        actions: { m: () => this.add(-Store.state.settings.restStep), p: () => this.add(Store.state.settings.restStep), skip: () => { this.stop(); } },
+          ${this.swap ? `<div class="btn-row"><button class="btn ghost" data-a="p30">+30 s</button><button class="btn ghost" data-a="p60">+1 min</button></div>`
+            : `<div class="btn-row"><button class="btn ghost" data-a="m">−${Store.state.settings.restStep}s</button><button class="btn ghost" data-a="p">+${Store.state.settings.restStep}s</button></div>`}
+          <button class="btn lime block" style="margin-top:10px" data-a="skip">${this.swap ? 'Já estou pronto' : 'Pular descanso'}</button>`,
+        actions: { m: () => this.add(-Store.state.settings.restStep), p: () => this.add(Store.state.settings.restStep), p30: () => { this.add(30); sheetRefresh(); }, p60: () => { this.add(60); sheetRefresh(); }, skip: () => { this.stop(); } },
       });
     },
     init() {

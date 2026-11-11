@@ -4,6 +4,9 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.41.0', date: '2026-11-11', items: [
+      { icon: 'timer', t: 'Troca de exercício', d: 'Um descanso maior só depois da última série de cada exercício, para trocar de aparelho. Ligue para todos em Configurações › Treino (Troca de exercício) ou só em alguns, no editor de cada exercício do plano. No treino, o cronômetro mostra o próximo exercício.', main: true, go: 'swap' },
+    ] },
     { v: '0.40.1', date: '2026-11-09', items: [
       { icon: 'check', t: 'Telas mais calmas', d: 'Ao trocar de aba, a tela chega inteira de uma vez, sem os blocos aparecendo um por um.' },
     ] },
@@ -160,6 +163,7 @@
     compare: () => { UI.switchTab('progress', true); setTimeout(() => { const b = document.querySelector('.screen [data-a="body"]'); if (b) b.click(); setTimeout(() => spotlight('[data-a="compare"]', 'Comparar fotos'), 500); }, 250); },
     power: () => { UI.switchTab('home', true); setTimeout(() => spotlight('.pw-card', 'Seu nível de poder'), 250); },
     settingsUpdate: () => { UI.push(Screens.Settings()); setTimeout(() => spotlight('[data-a="checkUpdate"]', 'Verificar atualizações'), 350); },
+    swap: () => { UI.push(Screens.Settings()); setTimeout(() => spotlight('.swap-row', 'Troca de exercício'), 350); },
     theme: () => { UI.push(Screens.Settings()); setTimeout(() => spotlight('.theme-grid', 'Escolha o tema'), 350); },
     news: () => { UI.push(Screens.Settings()); setTimeout(() => spotlight('[data-a="news"]', 'Todas as novidades'), 350); },
   };

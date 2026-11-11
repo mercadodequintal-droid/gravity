@@ -132,7 +132,7 @@
   // Instalação nova começa zerada: sem plano e sem histórico (os modelos ficam em Planos → Modelos prontos).
   // Quem atualiza o app mantém tudo, porque load() só chama fresh() quando não há dados salvos.
   function fresh() {
-    const settings = { name: '', restDefault: 60, restStep: 15, incKg: 2, weekStart: 1, sound: true, vibrate: true, suggest: true, colorPhotos: false, splash: true, bar: 20, askRir: true, reminder: false, reminderTime: '18:00', checkin: true, autoBackup: true, updateCheck: true };
+    const settings = { name: '', restDefault: 60, restStep: 15, incKg: 2, weekStart: 1, sound: true, vibrate: true, suggest: true, colorPhotos: false, splash: true, bar: 20, askRir: true, reminder: false, reminderTime: '18:00', checkin: true, autoBackup: true, updateCheck: true, restSwap: 0 };
     return { v: 1, settings, customExercises: [], exMeta: {}, plans: [], activePlanId: null, sessions: [], activeSessionId: null };
   }
 
@@ -398,7 +398,7 @@
   const SET_S = 45;
   function estimate(w, sets, restF) {
     return w.items.reduce((a, it, k) => a + (isCardio(it.exId) ? sets[k] * (Number(it.reps) || 1200)
-      : sets[k] * (SET_S + Math.max(restF < 1 ? 30 : 0, Math.round((Number(it.rest) || S.settings.restDefault) * restF)))), 0) / 60;
+      : sets[k] * (SET_S + Math.max(restF < 1 ? 30 : 0, Math.round((Number(it.rest) || S.settings.restDefault) * restF)))), 0) / 60 + swapExtra(w, restF) / 60;
   }
   function quickPlan(w, min) {
     const full = w.items.map((it) => Number(it.sets) || 1), sets = full.slice();
@@ -430,6 +430,36 @@
   function restFor(s, it) {
     const r = Number(it.rest) || S.settings.restDefault;
     return s && s.quick ? Math.max(30, Math.round(r * s.quick.rest / 5) * 5) : r;
+  }
+  // Troca de exercício (v0.41): descanso depois da última série. Próprio do exercício (it.restLast) ou
+  // o descanso normal + o acréscimo de Configurações (restSwap). 0 = sem troca diferente.
+  function swapBase(it) {
+    if (!it || isCardio(it.exId)) return 0;
+    if (Number(it.restLast) > 0) return Number(it.restLast);
+    const add = Number(S.settings.restSwap) || 0;
+    return add > 0 ? (Number(it.rest) || S.settings.restDefault) + add : 0;
+  }
+  function swapFor(s, it) {
+    const r = swapBase(it); if (!r) return 0;
+    return s && s.quick ? Math.max(30, Math.round(r * s.quick.rest / 5) * 5) : r;
+  }
+  // Extra da troca sobre o descanso normal, para as estimativas de tempo (só entre exercícios, não no último).
+  function swapExtra(w, restF) {
+    const f = restF == null ? 1 : restF;
+    return w.items.reduce((a, it, k) => {
+      if (k === w.items.length - 1) return a;
+      const g = window.TECH && TECH.groupOf(w.items, k);
+      if (g && k < g.end) return a;
+      const b = swapBase(it); if (!b) return a;
+      return a + Math.max(0, Math.round((b - (Number(it.rest) || S.settings.restDefault)) * f));
+    }, 0);
+  }
+  // Aprende com a troca: se a pessoa pede mais tempo na troca quase sempre, sugere aumentar o padrão.
+  function swapLog(extended) {
+    const st = S.settings; st.swapLog = (st.swapLog || []).concat(extended ? 1 : 0).slice(-6);
+    const last = st.swapLog.slice(-5);
+    if (last.length >= 5 && last.reduce((a, n) => a + n, 0) >= 4 && (!st.swapAskAt || Date.now() - st.swapAskAt > 14 * 864e5)) st.swapHint = true;
+    save();
   }
 
   // Treinos "leves" (semana leve ou dia ajustado) não contam para sugestões e estagnação.
@@ -763,7 +793,7 @@
   function clearDemo() { S.sessions = S.sessions.filter((s) => !s.demo); save(true); }
 
   window.Store = {
-    load, save, get state() { return S; }, uid, PAIN_SPOTS, PAIN_LEVELS, addPain, painsFor, painAlert, snoozePain, sessionNeed, quickPlan, applyQuick, restFor, isUni, sideR, sideL, setSides, checkinLevel, applyCheckin, lightSession, isCardio, isBodyweight, bodyWeight, loadOf, repRange, rangeMode, applyRange, deloadActive, deloadProposal, startDeload, endDeload, snoozeDeload, stallOf, snoozeStall, stalledExercises, DELOAD,
+    load, save, get state() { return S; }, uid, PAIN_SPOTS, PAIN_LEVELS, addPain, painsFor, painAlert, snoozePain, sessionNeed, quickPlan, applyQuick, restFor, swapBase, swapFor, swapExtra, swapLog, isUni, sideR, sideL, setSides, checkinLevel, applyCheckin, lightSession, isCardio, isBodyweight, bodyWeight, loadOf, repRange, rangeMode, applyRange, deloadActive, deloadProposal, startDeload, endDeload, snoozeDeload, stallOf, snoozeStall, stalledExercises, DELOAD,
     gymDependent, available, setAvailable, WEEKDAYS, WEEKDAYS_LONG, GROUPS, TEMPLATES, DAY,
     iso, parseISO, today, addDays, weekStartOf, weekRange, weeksBack,
     allExercises, exercise, findExerciseByName, videoUrl,
