@@ -1,8 +1,6 @@
 // Abertura do Gravity (v0.30, identidade Obsidian Chrome): a foto da entrada já traz o logo.
-// Duas aberturas que se alternam a cada vez que o app abre:
-//  A · Eclipse: um anel de cobre acende, a foto surge do escuro e o nível de poder sobe até 9.001.
-//  C · Scouter cromado: a mira de titânio procura o atleta, trava em cobre e a leitura sobe até 9.001.
-// Som: A = zumbido grave + brilho metálico; C = scouter (arpejo, tom 60%, velocidade 180%, zumbido 160 Hz).
+// Abertura C · Scouter cromado (a única desde a v0.43): a mira de titânio procura o atleta, trava em cobre e a leitura sobe até 9.001.
+// Som: scouter (arpejo, tom 60%, velocidade 180%, zumbido 160 Hz). A abertura A (Eclipse) saiu na v0.43.
 (function () {
   'use strict';
 
@@ -56,23 +54,6 @@
     buzz(2.0 * TS, 2100 * P, 0.06, 0.12); buzz(2.09 * TS, 2100 * P, 0.3, 0.1);             // leitura concluída
   }
 
-  // Som da abertura A: zumbido grave que cresce, sopro e um "brilho" metálico no 9.001.
-  function playSoundA() {
-    try { ac = new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume(); } catch (e) { ac = null; return; }
-    tone(0, 55, 2.4, 'sine', 0.22, 82);
-    tone(0.05, 110, 2.2, 'triangle', 0.05, 164);
-    try {
-      const n = ac.sampleRate * 1.6, buf = ac.createBuffer(1, n, ac.sampleRate), d = buf.getChannelData(0);
-      for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.sin(Math.PI * i / n);
-      const src = ac.createBufferSource(), bp = ac.createBiquadFilter(), g = ac.createGain();
-      src.buffer = buf; bp.type = 'bandpass'; bp.frequency.setValueAtTime(400, ac.currentTime + 0.3); bp.frequency.exponentialRampToValueAtTime(3200, ac.currentTime + 1.9); bp.Q.value = 1.2;
-      g.gain.value = 0.06; src.connect(bp); bp.connect(g); g.connect(ac.destination); src.start(ac.currentTime + 0.3);
-    } catch (e) { /* sem ruído */ }
-    const hit = 2.25;
-    [[1760, 0.16], [2640, 0.09], [3520, 0.05], [880, 0.12]].forEach(([f, v]) => tone(hit, f, 1.3, 'sine', v));
-    tone(hit, 70, 0.6, 'sine', 0.3, 45);
-  }
-
   // Nível de poder: sempre 9.001 ("é mais de 8 mil!").
   const POWER = 9001;
   const anim = (el, frames, opts) => el.animate(frames, Object.assign({ fill: 'both', easing: 'cubic-bezier(.2,.8,.2,1)' }, opts));
@@ -96,22 +77,13 @@
     // Fotos só com o logo (sem atleta): a arte desce o nome GRAVITY até onde fica o nível de poder; sobem um pouco.
     const nImg = Number((String(img).match(/entrada-(\d+)/) || [])[1]), logoOnly = nImg && !Splash.ATHLETE.includes(nImg);
     root.innerHTML = `<div class="sp-photo${logoOnly ? ' logo-only' : ''}" style="background-image:url('${img}')"></div><div class="sp-vig"></div>
-      ${mode === 'A' ? '<div class="sp-ring"></div><div class="sp-flare"></div>' : '<div class="sp-scope"><i></i><i></i><i></i><i></i><span class="sp-cross"></span></div><div class="sp-read"><small>Analisando…</small><b>– – – –</b></div>'}
+      ${'<div class="sp-scope"><i></i><i></i><i></i><i></i><span class="sp-cross"></span></div><div class="sp-read"><small>Analisando…</small><b>– – – –</b></div>'}
       <div class="sp-panel"><div class="sp-cap">Nível de poder</div><div class="sp-num">0</div><div class="sp-sub">É mais de 9.000!</div>
         <div class="sp-line"><i></i></div><button class="sp-go" type="button">Iniciar treino</button></div>`;
     const q = (sel) => root.querySelector(sel);
     const photo = q('.sp-photo'), num = q('.sp-num'), line = q('.sp-line i'), go = q('.sp-go'), sub = q('.sp-sub'), panel = q('.sp-panel');
     let finish;
-    if (mode === 'A') {
-      // Eclipse: anel de cobre acende no escuro, a foto aparece com zoom lento e o anel se abre e some no arco da foto.
-      const ring = q('.sp-ring');
-      anim(ring, [{ opacity: 0, transform: 'translate(-50%,-50%) scale(.35) rotate(-40deg)' }, { opacity: 1, transform: 'translate(-50%,-50%) scale(.6) rotate(0)', offset: 0.35 }, { opacity: 0.9, transform: 'translate(-50%,-50%) scale(1.05)', offset: 0.75 }, { opacity: 0, transform: 'translate(-50%,-50%) scale(1.25)' }], { duration: 2300, easing: 'cubic-bezier(.3,.1,.2,1)' });
-      anim(photo, [{ opacity: 0, transform: 'scale(1.1)', filter: 'brightness(.4)' }, { opacity: 1, transform: 'scale(1)', filter: 'brightness(1)' }], { delay: 500, duration: 2300, easing: 'cubic-bezier(.2,.6,.2,1)' });
-      anim(q('.sp-flare'), [{ opacity: 0, transform: 'translateX(-60%) scaleX(.2)' }, { opacity: 1, transform: 'translateX(0) scaleX(1)', offset: 0.5 }, { opacity: 0, transform: 'translateX(40%) scaleX(.6)' }], { delay: 2150, duration: 900, easing: 'ease-out' });
-      anim(panel, [{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }], { delay: 900, duration: 600 });
-      anim(line, [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], { delay: 950, duration: 1350, easing: 'cubic-bezier(.5,0,.3,1)' });
-      finish = counter(num, performance.now() + 950, 1350);
-    } else {
+    {
       // Scouter cromado: a foto aparece escurecida, a mira procura, trava em cobre e a leitura sobe.
       const scope = q('.sp-scope'), read = q('.sp-read'), rb = read.querySelector('b'), rs = read.querySelector('small');
       anim(photo, [{ opacity: 0, filter: 'brightness(.35) saturate(.5)' }, { opacity: 1, filter: 'brightness(.55) saturate(.6)', offset: 0.5 }, { opacity: 1, filter: 'brightness(1) saturate(1)' }], { duration: 2600, easing: 'ease-out' });
@@ -133,12 +105,12 @@
       finish = fr;
     }
     // 9.001 em cobre, com um pulso; depois o botão.
-    const END = mode === 'A' ? 2300 : 2350;
+    const END = 2350;
     setTimeout(() => { if (root.isConnected) root.classList.add('hit'); }, END);
     anim(sub, [{ opacity: 0 }, { opacity: 1 }], { delay: END + 100, duration: 400 });
     anim(go, [{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { delay: END + 350, duration: 450 });
 
-    if (Store.state.settings.sound) (mode === 'A' ? playSoundA : playSound)();
+    if (Store.state.settings.sound) playSound();
     // Toque fora do botão: adianta até o final (9.001 e o botão), sem entrar no app.
     root.addEventListener('click', (e) => {
       if (e.target.closest('.sp-go')) return;
@@ -173,15 +145,12 @@
   window.Splash = {
     // Fotos da entrada: img/entrada/entrada-NN.jpg (900 px de largura, 9:16, com o logo já na arte).
     // ATHLETE = as que têm atleta (a mira da abertura C precisa de alguém para "ler").
-    // v0.40: 9 fotos com o logo oficial (manual da marca); 1–7 com atleta, 8 e 9 só com o logo.
-    PHOTOS: 9,
+    // v0.40: fotos com o logo oficial (manual da marca). v0.43: só as 7 com atleta (a 08 e a 09, só com o logo, saíram com a abertura A).
+    PHOTOS: 7,
     ATHLETE: [1, 2, 3, 4, 5, 6, 7],
     // Alterna A e C a cada abertura.
-    nextMode() {
-      let m = 'C';
-      try { m = localStorage.getItem('gravity.entradaModo') === 'A' ? 'C' : 'A'; localStorage.setItem('gravity.entradaModo', m); } catch (e) { m = 'A'; }
-      return m;
-    },
+    // v0.43: só a abertura C (Scouter), com o som de leitura; a A (Eclipse) saiu.
+    nextMode() { return 'C'; },
     nextPhoto(mode) {
       const all = Array.from({ length: Splash.PHOTOS }, (_, i) => i + 1);
       const n = pick(mode === 'C' ? 'gravity.entradaC' : 'gravity.entradaA', mode === 'C' ? Splash.ATHLETE : all);
