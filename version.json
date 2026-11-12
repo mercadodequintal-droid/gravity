@@ -1,11 +1,11 @@
 {
- "versionCode": 60,
- "versionName": "0.43.0",
+ "versionCode": 61,
+ "versionName": "0.44.0",
  "date": "2026-11-12",
- "apk": "download/Gravity-v0.43.0.apk",
+ "apk": "download/Gravity-v0.44.0.apk",
  "notes": [
   {
-   "t": "Uma abertura só"
+   "t": "Planos mais simples"
   }
  ]
 }

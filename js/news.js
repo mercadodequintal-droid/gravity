@@ -4,6 +4,9 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.44.0', date: '2026-11-12', items: [
+      { icon: 'plans', t: 'Planos mais simples', d: 'A aba Planos abre direto no seu plano: semana atual, os treinos com Feito e Hoje, e um toque para editar cada um. Para começar outro plano, toque em Criar novo plano: objetivo, esporte, modelo pronto, do zero ou planilha, tudo num lugar.', main: true },
+    ] },
     { v: '0.43.0', date: '2026-11-12', items: [
       { icon: 'sparkle', t: 'Uma abertura só', d: 'O app agora abre sempre com a mira do Scouter e o som de leitura: ela procura o atleta, trava e o nível de poder sobe até 9.001.' },
     ] },
@@ -165,7 +168,7 @@
     voice: () => { UI.push(Screens.Settings()); setTimeout(() => UI.push(Screens.VoiceSettings()), 300); },
     balance: () => { UI.switchTab('home', true); setTimeout(() => { UI.push(Screens.MuscleMap()); setTimeout(() => spotlight('.bal-card', 'Equilíbrio entre os músculos'), 450); }, 250); },
     myBody: () => { UI.switchTab('home', true); setTimeout(() => UI.push(Screens.MuscleMap()), 250); },
-    sports: () => { UI.switchTab('plans', true); setTimeout(() => spotlight('[data-a="sports"]', 'Treinos por esporte'), 250); },
+    sports: () => { UI.switchTab('plans', true); setTimeout(() => UI.push(Screens.SportList()), 250); },
     muscles: () => { UI.switchTab('home', true); setTimeout(() => UI.push(Screens.MuscleMap()), 250); },
     month: () => { UI.switchTab('progress', true); setTimeout(() => UI.push(Screens.MonthSummary()), 250); },
     compare: () => { UI.switchTab('progress', true); setTimeout(() => { const b = document.querySelector('.screen [data-a="body"]'); if (b) b.click(); setTimeout(() => spotlight('[data-a="compare"]', 'Comparar fotos'), 500); }, 250); },

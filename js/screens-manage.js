@@ -252,53 +252,115 @@
 
   // ====================== PLANOS ======================
   function Plans() {
-    return {
-      render() {
-        const act = Store.activePlan();
-        const others = S().plans.filter((p) => p !== act);
-        const planCard = (p, active) => {
-          const wk = Store.planWeek(p);
-          return `<div class="card press appear ${active ? 'hero' : ''}" data-a="edit" data-id="${p.id}"><div class="row"><div class="grow">
-            ${active ? '<span class="chip done" style="margin-bottom:8px"><span class="dot"></span>Plano ativo</span>' : ''}
-            <div style="font-size:18px;font-weight:700">${esc(p.name)}</div><div class="small muted">${esc(p.goal || '')}${p.goal ? ' · ' : ''}${p.workouts.length} treinos · ${p.weeks} semanas</div></div>${icon('next')}</div>
-            ${active ? `<div class="bar"><i style="width:${Math.min(100, Math.max(0, (wk.n - 1) / wk.total) * 100)}%"></i></div><div class="tiny muted" style="margin-top:6px">${wk.n >= 1 && wk.n <= wk.total ? 'Semana ' + wk.n + ' de ' + wk.total : wk.n > wk.total ? 'Duração concluída — repita ou troque de plano' : 'Começa em breve'}</div>` : ''}
-            <div class="chip-row">${p.workouts.map((w) => `<span class="chip">${esc(w.letter)} · ${esc(w.name)}</span>`).join('')}</div>
-            ${!active ? `<button class="btn ghost sm" style="margin-top:12px" data-a="activate" data-id="${p.id}">Usar este plano</button>` : ''}</div>`;
-        };
-        return `<div class="hello"><div class="t"><h1>Planos<span>de treino</span></h1></div><button class="icon-btn" data-a="new">${icon('plus')}</button></div>
-          <div class="content"><button class="card tech-banner goal-banner press" style="margin:0 0 12px" data-a="goal"><span class="tb-ic">${icon('target', 'sm')}</span><span class="grow"><b>Montar por objetivo</b><small>Hipertrofia, força, salto, sprint, corrida, soco, prevenção, emagrecimento, saúde ou TAF</small></span>${icon('next', 'sm')}</button>
-          <button class="card tech-banner goal-banner press" style="margin:0 0 12px;width:100%" data-a="sports"><span class="tb-ic">${icon('bolt', 'sm')}</span><span class="grow"><b>Treinos por esporte</b><small>Futebol, vôlei, corrida, jiu-jitsu, beach tennis e mais 15 · academia ou sem equipamento</small></span>${icon('next', 'sm')}</button>
-          ${act ? planCard(act, true) : ''}
-          <div class="btn-row" style="margin-top:12px"><button class="btn ghost sm" data-a="new">${icon('plus', 'sm')}Novo plano</button><button class="btn ghost sm" data-a="import">${icon('upload', 'sm')}Importar planilha</button></div>
-          ${others.length ? `<div class="section-title"><h2>Meus outros planos</h2></div><div class="list">${others.map((p) => planCard(p, false)).join('')}</div>` : ''}
-          <button class="card tech-banner press" style="margin-top:12px;width:100%" data-a="guide"><span class="tb-ic">${icon('flame', 'sm')}</span><span class="grow"><b>Técnicas avançadas</b><small>Drop set, rest-pause, FST-7, bi-set, pirâmide e mais ${TECH.LIST.length - 5}: como fazer e como usar no app</small></span>${icon('next', 'sm')}</button>
-          <div class="section-title"><h2>Modelos prontos</h2></div><div class="list">${Store.TEMPLATES.map((t) => `<div class="card wo press appear" data-a="tpl" data-k="${t.key}"><div class="letter">${t.workouts.length}</div><div class="grow"><h4>${esc(t.name)}</h4><div class="meta">${esc(t.goal)} · ${t.weeks} semanas</div></div>${icon('plus')}</div>`).join('')}</div>
-          <div class="card small muted" style="margin-top:16px">${icon('info', 'sm')} Planilha: colunas <b>plano, semanas, treino, dia, exercicio, series, repeticoes, carga_kg, descanso_s, observacao</b> e, opcionais, <b>tecnica</b> e <b>grupo</b>. Salve como CSV no Excel ou Google Planilhas.</div></div>`;
-      },
+    // v0.44 (decidido em 12/11): "Plano em foco" (1) + folha "Criar novo plano" (2) + "Sem plano" (7).
+    const DS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const days = (w) => (w.days.length ? w.days.slice().sort((x, y) => ((x + 6) % 7) - ((y + 6) % 7)).map((d) => DS[d]).join(', ') : 'Sem dia');
+    const OPTS = [
+      ['goal', 'target', 'Pelo meu objetivo', 'Responda 5 perguntas e o app monta', true],
+      ['sports', 'bolt', 'Para meu esporte', '20 esportes, academia ou sem equipamento'],
+      ['models', 'layers', 'Modelo pronto', Store.TEMPLATES.length + ' planos: ABC, PPL, Upper/Lower, 5/3/1…'],
+      ['new', 'edit', 'Do zero', 'Você escolhe cada exercício'],
+    ];
+    const createSheet = () => sheet({
+      render: () => `<h3>Criar novo plano</h3><div class="desc">Como você quer começar? Você pode editar tudo depois.</div>
+        <div class="pl-g2">${OPTS.map(([a, ic, t, d, rec]) => `<button class="pl-tile press" data-a="${a}">${rec ? '<span class="pl-tag fill pl-rec">Recomendado</span>' : ''}<span class="ic">${icon(ic, 'sm')}</span><b>${t}</b><small>${d}</small></button>`).join('')}</div>
+        <button class="pl-mini press" style="margin-top:10px" data-a="import">${icon('upload', 'sm')}<span class="grow"><b>Importar planilha</b> · Excel ou Google Planilhas (CSV)</span>${icon('next', 'sm')}</button>`,
       actions: {
-        edit: (ds, el, e) => { if (e.target.closest('[data-a="activate"]')) return; push(PlanEditor(ds.id)); },
-        activate: (ds) => { S().activePlanId = ds.id; Store.save(); toast('Plano ativado'); refresh(); },
-        guide: () => push(TechGuide()),
-        goal: () => push(Screens.GoalWizard()),
-        sports: () => push(Screens.SportList()),
-        new: () => {
-          const p = { id: Store.uid('p'), name: 'Meu plano', goal: '', weeks: 4, startDate: Store.iso(Store.weekStartOf(Store.today(), S().settings.weekStart)), workouts: [{ id: Store.uid('w'), letter: 'A', name: 'Treino A', days: [1], items: [] }] };
-          S().plans.push(p); if (!Store.activePlan()) S().activePlanId = p.id; Store.save(); push(PlanEditor(p.id));
-        },
+        goal: () => { closeSheet(); push(Screens.GoalWizard()); },
+        sports: () => { closeSheet(); push(Screens.SportList()); },
+        models: () => { closeSheet(); setTimeout(modelsSheet, 380); },
+        new: () => { closeSheet(); newPlan(); },
+        import: () => { closeSheet(); setTimeout(importSheet, 380); },
+      },
+    });
+    const modelsSheet = () => sheet({
+      render: () => `<h3>Modelo pronto</h3><div class="desc">Uma cópia editável é criada e vira o seu plano ativo. Seu histórico continua salvo.</div>
+        <div class="list" style="max-height:58vh;overflow:auto">${Store.TEMPLATES.map((t) => `<button class="pl-row press" data-a="tpl" data-k="${t.key}"><span class="lt">${t.workouts.length}</span><span class="grow"><b>${esc(t.name)}</b><small>${esc(t.goal)} · ${t.weeks} semanas</small></span>${icon('plus', 'sm')}</button>`).join('')}</div>`,
+      actions: {
         tpl: (ds) => {
           const t = Store.TEMPLATES.find((x) => x.key === ds.k);
-          confirmSheet('Usar “' + t.name + '”?', 'Uma cópia editável é criada e vira o seu plano ativo. Seu histórico continua salvo.', 'Usar modelo', () => {
+          closeSheet();
+          setTimeout(() => confirmSheet('Usar “' + t.name + '”?', 'Uma cópia editável é criada e vira o seu plano ativo. Seu histórico continua salvo.', 'Usar modelo', () => {
             const p = Store.planFromTemplate(t, S().settings.weekStart); S().plans.push(p); S().activePlanId = p.id; Store.save(); refresh(); toast('Plano criado e ativado');
-          });
+          }), 380);
         },
-        import: () => pickFile('.csv,text/csv,text/plain,text/comma-separated-values', false, (text) => {
-          try {
-            const r = Store.importPlanCSV(text);
-            const p = r.plans[0];
-            confirmSheet('Planilha importada', `${r.plans.length} plano(s), ${p.workouts.length} treino(s)${r.created ? ', ' + r.created + ' exercício(s) novo(s) criado(s) sem foto' : ''}. Ativar “${esc(p.name)}” agora?`, 'Ativar', () => { S().activePlanId = p.id; Store.save(); refresh(); });
-            refresh();
-          } catch (err) { toast(err.message || 'Planilha inválida'); }
-        }),
+      },
+    });
+    const importSheet = () => sheet({
+      render: () => `<h3>Importar planilha</h3><div class="desc">Monte o treino no Excel ou no Google Planilhas e salve como <b>CSV</b>.</div>
+        <div class="card small muted">Colunas: <b>plano, semanas, treino, dia, exercicio, series, repeticoes, carga_kg, descanso_s, observacao</b> e, opcionais, <b>tecnica</b> e <b>grupo</b>. Exercícios que o app não conhece são criados sem foto.</div>
+        <button class="btn lime block" style="margin-top:14px" data-a="pick">${icon('upload', 'sm')}Escolher arquivo</button>`,
+      actions: { pick: () => { closeSheet(); doImport(); } },
+    });
+    const plansSheet = () => sheet({
+      render: () => `<h3>Meus planos</h3><div class="desc">Só um plano fica ativo por vez. O histórico de treinos nunca é apagado.</div>
+        <div class="list" style="max-height:52vh;overflow:auto">${S().plans.map((p) => { const on = S().activePlanId === p.id; return `<div class="pl-row ${on ? 'on' : ''}"><span class="grow press" data-a="open" data-id="${p.id}"><b>${esc(p.name)}</b><small>${esc(p.goal || '')}${p.goal ? ' · ' : ''}${p.workouts.length} treinos · ${p.weeks} semanas</small></span>${on ? '<span class="pl-tag fill">Ativo</span>' : `<button class="pl-tag press" data-a="use" data-id="${p.id}">Usar</button>`}</div>`; }).join('')}</div>
+        <button class="btn ghost block" style="margin-top:12px" data-a="create">${icon('plus', 'sm')}Criar novo plano</button>`,
+      actions: {
+        open: (ds) => { closeSheet(); push(PlanEditor(ds.id)); },
+        use: (ds) => { S().activePlanId = ds.id; Store.save(); toast('Plano ativado'); closeSheet(); refresh(); },
+        create: () => { closeSheet(); setTimeout(createSheet, 380); },
+      },
+    });
+    function newPlan() {
+      const p = { id: Store.uid('p'), name: 'Meu plano', goal: '', weeks: 4, startDate: Store.iso(Store.weekStartOf(Store.today(), S().settings.weekStart)), workouts: [{ id: Store.uid('w'), letter: 'A', name: 'Treino A', days: [1], items: [] }] };
+      S().plans.push(p); if (!Store.activePlan()) S().activePlanId = p.id; Store.save(); push(PlanEditor(p.id));
+    }
+    function doImport() {
+      pickFile('.csv,text/csv,text/plain,text/comma-separated-values', false, (text) => {
+        try {
+          const r = Store.importPlanCSV(text);
+          const p = r.plans[0];
+          confirmSheet('Planilha importada', `${r.plans.length} plano(s), ${p.workouts.length} treino(s)${r.created ? ', ' + r.created + ' exercício(s) novo(s) criado(s) sem foto' : ''}. Ativar “${esc(p.name)}” agora?`, 'Ativar', () => { S().activePlanId = p.id; Store.save(); refresh(); });
+          refresh();
+        } catch (err) { toast(err.message || 'Planilha inválida'); }
+      });
+    }
+    return {
+      render() {
+        const act = Store.activePlan(), n = S().plans.length;
+        const head = `<div class="hello"><div class="t"><h1>Planos</h1></div>${n ? `<button class="icon-btn" data-a="plans" aria-label="Meus planos">${icon('layers', 'sm')}</button>` : ''}</div>`;
+        // 7 · Sem plano: convite para começar.
+        if (!act) {
+          return head + `<div class="content"><div class="pl-empty"><div class="ic">${icon('plans', 'lg')}</div><h2>Vamos montar seu treino</h2><p>Leva menos de 1 minuto. Você pode mudar tudo depois.</p></div>
+            ${OPTS.map(([a, ic, t, d, rec]) => `<button class="pl-row press ${rec ? 'rec' : ''}" data-a="${a}"><span class="lt ${rec ? 'on' : ''}">${icon(ic, 'sm')}</span><span class="grow"><b>${t}</b><small>${rec ? 'O app monta para você · recomendado' : d}</small></span>${icon('next', 'sm')}</button>`).join('')}
+            <button class="pl-mini press" style="margin-top:4px" data-a="import">${icon('upload', 'sm')}<span class="grow"><b>Importar planilha</b> · Excel ou Google Planilhas</span>${icon('next', 'sm')}</button>
+            ${n ? `<button class="pl-mini press" style="margin-top:8px" data-a="plans">${icon('layers', 'sm')}<span class="grow"><b>Meus planos</b> · ${n} salvo${n > 1 ? 's' : ''}, nenhum ativo</span>${icon('next', 'sm')}</button>` : ''}</div>`;
+        }
+        // 1 · Plano em foco
+        const wk = Store.planWeek(act), dow = Store.today().getDay();
+        const left = wk.total - wk.n;
+        const pct = Math.min(100, Math.max(0, wk.n / wk.total * 100));
+        const weekTxt = wk.n >= 1 && wk.n <= wk.total ? `<span>Semana ${wk.n} de ${wk.total}</span><span>${left ? left + (left === 1 ? ' semana restante' : ' semanas restantes') : 'Última semana'}</span>`
+          : wk.n > wk.total ? '<span>Duração concluída</span><span>Repita ou crie outro plano</span>' : '<span>Começa em breve</span><span></span>';
+        const rows = act.workouts.map((w) => {
+          const st = Store.workoutStatus(w).status, today = w.days.includes(dow);
+          const tag = st === 'done' ? '<span class="pl-tag ok">Feito</span>' : today ? '<span class="pl-tag fill">Hoje</span>' : st === 'partial' ? '<span class="pl-tag">Em andamento</span>' : icon('next', 'sm');
+          return `<button class="pl-row press" data-a="w" data-id="${w.id}"><span class="lt ${st === 'done' ? 'ok' : today ? 'on' : ''}">${esc(w.letter)}</span><span class="grow"><b class="ellipsis">${esc(w.name)}</b><small>${days(w)} · ${w.items.length} exercício${w.items.length === 1 ? '' : 's'} · ~${Screens.estMinutes(w)} min</small></span>${tag}</button>`;
+        }).join('');
+        const others = n - 1;
+        return head + `<div class="content">
+          <div class="pl-hero"><span class="pl-tag fill">Plano ativo</span><div class="nm">${esc(act.name)}</div><div class="sb">${esc(act.goal || '')}${act.goal ? ' · ' : ''}${act.workouts.length} treino${act.workouts.length === 1 ? '' : 's'}</div>
+            <div class="pl-prog"><i style="width:${pct}%"></i></div><div class="sb pl-wk">${weekTxt}</div>
+            <div class="pl-acts"><button class="btn ghost sm press" data-a="edit" data-id="${act.id}">${icon('edit', 'sm')}Editar plano</button><button class="btn ghost sm press pl-share" data-a="share" aria-label="Compartilhar plano">${icon('share', 'sm')}</button></div></div>
+          <div class="pl-cap"><span>Treinos do plano</span>${act.workouts.length > 1 ? '<button class="link" data-a="edit" data-id="' + act.id + '">Reordenar</button>' : ''}</div>
+          ${rows || '<div class="card small muted">Nenhum treino ainda. Toque em Editar plano para adicionar.</div>'}
+          ${Screens.balanceWarnHTML(act) ? `<div style="margin-top:4px">${Screens.balanceWarnHTML(act)}</div>` : ''}
+          <button class="btn lime block pl-create" data-a="create">${icon('plus', 'sm')}Criar novo plano</button>
+          ${others ? `<button class="pl-mini press" style="margin-top:10px" data-a="plans">${icon('layers', 'sm')}<span class="grow"><b>Meus planos</b> · mais ${others} salvo${others > 1 ? 's' : ''}</span>${icon('next', 'sm')}</button>` : ''}</div>`;
+      },
+      actions: {
+        edit: (ds) => push(PlanEditor(ds.id)),
+        w: (ds) => push(WorkoutEditor(Store.activePlan().id, ds.id)),
+        share: () => { const p = Store.activePlan(); Native.share('Plano ' + p.name, Store.exportPlanCSV(p), p.name.replace(/[^\w\- ]+/g, '') + '.csv'); },
+        create: () => createSheet(),
+        plans: () => plansSheet(),
+        goal: () => push(Screens.GoalWizard()),
+        sports: () => push(Screens.SportList()),
+        models: () => modelsSheet(),
+        new: () => newPlan(),
+        import: () => importSheet(),
+        guide: () => push(TechGuide()),
       },
     };
   }
@@ -790,5 +852,5 @@
     };
   }
 
-  Object.assign(window.Screens, { GymSetup, lineChart, TechGuide, Library, ExerciseDetail, ExerciseForm, Plans, PlanEditor, WorkoutEditor, Progress, SessionDetail, Settings });
+  Object.assign(window.Screens, { PlansCreate: () => Plans().actions.create(), GymSetup, lineChart, TechGuide, Library, ExerciseDetail, ExerciseForm, Plans, PlanEditor, WorkoutEditor, Progress, SessionDetail, Settings });
 })();
