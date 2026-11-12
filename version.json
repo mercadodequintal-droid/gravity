@@ -1,11 +1,17 @@
 {
- "versionCode": 58,
- "versionName": "0.41.0",
- "date": "2026-11-11",
- "apk": "download/Gravity-v0.41.0.apk",
+ "versionCode": 59,
+ "versionName": "0.42.0",
+ "date": "2026-11-12",
+ "apk": "download/Gravity-v0.42.0.apk",
  "notes": [
   {
-   "t": "Troca de exercício"
+   "t": "Tela inicial sem rolar"
+  },
+  {
+   "t": "Dourado mais leve"
+  },
+  {
+   "t": "Boneco sem o quadro preto"
   }
  ]
 }

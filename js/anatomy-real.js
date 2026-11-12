@@ -5,7 +5,7 @@
   'use strict';
   const BODIES = {
     m: {
-      img: 'img/body-m.jpg',
+      img: 'img/body-m.webp',
       views: [
         { cx: 410, parts: [
           ['trapezio', [[395, 145], [378, 150], [350, 162], [322, 175], [305, 180], [340, 183], [378, 173], [400, 166]]],
@@ -42,7 +42,7 @@
       ],
     },
     f: {
-      img: 'img/body-f.jpg',
+      img: 'img/body-f.webp',
       views: [
         { cx: 400.5, parts: [
           ['trapezio', [[392, 172], [375, 178], [345, 190], [318, 200], [345, 204], [372, 196], [393, 190]]],

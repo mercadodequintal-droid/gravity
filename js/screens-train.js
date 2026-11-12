@@ -72,7 +72,8 @@
         const S = Store.state, p = Store.activePlan(), range = Store.weekRange(), t = Store.today();
         const done_ = completedSessions();
         const level = 1 + Math.floor(done_.length / 10);
-        const head = `<div class="topbar"><span class="icon-btn plain" style="visibility:hidden"></span><h1 style="text-align:center;letter-spacing:7px;padding-left:7px;color:var(--gold-2);font-family:var(--display);font-size:17px;font-weight:400">Gravity</h1><button class="icon-btn plain" data-a="settings" aria-label="Configurações">${icon('gear')}</button></div>`;
+        // v0.42: com plano, a foto do atleta fica fixa no topo (à esquerda do GRAVITY); sem a linha "Bom dia".
+        const head = `<div class="topbar">${p ? `<button class="h2-av tb press" data-a="avatar" aria-label="Foto do perfil">${Profile.avatarHTML(26)}</button>` : '<span class="icon-btn plain" style="visibility:hidden"></span>'}<h1 style="text-align:center;letter-spacing:7px;padding-left:7px;color:var(--gold-2);font-family:var(--display);font-size:17px;font-weight:400">Gravity</h1><button class="icon-btn plain" data-a="settings" aria-label="Configurações">${icon('gear')}</button></div>`;
         const who = `<div class="row appear" style="margin:12px 2px 16px"><button class="emblem-ring avatar press" style="width:50px;height:50px;margin:0" data-a="avatar" aria-label="Foto do perfil">${Profile.avatarHTML(30)}</button>
           <div class="grow"><div class="caps" style="font-size:10px">${greeting()}</div><div class="display" style="font-size:20px;letter-spacing:3px;text-transform:uppercase">${esc(S.settings.name || 'Atleta')}</div></div><button class="level" style="margin:0" data-a="medals">Nível ${level}</button></div>`;
         if (!p) {
@@ -258,14 +259,15 @@
     const ranked = vd.filter((r) => r.alvo).map((r) => ({ r, k: r.n / Math.max(1, r.alvo[0]) })).sort((a, b) => a.k - b.k);
     const bars = (vd.some((r) => r.n > 0) ? ranked.slice(0, 3) : ranked.slice(0, 3)).map(({ r }) => `<div><div class="r"><span class="ellipsis">${esc(r.nome)}</span><b class="num">${nf(r.n)}/${r.alvo[0]}</b></div><div class="h2-bar"><i style="width:${Math.min(100, r.n / Math.max(1, r.alvo[0]) * 100)}%;${r.st === 'pouco' || r.st === 'zero' ? 'background:var(--amber)' : r.st === 'alto' ? 'background:#d0803e' : ''}"></i></div></div>`).join('');
     const gaugeLen = 188.5, g = st.power != null ? Math.min(1, st.power / 9001) : 0;
-    return `<div class="content home2 hB">${top}<div class="h2-bento">
+    return `<div class="content home2 hB">${c.upd || ''}<div class="h2-bento">
       <div class="card h2-tile press" data-a="agenda"><div class="caps">Semana</div>${ring(104, 9, pct / 100, 'gold', `<b class="num">${pct}%</b>`)}
         <div class="h2-cnt"><span><i style="background:#2FB36B"></i>${done}/${list.length}</span><span><i style="background:var(--amber)"></i>${partial}</span><span><i style="background:var(--red)"></i>${late}</span></div></div>
       <div class="card h2-tile h2-next">${photo}<div class="in"><span class="h2-tag">${tag}</span><h3>${title}</h3>${w ? `<div class="h2-meta"><span>${items.length} ex</span><span>~${estMinutes(w)} min</span></div>` : ''}${btn('sm')}</div></div>
       <div class="card h2-tile press" data-a="pwOpen"><div class="caps">Nível de poder</div><svg class="h2-gauge" viewBox="0 0 140 78"><path d="M10 70 A60 60 0 0 1 130 70" stroke="rgba(var(--fg-rgb),.08)" stroke-width="8" fill="none" stroke-linecap="round"/><path d="M10 70 A60 60 0 0 1 130 70" stroke="var(--gold)" stroke-width="8" fill="none" stroke-linecap="round" stroke-dasharray="${(g * gaugeLen).toFixed(1)} 400"/><text x="70" y="64" text-anchor="middle" fill="var(--text)" font-family="Oswald" font-size="26">${power}</text></svg><div class="h2-sub">${st.power != null ? 'de 9.001 · ' + esc(st.level) : 'Registre os básicos'}</div></div>
       <div class="card h2-tile wide press" data-a="muscles"><div class="h2-mus"><div class="h2-body">${(() => { const mp = Screens.volumeData().map; return Screens.bodySVG((k) => Screens.VCOL[(mp[k] || {}).st || 'zero'], 104); })()}</div><div class="h2-bars"><div class="caps">Músculos da semana</div>${bars}</div></div></div>
-      <div class="card h2-tile mini press" data-a="progress"><div class="ic">${icon('weight', 'sm')}</div><b class="num">${volume(vol)}</b><small>Volume da semana</small></div>
+      <div class="h2-row3"><div class="card h2-tile mini press" data-a="progress"><div class="ic">${icon('weight', 'sm')}</div><b class="num">${volume(vol)}</b><small>Volume da semana</small></div>
       <div class="card h2-tile mini press" data-a="progress"><div class="ic">${icon('clock', 'sm')}</div><b class="num">${mins} min</b><small>Tempo treinando</small></div>
+      <div class="card h2-tile mini press h2-lvl3" data-a="medals"><div class="ic">${icon('trophy', 'sm')}</div><b class="num">Nível ${level}</b><small>Conquistas</small></div></div>
     </div>${c.extra}</div>`;
   }
 

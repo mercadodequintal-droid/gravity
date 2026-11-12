@@ -703,7 +703,7 @@ body.live-out .rest-pill { visibility: hidden !important; pointer-events: none !
 #splash.has-bg .sp-logo { filter: drop-shadow(0 4px 18px rgba(var(--shadow-rgb), 0.85)); }
 
 /* ---------- mapa muscular realista (v0.19) ---------- */
-.bodymap.real { width: 100%; height: auto !important; max-height: 340px; border-radius: 12px; background: #000; }
+.bodymap.real { width: 100%; height: auto !important; max-height: 340px; border-radius: 12px; background: transparent; }
 .body-switch { width: 168px; margin: 0 auto 10px; }
 .body-switch button { height: 30px; }
 
@@ -1273,3 +1273,19 @@ h1, h2, h3, h4, .card b { overflow-wrap: break-word; hyphens: auto; -webkit-hyph
 .tip-mini b { font-size: 11.5px; font-weight: 600; color: var(--text); line-height: 1.2; }
 #splash.sp2 .sp-photo.logo-only { background-color: #000; background-size: auto 84%; background-position: 50% 3%; }
 .swap-txt{color:var(--gold);font-weight:600;white-space:nowrap}
+
+/* ===== v0.42.0 ===== */
+/* Dourado com fundo grafite (opção B, 12/11): menos "tudo escuro", blocos separados do fundo. */
+:root:not([data-theme]), :root[data-theme="dourado"] {
+  --bg: #121214; --bg-2: #18181b; --card-a: #202024; --card-b: #18181b; --bg-rgb: 18, 18, 20;
+  --line: rgba(217, 178, 95, 0.18); --text-2: #aaa395; --text-3: #77726a;
+}
+/* Tela inicial sem rolagem: foto do atleta no topo; Volume, Tempo e Nível lado a lado. */
+.topbar .h2-av.tb { width: 36px; height: 36px; margin: 0 3px; }
+.h2-row3 { grid-column: span 2; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.h2-row3 .h2-tile.mini { padding: 12px; min-width: 0; }
+.h2-row3 .h2-tile.mini small { display: block; line-height: 1.25; }
+.h2-row3 .h2-tile.mini b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.h2-row3 .h2-lvl3 { border-color: rgba(var(--acc-rgb), 0.5) !important; }
+.h2-row3 .h2-lvl3 .ic { background: var(--gold); color: var(--lime-ink); }
+.h2-row3 .h2-lvl3 b { color: var(--gold-2); }

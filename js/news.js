@@ -4,6 +4,11 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.42.0', date: '2026-11-12', items: [
+      { icon: 'home', t: 'Tela inicial sem rolar', d: 'A sua foto foi para o topo e o Nível virou um quadro ao lado de Volume e Tempo (toque para ver as conquistas). Agora a tela inicial cabe inteira, sem rolar.', main: true },
+      { icon: 'sparkle', t: 'Dourado mais leve', d: 'O tema Dourado trocou o preto puro por grafite: os quadros se destacam do fundo e os textos ficaram mais fáceis de ler.', go: 'theme' },
+      { icon: 'target', t: 'Boneco sem o quadro preto', d: 'O boneco dos músculos agora aparece direto na cor de cada tema, sem o quadrado preto em volta.' },
+    ] },
     { v: '0.41.0', date: '2026-11-11', items: [
       { icon: 'timer', t: 'Troca de exercício', d: 'Um descanso maior só depois da última série de cada exercício, para trocar de aparelho. Ligue para todos em Configurações › Treino (Troca de exercício) ou só em alguns, no editor de cada exercício do plano. No treino, o cronômetro mostra o próximo exercício.', main: true, go: 'swap' },
     ] },
