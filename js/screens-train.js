@@ -308,6 +308,25 @@
     return i < 0 ? 0 : i;
   }
 
+  // Volume da sessão anterior do mesmo treino (para o "↑ x%").
+  function prevVolume(s) {
+    const o = Store.state.sessions.filter((x) => x.workoutId === s.workoutId && x.id !== s.id && x.start < s.start && x.sets.some((y) => y.done)).sort((a, b) => b.start - a.start)[0];
+    return o ? Store.sessionVolume(o) : 0;
+  }
+  // Próximo treino do plano depois deste (o primeiro ainda não feito na semana, na ordem do plano).
+  function nextWorkout(p, w) {
+    const ws = p.workouts, i = ws.indexOf(w);
+    for (let k = 1; k < ws.length; k++) { const o = ws[(i + k) % ws.length]; if (Store.workoutStatus(o).status !== 'done') return o; }
+    return null;
+  }
+  function nextWhen(w) {
+    if (!w.days.length) return 'sem dia fixo';
+    const t = Store.today().getDay();
+    const d = w.days.map((x) => (x - t + 7) % 7).sort((a, b) => a - b);
+    const n = d.find((x) => x > 0); const k = n === undefined ? d[0] : n;
+    return k === 0 ? 'hoje' : k === 1 ? 'amanhã' : Store.WEEKDAYS[(t + k) % 7].toLowerCase();
+  }
+
   // ====================== TREINO (visão geral) ======================
   function WorkoutScreen(wid) {
     const def = {
@@ -319,37 +338,56 @@
         const s = cur || (st.status === 'done' ? st.session : null);
         // "Rodando" = treino aberto agora (não finalizado). Um treino incompleto já salvo deixa trocar de treino.
         const running = cur && !cur.finished && Store.state.activeSessionId === cur.id;
+        const done = !cur && st.status === 'done';
         def.footer = true;
+        const recIds = done && s ? Store.sessionRecords(s).map((r) => r.exId) : [];
         const rows = w.items.map((it, i) => {
           const ex = Store.exercise(it.exId);
-          const pr = s ? Store.itemProgress(s, it) : null;
-          const dots = s ? `<div class="dots">${s.sets.filter((x) => x.itemId === it.id).map((x) => `<i class="${x.done ? 'on' : ''}"></i>`).join('')}</div>` : '';
-          return `<div class="card ex-row press appear" data-a="item" data-i="${i}">${thumb(ex)}<div class="grow"><h4 class="ellipsis">${esc(ex.nome)}</h4>
-            <div class="meta">${Tools.repsText(it, ex)}${Tools.loadText(it.kg, ex) ? ' · ' + Tools.loadText(it.kg, ex) : ''}${Store.isCardio(ex) ? '' : ' · ' + restLabel(it.rest)}${swapTxt(w.items, i)}</div>${techChips(w.items, i)}${dots}</div>
-            <div class="state ${pr && pr.complete ? 'done' : ''}">${pr && pr.complete ? icon('check', 'sm') : '<span class="tiny num">' + (i + 1) + '</span>'}</div></div>`;
+          const pr = s ? Store.itemProgress(s, it) : null, ok = pr && pr.complete;
+          const base = Tools.repsText(it, ex) + (Tools.loadText(it.kg, ex) ? ' · ' + Tools.loadText(it.kg, ex) : '');
+          const meta = s ? base + ' · ' + (ok ? 'feito' : 'falta') : base + (Store.isCardio(ex) ? '' : ' · ' + restLabel(it.rest)) + swapTxt(w.items, i);
+          return `<div class="wk-ex press appear" data-a="item" data-i="${i}"><span class="n ${ok ? 'ok' : ''}">${ok ? icon('check', 'sm') : i + 1}</span>${thumb(ex)}<div class="grow"><b class="ellipsis">${esc(ex.nome)}</b><small>${meta}</small>${techChips(w.items, i)}</div>${recIds.includes(Store.exOf(s, it)) ? '<span class="wk-tag">Recorde</span>' : ''}</div>`;
         }).join('');
-        let footer;
-        if (cur) {
+        const mus = [...new Set(w.items.map((x) => Store.exercise(x.exId).grupo).filter(Boolean))];
+        const sets = workoutSets(w), dow = Store.today().getDay();
+        let tag, info, footer;
+        if (done) {
+          const recs = recIds.length, pv = prevVolume(s), vol = Store.sessionVolume(s);
+          const when = s.date === Store.iso(Store.today()) ? 'Feito hoje' : 'Feito · ' + Store.WEEKDAYS[Store.parseISO(s.date).getDay()].toLowerCase();
+          tag = `<span class="wk-tag ok">${icon('check', 'sm')}${when}</span>`;
+          info = `<div class="wk-nums"><div><b class="num">${Store.sessionDuration(s)}</b><small>minutos</small></div><div><b class="num">${volume(vol)}</b><small>volume${pv ? ' · ' + (vol >= pv ? '↑ ' : '↓ ') + Math.abs(Math.round((vol / pv - 1) * 100)) + '%' : ''}</small></div><div><b class="num">${recs}</b><small>${recs === 1 ? 'recorde' : 'recordes'}</small></div></div>`;
+          footer = `<button class="btn ghost" data-a="start">${icon('repeat', 'sm')}Treinar de novo</button><button class="btn lime" data-a="summary">Ver resumo</button>`;
+        } else if (cur) {
           const pr = Store.sessionProgress(cur);
-          footer = `<button class="btn lime" data-a="continue">Continuar (${pr.complete}/${pr.total})<span class="arrow">${icon('arrow', 'sm')}</span></button>`;
-        } else if (st.status === 'done') {
-          footer = `<button class="btn ghost" data-a="summary">Ver resumo</button><button class="btn lime" data-a="start">${icon('repeat', 'sm')}Treinar de novo</button>`;
+          const left = w.items.filter((it) => !Store.itemProgress(cur, it).complete).map((it) => Store.exercise(Store.exOf(cur, it)).nome);
+          const missing = pr.total - pr.complete;
+          tag = `<span class="wk-tag warn">${running ? 'Em andamento' : 'Incompleto'} · ${pr.complete} de ${pr.total}</span>`;
+          const dm = Store.sessionDuration(cur);
+          info = `<div class="wk-prog"><i style="width:${pr.total ? Math.round(pr.complete / pr.total * 100) : 0}%"></i></div><div class="wk-sub">${dm ? dm + ' min' : ''}${left.length ? (dm ? ' · ' : '') + 'faltam ' + esc(left.length > 2 ? left.slice(0, 2).join(', ') + ' e mais ' + (left.length - 2) : left.join(' e ')) : ''}</div>`;
+          footer = `<button class="btn lime" data-a="continue">${icon('play', 'sm')}${missing > 0 ? 'Continuar · faltam ' + missing : 'Continuar'}</button>`;
         } else {
-          footer = `<button class="btn lime" data-a="start">Começar treino<span class="arrow">${icon('play', 'sm')}</span></button>`;
+          const lab = w.days.includes(dow) ? 'Hoje' : st.status === 'late' ? 'Atrasado' : daysText(w.days);
+          tag = `<span class="wk-tag ${w.days.includes(dow) ? 'fill' : st.status === 'late' ? 'late' : ''}">${lab}</span>`;
+          info = `<div class="wk-sub">${w.items.length} exercícios · ~${estMinutes(w)} min · ${sets} séries${mus.length ? ' · ' + esc(mus.slice(0, 3).join(', ')) : ''}</div>`;
+          footer = `<button class="btn lime" data-a="start">${icon('play', 'sm')}Começar treino</button>`;
         }
+        const links = [];
+        if (!running && !done && w.items.length && estMinutes(w) > 25) links.push(`<button class="press" data-a="quick">${icon('timer', 'sm')}Pouco tempo?</button>`);
+        if (!running && !done && fw.plan.workouts.length > 1) links.push(`<button class="press" data-a="switchW">${icon('repeat', 'sm')}Trocar treino</button>`);
+        const nx = done ? nextWorkout(fw.plan, w) : null;
+        const next = nx ? `<div class="caps wk-cap">Próximo treino</div><button class="wk-next press" data-a="open" data-id="${nx.id}"><span class="lt">${esc(nx.letter)}</span><span class="grow"><b class="ellipsis">${esc(nx.name)}</b><small>${nextWhen(nx)} · ${nx.items.length} exercícios · ~${estMinutes(nx)} min</small></span>${icon('next', 'sm')}</button>` : '';
         return `<div class="topbar"><button class="icon-btn" data-a="back">${icon('back')}</button><h1>Treino ${esc(w.letter)}</h1><button class="icon-btn" data-a="edit">${icon('edit', 'sm')}</button></div>
-          <div class="content"><div class="row appear" style="margin:4px 0 6px;gap:14px"><div class="letter ${STATUS[st.status].cls}" style="width:64px;height:64px;font-size:28px;border-radius:20px">${esc(w.letter)}</div>
-          <div class="grow"><div style="font-size:22px;font-weight:700;letter-spacing:-.3px">${esc(w.name)}</div><div class="small muted">${daysText(w.days)} · ${w.items.length} exercícios · ~${estMinutes(w)} min</div></div></div>
-          <div style="margin:10px 0 14px">${statusChip(st)}</div>
-          ${!running && w.items.length && estMinutes(w) > 25 ? `<button class="quick-link" data-a="quick">${icon('timer', 'sm')}Pouco tempo hoje?</button>` : ''}
-          ${!running && fw.plan.workouts.length > 1 ? `<button class="switch-w press" data-a="switchW">${icon('repeat', 'sm')}<span class="grow"><b>Trocar de treino</b><small>Fazer outro treino do plano hoje</small></span>${icon('next', 'sm')}</button>` : ''}
-          <div class="list">${rows || '<div class="card empty">Nenhum exercício. Toque no lápis para montar o treino.</div>'}</div></div>
-          <div class="footer">${footer}</div>`;
+          <div class="content"><div class="wk-hero appear"><div class="ph" style="background-image:url('${homePhoto(Store.today().getTime())}')"></div><div class="in">${tag}<h2>${esc(w.name)}</h2>${info}</div></div>
+          ${links.length ? `<div class="wk-links">${links.join('')}</div>` : ''}${next}
+          <div class="caps wk-cap">${done ? 'Exercícios feitos' : 'Exercícios'}</div>
+          <div class="wk-list">${rows || '<div class="card empty">Nenhum exercício. Toque no lápis para montar o treino.</div>'}</div></div>
+          <div class="footer wk-foot">${footer}</div>`;
       },
       actions: {
         back: pop,
         edit: () => { const fw = Store.findWorkout(wid); push(Screens.WorkoutEditor(fw.plan.id, wid)); },
         switchW: () => pickWorkout(wid),
+        open: (ds) => UI.replace(WorkoutScreen(ds.id), 1),
         start: () => {
           const fw = Store.findWorkout(wid);
           if (!fw.workout.items.length) { toast('Adicione exercícios primeiro'); return; }
@@ -380,38 +418,68 @@
     if (Store.state.settings.checkin && !Store.deloadActive()) checkinSheet(go); else go(null);
   }
 
-  // Treino rápido: "quanto tempo você tem?" → encurta descanso e tira séries para caber.
+  // Treino rápido: régua de tempo → encurta descanso e tira séries para caber (v0.45: régua).
   function quickSheet(wid) {
     const w = Store.findWorkout(wid).workout, full = estMinutes(w);
-    const opts = [15, 20, 25, 30, 40, 50, 60].filter((m) => m < full - 4).slice(-4);
+    let min = Math.max(10, Math.min(full - 1, Math.round(full * 0.66)));
+    const hh = (d) => String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    const body = () => {
+      const all = min >= full, q = all ? null : Store.quickPlan(w, min), est = all ? full : q.est;
+      const rows = w.items.map((it, i) => { const e = Store.exercise(it.exId), a0 = Number(it.sets) || 1, n = all ? a0 : q.sets[i]; return `<div class="pq-row">${thumb(e)}<span class="nm">${esc(e.nome)}</span><span class="st ${n < a0 ? 'cut' : ''}">${n < a0 ? `<s>${a0}×</s>` : ''}${n} ${n === 1 ? 'série' : 'séries'}</span></div>`; }).join('');
+      return `<div class="pq-top"><div class="pq-big num">${est}<small>min</small></div><div class="pq-end">termina por volta das<b class="num">${hh(new Date(Date.now() + est * 60000))}</b></div></div>
+        <div class="pq-sum"><span>${icon('check', 'sm')}todos os ${w.items.length} exercícios</span>${all ? '<span>treino inteiro</span>' : `<span>descanso ${Math.round(q.restF * 100)}%</span>${q.cut ? `<span>${q.cut} ${q.cut === 1 ? 'série' : 'séries'} a menos</span>` : ''}${q.est > min + 2 ? '<span>não coube todo</span>' : ''}`}</div>
+        <div class="pq-list">${rows}</div>
+        <button class="btn lime block pl-create" style="margin-top:14px" data-a="go">${icon('play', 'sm')}${all ? 'Começar o treino inteiro' : 'Começar com ' + est + ' min'}</button>`;
+    };
+    const ticks = [10, 15, 20, 25, 30, 40, 50].filter((m) => m < full - 3).concat([full]);
+    const pc = (v) => ((v - 10) / Math.max(1, full - 10)) * 100;
     sheet({
-      render: () => `<h3>Pouco tempo hoje?</h3><div class="desc">O treino completo leva ~${full} min. Escolha quanto tempo você tem: o app encurta o descanso e tira algumas séries, mantendo todos os exercícios.</div>
-        <div class="list">${opts.map((m) => { const q = Store.quickPlan(w, m); return `<button class="menu-item" data-a="go" data-m="${m}"><span class="ic num" style="font-family:var(--display);font-size:15px">${m}'</span><span class="grow">${m} minutos<div class="small muted">~${q.est} min · descanso ${Math.round(q.restF * 100)}%${q.cut ? ' · ' + q.cut + (q.cut === 1 ? ' série a menos' : ' séries a menos') : ''}${q.est > m + 2 ? ' · não coube todo' : ''}</div></span>${icon('play', 'sm')}</button>`; }).join('')}</div>`,
-      actions: { go: (ds) => { closeSheet(); setTimeout(() => beginWorkout(wid, Number(ds.m)), 300); } },
+      render: () => `<h3>Pouco tempo hoje?</h3><div class="desc" style="margin-bottom:6px">Treino completo: ~${full} min. Arraste para o tempo que você tem.</div>
+        <div class="pq-rule"><input type="range" min="10" max="${full}" step="1" value="${min}" data-in="m" style="--p:${pc(min)}%">${ticks.map((m) => `<span class="tk" style="left:${pc(m)}%">${m === full ? m + ' (todo)' : m}</span>`).join('')}</div>
+        <div id="pqBody">${body()}</div>
+        <div class="pq-note">Os exercícios com mais séries perdem uma primeiro; nenhum sai do treino.</div>`,
+      actions: {
+        m: (ds, el) => { min = Number(el.value); el.style.setProperty('--p', pc(min) + '%'); const box = document.getElementById('pqBody'); if (box) box.innerHTML = body(); },
+        go: () => { const m = min; closeSheet(); setTimeout(() => beginWorkout(wid, m >= full ? null : m), 300); },
+      },
     });
   }
 
-  // Como você está hoje: sono, energia e dor antes de começar. Dia ruim → sugere aliviar o treino.
+  // Como você está hoje: um toque (3 rostos), uma vez por dia. "Detalhar" abre sono, energia e dor.
+  const FACES = [
+    { nome: 'Cansado', sub: 'dormi mal / dolorido', c: { sono: 0, energia: 0, dor: 1 } },
+    { nome: 'Normal', sub: 'como sempre', c: { sono: 1, energia: 1, dor: 2 } },
+    { nome: 'Ótimo', sub: 'com energia', c: { sono: 2, energia: 2, dor: 2 } },
+  ];
+  const face = (m) => `<svg viewBox="0 0 40 40" width="40" height="40"><circle cx="20" cy="20" r="17" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="14" cy="16" r="2" fill="currentColor"/><circle cx="26" cy="16" r="2" fill="currentColor"/>${m === 0 ? '<path d="M13 28q7-6 14 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' : m === 1 ? '<path d="M13 26h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' : '<path d="M12 24q8 7 16 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'}</svg>`;
   function checkinSheet(go) {
-    const c = { sono: 1, energia: 1, dor: 2 };
-    const Q = [['sono', 'Sono', ['Ruim', 'Ok', 'Bom']], ['energia', 'Energia', ['Baixa', 'Ok', 'Alta']], ['dor', 'Dor ou cansaço muscular', ['Muita', 'Pouca', 'Nenhuma']]];
+    const S = Store.state.settings, today = Store.iso(Store.today());
+    // Só uma vez por dia: no segundo treino do dia, vale a resposta da primeira vez.
+    if (S.checkinLast && S.checkinLast.date === today) { go(S.checkinLast.c); return; }
+    let c = Object.assign({}, FACES[1].c), pick = 1, detail = false;
+    const Q = [['sono', 'Sono', ['Ruim', 'Ok', 'Bom']], ['energia', 'Energia', ['Baixa', 'Ok', 'Alta']], ['dor', 'Dor muscular', ['Muita', 'Pouca', 'Nenhuma']]];
+    const remember = (v) => { S.checkinLast = { date: today, c: v }; Store.save(); };
     sheet({
       render: () => {
         const lv = Store.checkinLevel(c);
-        const tip = lv >= 2 ? '<b>Dia puxado.</b> Sugestão: 10% menos carga e uma série a menos nos exercícios com 3 ou mais.' : lv ? '<b>Dia mais pesado que o normal.</b> Sugestão: 10% menos carga hoje.' : '';
-        return `<h3>Como você está hoje?</h3><div class="desc">Leva 3 toques. Se o dia estiver ruim, o app sugere aliviar o treino.</div>
-          ${Q.map(([k, l, o]) => `<div class="field" style="margin-top:12px"><label>${l}</label><div class="seg">${o.map((t, v) => `<button class="${c[k] === v ? 'on' : ''}" data-a="v" data-k="${k}" data-v="${v}">${t}</button>`).join('')}</div></div>`).join('')}
-          ${lv ? `<div class="suggest" style="margin-top:14px">${icon('sparkle', 'sm')}<span>${tip}</span></div>
-            <div class="btn-row" style="margin-top:14px"><button class="btn ghost" data-a="normal">Treinar normal</button><button class="btn lime" data-a="adj">Aliviar hoje</button></div>`
-          : `<button class="btn lime block" style="margin-top:16px" data-a="normal">Começar treino</button>`}
+        const tip = lv >= 2 ? '10% menos carga e uma série a menos nos exercícios com 3 ou mais.' : '10% menos carga hoje.';
+        return `<h3>Como você está hoje?</h3><div class="desc">Um toque. Se o dia estiver ruim, o app alivia o treino.</div>
+          ${detail ? Q.map(([k, l, o]) => `<div class="ck-q"><span>${l}</span><div class="opts">${o.map((t, v) => `<button class="${c[k] === v ? 'on' : ''}" data-a="v" data-k="${k}" data-v="${v}">${face(v)}${t}</button>`).join('')}</div></div>`).join('')
+            : `<div class="ck-faces">${FACES.map((f, i) => `<button class="${pick === i ? 'on' : ''}" data-a="f" data-i="${i}">${face(i)}<b>${f.nome}</b>${f.sub}</button>`).join('')}</div>
+               <button class="ck-more" data-a="more">${icon('down', 'sm')}Detalhar (sono, energia e dor)</button>`}
+          ${lv ? `<div class="ck-sug">${icon('sparkle', 'sm')} <b>Sugestão para hoje:</b> ${tip}</div>
+            <div class="ck-btns"><button class="btn ghost" data-a="normal">Treinar normal</button><button class="btn lime pl-create" data-a="adj">Aliviar hoje</button></div>`
+          : `<button class="btn lime block pl-create" style="margin-top:16px" data-a="normal">Começar treino</button>`}
           <div class="row" style="justify-content:space-between;margin-top:12px"><button class="link small muted" data-a="skip">Pular</button><button class="link small muted" data-a="never">Não perguntar mais</button></div>`;
       },
       actions: {
+        f: (ds) => { pick = Number(ds.i); c = Object.assign({}, FACES[pick].c); Native.vibrate(6); sheetRefresh(); },
+        more: () => { detail = true; sheetRefresh(); },
         v: (ds) => { c[ds.k] = Number(ds.v); Native.vibrate(6); sheetRefresh(); },
-        adj: () => { closeSheet(); go(c); },
-        normal: () => { closeSheet(); go(Object.assign({}, c, { forceNormal: true })); },
+        adj: () => { remember(c); closeSheet(); go(c); },
+        normal: () => { const v = Object.assign({}, c, { forceNormal: true }); remember(v); closeSheet(); go(v); },
         skip: () => { closeSheet(); go(null); },
-        never: () => { Store.state.settings.checkin = false; Store.save(); closeSheet(); toast('Não vou mais perguntar. Dá para ligar de novo em Configurações.'); go(null); },
+        never: () => { S.checkin = false; Store.save(); closeSheet(); toast('Não vou mais perguntar. Dá para ligar de novo em Configurações.'); go(null); },
       },
     });
   }
@@ -438,13 +506,15 @@
   function painSheet(s, it, done) {
     const exId = Store.exOf(s, it), ex = Store.exercise(exId);
     let where = null, lvl = 0, note = '';
+    const LC = ['#d9b25f', '#d0803e', '#c8574b'];
     sheet({
       render: () => `<h3>Dor ou incômodo</h3><div class="desc">Em ${esc(ex.nome)}. Fica registrado; se repetir, o app avisa e sugere alternativas.</div>
-        <div class="field"><label>Onde?</label><div class="chip-pick">${Store.PAIN_SPOTS.map((p) => `<button class="${where === p ? 'on' : ''}" data-a="w" data-v="${p}">${p}</button>`).join('')}</div></div>
-        <div class="field"><label>Quanto?</label><div class="seg">${Store.PAIN_LEVELS.map((l, v) => `<button class="${lvl === v ? 'on' : ''}" data-a="l" data-v="${v}">${l}</button>`).join('')}</div></div>
-        <div class="field"><label>Observação (opcional)</label><input class="input" data-in="n" value="${esc(note)}" placeholder="Ex.: na descida, pegada aberta"></div>
-        <button class="btn lime block" style="margin-top:16px" data-a="ok" ${where ? '' : 'disabled'}>Registrar</button>`,
+        <div class="fx-cap">Onde?</div><div class="fx-grid">${Store.PAIN_SPOTS.map((p) => `<button class="${where === p ? 'on' : ''}" data-a="w" data-v="${p}">${p}</button>`).join('')}</div>
+        <div class="fx-cap">Quanto?</div><div class="fx-lv">${Store.PAIN_LEVELS.map((l, v) => `<button class="${lvl === v ? 'on' : ''}" data-a="l" data-v="${v}" style="--lc:${LC[v]}">${l}<i></i></button>`).join('')}</div>
+        <div class="fx-cap">Observação (opcional)</div><input class="input" data-in="n" value="${esc(note)}" placeholder="Ex.: na descida, pegada aberta">
+        <div class="fx-btns wide"><button class="btn ghost" data-a="no">Cancelar</button><button class="btn lime pl-create" data-a="ok" ${where ? '' : 'disabled'}>Registrar</button></div>`,
       actions: {
+        no: closeSheet,
         w: (ds) => { where = ds.v; Native.vibrate(6); sheetRefresh(); },
         l: (ds) => { lvl = Number(ds.v); Native.vibrate(6); sheetRefresh(); },
         n: (ds, el) => { note = el.value; },
@@ -503,12 +573,25 @@
     });
   }
 
-  // Escolher outro treino do plano (em vez do treino do dia).
+  // Escolher outro treino do plano: lista informativa (músculos, tempo, estado; atrasados primeiro; aviso de músculo de ontem).
   function pickWorkout(currentId, title) {
     const p = Store.activePlan(); if (!p) return;
+    const t = Store.today(), dow = t.getDay(), yIso = Store.iso(Store.addDays(t, -1)), tIso = Store.iso(t);
+    const yGroups = new Set(Store.state.sessions.filter((x) => x.date === yIso).flatMap((x) => x.sets.filter((y) => y.done).map((y) => (Store.exercise(y.exId) || {}).grupo)).filter(Boolean));
+    const groupsOf = (w) => [...new Set(w.items.map((x) => Store.exercise(x.exId).grupo).filter(Boolean))];
+    const rank = (o) => (o.st.status === 'late' ? 0 : o.w.days.includes(dow) && o.st.status !== 'done' ? 1 : o.st.status === 'done' ? 3 : 2);
+    const list = p.workouts.map((w, i) => ({ w, i, st: Store.workoutStatus(w) })).sort((a, b) => rank(a) - rank(b) || a.i - b.i);
+    const rec = list.find((o) => o.st.status === 'late');
+    const row = (o) => {
+      const { w, st } = o, g = groupsOf(w), rep = g.filter((x) => yGroups.has(x));
+      const done = st.status === 'done', late = st.status === 'late', today = w.days.includes(dow) && !done;
+      const dd = st.session && st.session.date;
+      const tag = done ? `<span class="wk-tag ok">${dd === yIso ? 'Feito ontem' : dd === tIso ? 'Feito hoje' : 'Feito'}</span>` : late ? '<span class="wk-tag late">Atrasado</span>' : today ? '<span class="wk-tag fill">Hoje</span>' : st.status === 'partial' ? `<span class="wk-tag warn">${st.p.complete}/${st.p.total}</span>` : icon('next', 'sm');
+      return `<button class="tt-row press ${o === rec ? 'rec' : ''} ${w.id === currentId ? 'cur' : ''}" data-a="pick" data-id="${w.id}"><span class="lt ${done ? 'ok' : late ? 'late' : today ? 'on' : ''}">${esc(w.letter)}</span><span class="g"><b class="ellipsis">${esc(w.name)}</b><small>${esc(g.slice(0, 3).join(', ') || w.items.length + ' exercícios')} · ~${estMinutes(w)} min${w.id === currentId ? ' · aberto agora' : ''}</small>${rep.length && !done ? `<span class="tt-warn">${icon('alert', 'sm')}${esc(rep.join(' e '))} ${rep.length > 1 ? 'foram treinados' : 'foi treinado'} ontem</span>` : ''}</span>${tag}</button>`;
+    };
     sheet({
       render: () => `<h3>${title || 'Trocar de treino'}</h3><div class="desc">Escolha o treino que você vai fazer agora.</div>
-        <div class="list">${p.workouts.map((w) => { const st = Store.workoutStatus(w); return `<button class="menu-item ${w.id === currentId ? 'on' : ''}" data-a="pick" data-id="${w.id}"><span class="letter ${STATUS[st.status].cls}" style="width:38px;height:38px;font-size:17px;border-radius:12px;flex:none">${esc(w.letter)}</span><span class="grow">${esc(w.name)}<div class="small muted">${w.items.length} exercícios · ${STATUS[st.status].label || ''}${w.id === currentId ? ' · aberto agora' : ''}</div></span>${icon('next', 'sm')}</button>`; }).join('')}</div>`,
+        ${list.map(row).join('')}<div class="tt-warn" style="color:var(--text-2);margin-top:4px">${icon('info', 'sm')}Atrasados primeiro; aviso quando repete músculos de ontem.</div>`,
       actions: {
         pick: (ds) => { closeSheet(); if (ds.id === currentId) return; setTimeout(() => (currentId ? UI.replace(WorkoutScreen(ds.id), 1) : push(WorkoutScreen(ds.id))), 300); },
       },
@@ -524,8 +607,17 @@
   ];
   const feelOf = (rir) => (rir >= 3 ? EFFORT[2] : rir >= 1 ? EFFORT[1] : EFFORT[0]);
 
+  // Jeito do treino de hoje (rápido, aliviado, semana leve): um selo ao lado do cronômetro, para o treino todo.
+  function modeChip(s) {
+    const m = [];
+    if (s.quick) m.push('Rápido');
+    if (s.checkin && s.checkin.adj && !s.deload) m.push(m.length ? 'aliviado' : 'Aliviado');
+    if (s.deload) m.push(m.length ? 'semana leve' : 'Semana leve');
+    return m.length ? `<span class="av-top" data-a="modeInfo">${m.join(' · ')}</span>` : '';
+  }
   function Player(sid, startIdx) {
     let idx = startIdx || 0, elapsedT = null, scrollT = null, rirFor = null, rirT = null;
+    const avOpen = {}; // itens com "ver todos" aberto
     const ctx = () => { const s = Store.session(sid); const fw = Store.findWorkout(s.workoutId); return { s, w: fw.workout, items: fw.workout.items }; };
     const exIdOf = (s, it) => Store.exOf(s, it);
 
@@ -553,7 +645,7 @@
       if (sides) val = `<span class="sd">D</span>${Store.sideR(x)}<span class="sl">/</span><span class="sd">E</span>${Store.sideL(x)}`;
       const btn = x.time && !x.done ? `<button class="check play" data-a="play" data-set="${x.id}">${icon('play')}</button>` : `<button class="check" data-a="toggle" data-set="${x.id}">${icon('check')}</button>`;
       const row = `<div class="set ${x.done ? 'done' : ''} ${x.sub ? 'sub' : ''} ${x.warm ? 'warm' : ''}" data-set="${x.id}"><span class="n num">${x.sub ? icon(x.warm ? 'flame' : 'next', 'sm') : x.n}</span>
-        <div class="stepper"><button data-a="kgm" data-set="${x.id}">${icon('minus', 'sm')}</button><div class="val" data-a="kgEdit" data-set="${x.id}"><b class="num">${kgVal(x.kg)}</b><small>${kgSmall}</small></div><button data-a="kgp" data-set="${x.id}">${icon('plus', 'sm')}</button></div>
+        <div class="stepper"><button data-a="kgm" data-set="${x.id}">${icon('minus', 'sm')}</button><div class="val" data-a="kgEdit" data-set="${x.id}"><b class="num">${kgVal(x.kg)}</b><small>${kgSmall}</small>${x.upFrom != null && Number(x.kg) > x.upFrom ? `<span class="av-up">↑ ${nf(Number(x.kg) - x.upFrom)}</span>` : ''}</div><button data-a="kgp" data-set="${x.id}">${icon('plus', 'sm')}</button></div>
         <div class="stepper"><button data-a="rm" data-set="${x.id}">${icon('minus', 'sm')}</button><div class="val ${sides ? 'uni' : ''}" data-a="rEdit" data-set="${x.id}"><b class="num">${val}</b><small>${sides && !x.rir && !x.target ? 'cada lado' : repSmall}</small></div><button data-a="rp" data-set="${x.id}">${icon('plus', 'sm')}</button></div>
         ${btn}</div>`;
       // Pergunta rápida de esforço logo após concluir (some sozinha).
@@ -569,19 +661,21 @@
       const pr = Store.itemProgress(s, it);
       const last = Store.lastSetsFor(exId, s.id);
       const sug = Store.loadSuggestion(it, s.id, exId);
-      const sugTxt = sug && (sug.why === 'range' ? `Você fez ${sug.hi} repetições em todas as séries (faixa ${sug.lo}–${sug.hi}). <b>Subir para ${kg(sug.to)} e voltar para ${sug.lo}?</b>`
-        : sug.why === 'rir' ? `Na última vez as séries foram tranquilas. <b>Subir para ${kg(sug.to)}?</b>` : `Você completou tudo nas 2 últimas vezes. <b>Subir para ${kg(sug.to)}?</b>`);
-      const sugHTML = sug && !s.deload && !(s.rangeSkip || {})[it.id] && sets.some((x) => !x.done && !x.warm && x.kg < sug.to) ? `<button class="suggest" data-a="applySug" data-i="${i}" data-kg="${sug.to}" style="width:100%;text-align:left">${icon('sparkle', 'sm')}<span>${sugTxt}</span></button>` : '';
-      const lastHTML = last ? `<div class="small faint" style="margin-top:10px">Última vez: ${last.map((x) => (x.time ? UI.secs(x.reps) : x.repsR != null && x.repsR !== x.repsL ? nf(x.kg) + '×' + x.repsR + '/' + x.repsL : Store.isBodyweight(x.exId) ? (Number(x.kg) ? (x.kg > 0 ? '+' : '−') + nf(Math.abs(x.kg)) + '×' : '') + x.reps : nf(x.kg) + '×' + x.reps)).join(' · ')}</div>` : '';
-      const pin = Tools.pinOf(exId);
+      // v0.45: avisos inteligentes. Um por vez (dor → sem evoluir → subir carga); os outros em "ver todos".
+      // Dourado = oportunidade (subir carga, com "Aplicar"); laranja = atenção (dor, sem evoluir, com "Ver").
       const live = !s.finished && Store.state.activeSessionId === s.id;
+      const showSug = sug && !s.deload && !(s.rangeSkip || {})[it.id] && sets.some((x) => !x.done && !x.warm && x.kg < sug.to);
       const stall = live && !s.deload && !pr.complete && Store.stallOf(exId, s.id);
       const pa = live && Store.painAlert(exId, s.id);
-      const painHTML = pa ? `<button class="suggest warn" data-a="painAlert" data-i="${i}" style="width:100%;text-align:left">${icon('alert', 'sm')}<span><b>${esc(pa.where)} incomodou ${pa.n} vezes neste exercício.</b> Toque para ver alternativas.</span></button>` : '';
-      const stallHTML = stall ? `<button class="suggest warn" data-a="stall" data-i="${i}" style="width:100%;text-align:left">${icon('info', 'sm')}<span><b>3 treinos sem evoluir neste exercício.</b> Toque para ver o que fazer.</span></button>` : '';
-      const quickHTML = s.quick ? `<div class="suggest" style="margin-top:10px">${icon('timer', 'sm')}<span><b>Treino rápido (~${s.quick.min} min):</b> descanso mais curto e menos séries.</span></div>` : '';
-      const adjHTML = quickHTML + (s.checkin && s.checkin.adj && !s.deload ? `<div class="suggest" style="margin-top:10px">${icon('sparkle', 'sm')}<span><b>Treino aliviado hoje:</b> 10% menos carga${s.checkin.adj >= 2 ? ' e uma série a menos' : ''}, porque o dia está puxado.</span></div>` : '');
-      const deloadHTML = adjHTML + (s.deload ? `<div class="suggest" style="margin-top:10px">${icon('sparkle', 'sm')}<span><b>Semana leve:</b> menos séries e 10% menos carga para o corpo recuperar.</span></div>` : '');
+      const av = [];
+      if (pa) av.push({ warn: true, ic: 'alert', t: `${esc(pa.where)} incomodou ${pa.n} vezes aqui`, d: 'Veja alternativas que poupam a região', a: 'painAlert', b: 'Ver' });
+      if (stall) av.push({ warn: true, ic: 'info', t: '3 treinos sem evoluir', d: 'Veja o que mudar para voltar a progredir', a: 'stall', b: 'Ver' });
+      if (showSug) av.push({ ic: 'sparkle', t: `Hora de subir: ${kg(sug.to)}`, d: sug.why === 'range' ? `Você fez ${sug.hi} reps em todas as séries · depois volta para ${sug.lo}` : sug.why === 'rir' ? 'As séries foram tranquilas na última vez' : 'Você fez tudo nas 2 últimas vezes', a: 'applySug', b: 'Aplicar', kg: sug.to });
+      const avCard = (v, k) => `<div class="av-one ${v.warn ? 'warn' : ''}" ${k ? 'style="margin-top:6px"' : ''}><span class="ic">${icon(v.ic, 'sm')}</span><span class="t"><b>${v.t}</b>${v.d}</span><button class="go" data-a="${v.a}" data-i="${i}"${v.kg ? ` data-kg="${v.kg}"` : ''}>${v.b}</button></div>`;
+      const avHTML = !av.length ? '' : (avOpen[it.id] ? av.map(avCard).join('') : avCard(av[0], 0))
+        + (av.length > 1 ? `<button class="av-more" data-a="avAll" data-i="${i}"><span>${avOpen[it.id] ? av.length + ' avisos neste exercício' : '+' + (av.length - 1) + (av.length > 2 ? ' avisos' : ' aviso') + ' neste exercício'}</span><b>${avOpen[it.id] ? 'recolher' : 'ver todos'}</b></button>` : '');
+      const lastHTML = last ? `<div class="small faint" style="margin-top:10px">Última vez: ${last.map((x) => (x.time ? UI.secs(x.reps) : x.repsR != null && x.repsR !== x.repsL ? nf(x.kg) + '×' + x.repsR + '/' + x.repsL : Store.isBodyweight(x.exId) ? (Number(x.kg) ? (x.kg > 0 ? '+' : '−') + nf(Math.abs(x.kg)) + '×' : '') + x.reps : nf(x.kg) + '×' + x.reps)).join(' · ')}</div>` : '';
+      const pin = Tools.pinOf(exId);
       const pending = items.findIndex((y) => !Store.itemProgress(s, y).complete);
       const doneBanner = live && pr.complete ? `<div class="done-banner" data-done-banner><span class="db-ic">${icon('check', 'sm')}</span><span class="grow"><b>Exercício finalizado</b><small>${sets.filter((x) => x.done).length} séries feitas${pending >= 0 ? ' · ainda faltam ' + items.filter((y) => !Store.itemProgress(s, y).complete).length + ' exercício(s)' : ' · treino completo'}</small></span>${pending >= 0 ? `<button data-a="go" data-i="${pending}">Ir ao próximo</button>` : `<button data-a="finish">Finalizar</button>`}</div>` : '';
       return `${doneBanner}<div class="player-img">${imgHTML(ex, '', true)}<div class="fade"></div><span class="chip count num">${i + 1} / ${items.length}</span>
@@ -593,7 +687,7 @@
         <div class="quick-row">${ex.tipo === 'tempo' ? '' : `<button data-a="warm" data-i="${i}">${icon('flame', 'sm')}Aquecer</button>`}${ex.tipo === 'tempo' || Store.isCardio(ex) ? '' : `<button data-a="metro" data-i="${i}">${icon('timer', 'sm')}Metrônomo</button>`}<button data-a="swap" data-i="${i}">${icon('repeat', 'sm')}Trocar</button>${pin ? '' : `<button data-a="pin" data-i="${i}">${icon('note', 'sm')}Nota fixa</button>`}${live ? `<button data-a="pain" data-i="${i}">${icon('alert', 'sm')}Dor</button>` : ''}</div>
         ${techBanner(items, i)}
         ${it.note ? `<div class="small muted" style="margin-top:10px">${icon('note', 'sm')} ${esc(it.note)}</div>` : ''}
-        ${deloadHTML}${painHTML}${stallHTML}${sugHTML}
+        ${avHTML}
         <div class="sets"><div class="sets-head"><span>#</span><span>Carga</span><span>${ex.tipo === 'tempo' ? 'Tempo' : 'Reps'}</span><span></span></div>${sets.map((x) => setRow(x, last, Store.isUni(it, ex))).join('')}</div>
         <button class="add-set" data-a="addSet" data-i="${i}">${icon('plus', 'sm')}Adicionar série</button>
         ${lastHTML}
@@ -608,7 +702,8 @@
       const cur = items[idx] && Store.itemProgress(s, items[idx]).complete;
       const prev = `<button class="btn ghost" style="flex:0 0 52px;padding:0;${idx === 0 ? 'opacity:.4' : ''}" data-a="prev" ${idx === 0 ? 'disabled' : ''}>${icon('back')}</button>`;
       if (idx === items.length - 1 || allDone) return prev + `<button class="btn lime" data-a="finish">${allDone ? 'Finalizar treino' : 'Finalizar'}<span class="arrow">${icon('check', 'sm')}</span></button>`;
-      return prev + `<button class="btn ${cur ? 'lime' : 'primary'}" data-a="next">Próximo exercício<span class="arrow">${icon('next', 'sm')}</span></button>`;
+      const nx = items[idx + 1] && Store.exercise(exIdOf(s, items[idx + 1]));
+      return prev + `<button class="btn ${cur ? 'lime' : 'primary'} next-ex" data-a="next"><span class="nx-t">Próximo${nx ? ' · <b>' + esc(nx.nome) + '</b>' : ' exercício'}</span><span class="arrow">${icon('next', 'sm')}</span></button>`;
     }
 
     function updatePage(i) {
@@ -690,9 +785,13 @@
       const rec = Analytics.newRecord(x);
       if (rec) { UI.prBurst(rec.tipo, exName + ' · ' + rec.txt); Voice.say('Novo recorde no ' + exName + '!', 'recordes'); }
       if (Store.state.settings.askRir && !x.warm && !x.time && !x.sub) {
-        rirFor = x.id; clearTimeout(rirT);
-        rirT = setTimeout(() => { if (rirFor === x.id) { rirFor = null; updatePage(i); } }, 10000);
-        updatePage(i);
+        // Com o descanso na tela, a pergunta aparece junto da barrinha; sem descanso, na própria série.
+        setTimeout(() => {
+          if (Rest.el && Rest.el.classList.contains('show') && Rest.askEffort(EFFORT, (v) => { x.rir = v; Store.save(); Native.vibrate(10); updatePage(i); })) return;
+          rirFor = x.id; clearTimeout(rirT);
+          rirT = setTimeout(() => { if (rirFor === x.id) { rirFor = null; updatePage(i); } }, 10000);
+          updatePage(i);
+        }, 60);
       }
       if (x.warm) { Rest.start(45, 'Aquecimento · ' + exName); return; }
       const allDone = items.every((y) => Store.itemProgress(s, y).complete);
@@ -729,7 +828,12 @@
           return;
         }
       }
-      Rest.start(Store.restFor(s, it), exName);
+      // "A seguir": a próxima série deste exercício (carga × reps) ou o próximo exercício.
+      const nr = s.sets.filter((y) => y.itemId === it.id && !y.done && !y.warm)[0];
+      let after = null;
+      if (nr) { const ld = Tools.loadText(nr.kg, exIdOf(s, it)); after = { head: 'A seguir · série ' + nr.n, detail: (ld ? ld + ' × ' : '') + (nr.reps || '') + (ld ? '' : ' reps') }; }
+      else { const nx = [...items.keys()].filter((k) => k > i).concat([...items.keys()].filter((k) => k < i)).find((k) => !Store.itemProgress(s, items[k]).complete); if (nx != null) after = { head: 'A seguir', detail: Store.exercise(exIdOf(s, items[nx])).nome }; }
+      Rest.start(Store.restFor(s, it), exName, after);
       if (g && i === g.end) {
         const back = [...Array(g.size).keys()].map((k) => g.start + k).find((k) => !Store.itemProgress(s, items[k]).complete);
         if (back != null) setTimeout(() => go(back), 450);
@@ -744,7 +848,7 @@
       render() {
         const { w, items, s } = ctx();
         return `<div class="topbar"><button class="icon-btn" data-a="back">${icon('back')}</button>
-          <div class="grow"><h1>Treino ${esc(w.letter)}</h1><div class="timer-pill">${icon('clock', 'sm')}<span class="num" data-elapsed>${clock(Store.activeMs(s))}</span></div></div>
+          <div class="grow"><h1>Treino ${esc(w.letter)}</h1><div class="timer-pill">${icon('clock', 'sm')}<span class="num" data-elapsed>${clock(Store.activeMs(s))}</span>${modeChip(s)}</div></div>
           <button class="btn sm lime" data-a="finish">Finalizar</button></div>
           <div class="session-head"><div class="segs" style="display:flex;gap:4px">${segs()}</div></div>
           <div class="pager">${items.map((_, i) => `<div class="page">${pageHTML(i)}</div>`).join('')}</div>
@@ -835,11 +939,13 @@
           const { s, items } = ctx(); const i = Number(ds.i), it = items[i];
           const sg = Store.loadSuggestion(it, s.id, exIdOf(s, it));
           if (sg && sg.why === 'range') { rangeSheet(s, it, sg, () => updatePage(i)); return; }
-          s.sets.filter((x) => x.itemId === it.id && !x.done && !x.warm && !x.sub).forEach((x) => { x.kg = Number(ds.kg); });
+          s.sets.filter((x) => x.itemId === it.id && !x.done && !x.warm && !x.sub).forEach((x) => { if (x.upFrom == null) x.upFrom = Number(x.kg); x.kg = Number(ds.kg); });
           Store.save(); updatePage(Number(ds.i)); toast('Carga atualizada para ' + kg(ds.kg));
         },
         pain: (ds) => { const { s, items } = ctx(); const i = Number(ds.i); painSheet(s, items[i], () => updatePage(i)); },
         painAlert: (ds) => { const { s, items } = ctx(); const i = Number(ds.i); painAlertSheet(s, items[i], () => updatePage(i)); },
+        modeInfo: () => { const { s } = ctx(); const t = []; if (s.quick) t.push(`<b>Treino rápido (~${s.quick.min} min):</b> descanso mais curto e menos séries.`); if (s.checkin && s.checkin.adj && !s.deload) t.push(`<b>Treino aliviado:</b> 10% menos carga${s.checkin.adj >= 2 ? ' e uma série a menos' : ''}, porque o dia está puxado.`); if (s.deload) t.push('<b>Semana leve:</b> menos séries e 10% menos carga para o corpo recuperar.'); sheet({ render: () => `<h3>Treino de hoje</h3>${t.map((x) => `<div class="suggest" style="margin-top:10px">${icon('sparkle', 'sm')}<span>${x}</span></div>`).join('')}<button class="btn lime block pl-create" style="margin-top:16px" data-a="ok">Entendi</button>`, actions: { ok: closeSheet } }); },
+        avAll: (ds) => { const { items } = ctx(); const i = Number(ds.i), id = items[i].id; avOpen[id] = !avOpen[id]; updatePage(i); },
         stall: (ds) => { const { s, items } = ctx(); const i = Number(ds.i); stallSheet(s, items[i], () => updatePage(i)); },
         warm: (ds) => { const { s, items } = ctx(); const i = Number(ds.i); Tools.warmupSheet(s, items[i], () => updatePage(i)); },
         swap: (ds) => { const { s, items } = ctx(); const i = Number(ds.i); Tools.swapSheet(s, items[i], () => updatePage(i)); },
@@ -943,6 +1049,8 @@
     }, true);
   }
 
+  // v0.45: comemoração em tela cheia. Selo grande, 3 números, destaques curtos (recordes antes → agora,
+  // no máximo uma conquista e "e mais N") e Compartilhar como botão principal.
   function celebrate(s) {
     const pr = Store.sessionProgress(s);
     const recs = Store.sessionRecords(s);
@@ -951,14 +1059,28 @@
     const complete = pr.complete >= pr.total;
     Native.pattern([0, 40, 60, 40]);
     Voice.say((complete ? 'Treino concluído! ' : 'Treino salvo. ') + Store.sessionDuration(s) + ' minutos, ' + pr.setsDone + ' séries.' + (recs.length ? ' ' + recs.length + (recs.length > 1 ? ' recordes!' : ' recorde!') : ''), 'resumo');
-    sheet({
-      render: () => `<div class="celebrate"><div class="badge">${icon(complete ? 'check' : 'flame', 'lg')}</div><h3>${complete ? 'Treino concluído!' : 'Treino salvo'}</h3><div class="desc">${complete ? 'Mais um na conta. Consistência é tudo.' : pr.complete + ' de ' + pr.total + ' exercícios feitos. Dá para continuar depois.'}</div></div>
-        <div class="tiles"><div class="card tile"><div class="v num">${Store.sessionDuration(s)}<small>min</small></div><div class="l">Duração</div></div><div class="card tile"><div class="v num">${pr.setsDone}</div><div class="l">Séries</div></div><div class="card tile"><div class="v num">${volume(Store.sessionVolume(s))}</div><div class="l">Volume</div></div></div>
-        ${recs.length ? `<div class="section-title"><h2>${icon('trophy', 'sm')} Recordes</h2></div>${recs.map((r) => `<div class="kv"><span>${esc(Store.exercise(r.exId).nome)}</span><b class="pr num">${kg(r.kg)} <span class="faint small">(antes ${nf(r.prev)})</span></b></div>`).join('')}` : ''}
-        ${medals.length ? `<div class="section-title"><h2>${icon('star', 'sm')} Conquista${medals.length > 1 ? 's' : ''} nova${medals.length > 1 ? 's' : ''}</h2></div>${medals.map((m) => `<div class="kv"><span><b style="color:var(--gold-2)">${esc(m.nome)}</b></span><span class="small">${esc(m.desc)}</span></div>`).join('')}` : ''}
-        <div class="btn-row" style="margin-top:18px"><button class="btn ghost" data-a="share">${icon('share', 'sm')}Compartilhar</button><button class="btn lime" data-a="ok">Fechar</button></div>`,
-      actions: { ok: closeSheet, share: () => { toast('Gerando imagem…'); Screens.shareSession(s.id); } },
-      onClose: () => { if (window.News) News.afterWorkout(); },
+    const fw = Store.findWorkout(s.workoutId), w = fw && fw.workout;
+    const wk = Store.weekRange();
+    const nWeek = Store.state.sessions.filter((x) => x.date >= wk.startISO && x.date <= wk.endISO && x.start <= s.start && x.sets.some((y) => y.done)).length;
+    const vol = Store.sessionVolume(s), pv = prevVolume(s);
+    const up = pv ? Math.round((vol / pv - 1) * 100) : null;
+    const hl = recs.slice(0, 3).map((r) => `<div class="fm-hl"><span class="ic">${icon('trophy', 'sm')}</span><span class="g"><b>Recorde no ${esc(Store.exercise(r.exId).nome)}</b><small>antes ${kg(r.prev)}</small></span><span class="r num">${kg(r.kg)}</span></div>`).join('')
+      + (recs.length > 3 ? `<div class="small muted" style="margin:-2px 2px 8px">e mais ${recs.length - 3} ${recs.length - 3 > 1 ? 'recordes' : 'recorde'}</div>` : '')
+      + (medals.length ? `<div class="fm-hl"><span class="ic">${icon('star', 'sm')}</span><span class="g"><b>Conquista: ${esc(medals[0].nome)}</b><small>${medals.length > 1 ? 'e mais ' + (medals.length - 1) + (medals.length > 2 ? ' conquistas novas' : ' conquista nova') : esc(medals[0].desc)}</small></span></div>` : '');
+    const el = document.createElement('div');
+    el.className = 'fm-full';
+    el.innerHTML = `<div class="fm-in"><div class="fm-badge">${icon(complete ? 'check' : 'flame', 'lg')}</div><div class="fm-h">${complete ? 'Treino concluído!' : 'Treino salvo'}</div>
+      <div class="fm-sub">${w ? 'Treino ' + esc(w.letter) + ' · ' + esc(w.name) : ''}${complete ? (nWeek ? ' · ' + nWeek + 'º treino da semana' : '') : ' · ' + pr.complete + ' de ' + pr.total + ' exercícios'}</div>
+      <div class="fm-tiles"><div><b class="num">${Store.sessionDuration(s)}</b><small>minutos</small></div><div><b class="num">${pr.setsDone}</b><small>séries</small></div><div><b class="num">${volume(vol)}</b><small>volume</small>${up != null && up !== 0 ? `<span class="up ${up < 0 ? 'down' : ''}">${up > 0 ? '↑' : '↓'} ${Math.abs(up)}%</span>` : ''}</div></div>
+      ${hl ? `<div class="fm-cap">Destaques</div>${hl}` : `<div class="fm-quote">${complete ? 'Mais um na conta. Consistência é tudo.' : 'Dá para continuar depois, na tela do treino.'}</div>`}</div>
+      <div class="fm-btns"><button class="btn ghost" data-fm="ok">Fechar</button><button class="btn lime pl-create" data-fm="share">${icon('share', 'sm')}Compartilhar</button></div>`;
+    document.body.appendChild(el);
+    requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
+    const close = () => { if (!el.parentNode) return false; el.classList.remove('show'); setTimeout(() => el.remove(), 320); UI.overlayBack = null; if (window.News) setTimeout(() => News.afterWorkout(), 350); return true; };
+    UI.overlayBack = close;
+    el.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-fm]'); if (!b) return;
+      if (b.dataset.fm === 'share') { toast('Gerando imagem…'); Screens.shareSession(s.id); } else close();
     });
   }
 

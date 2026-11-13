@@ -1,11 +1,23 @@
 {
- "versionCode": 61,
- "versionName": "0.44.0",
- "date": "2026-11-12",
- "apk": "download/Gravity-v0.44.0.apk",
+ "versionCode": 62,
+ "versionName": "0.45.0",
+ "date": "2026-11-13",
+ "apk": "download/Gravity-v0.45.0.apk",
  "notes": [
   {
-   "t": "Planos mais simples"
+   "t": "Treinar de cara nova"
+  },
+  {
+   "t": "Pouco tempo e descanso"
+  },
+  {
+   "t": "Avisos mais claros"
+  },
+  {
+   "t": "Como você está? em um toque"
+  },
+  {
+   "t": "Comemoração nova"
   }
  ]
 }

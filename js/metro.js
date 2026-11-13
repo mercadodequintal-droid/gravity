@@ -99,19 +99,30 @@
 
   // ---------- telas ----------
   // Folha para escolher a cadência e o som antes de começar.
+  // v0.45: ritmos prontos, barra colorida da repetição e "Personalizar tempos".
+  const PRESETS = [['3-1-1', 'controle'], ['2-0-2', 'constante'], ['4-0-1', 'negativa'], ['1-0-1', 'rápido']];
   function sheet(it, exId, onStart) {
     const c = forItem(it, exId).slice();
-    let m = mode();
+    let m = mode(), custom = false;
     const ex = Store.exercise(exId);
+    const reps = parseInt(String((it && it.reps) || 10), 10) || 10;
     const box = (i, lb) => `<div class="field"><label>${lb}</label><div class="stepper big"><button data-a="st" data-i="${i}" data-d="-1">${UI.icon('minus')}</button><div class="val"><b class="num">${c[i]}</b><small>seg</small></div><button data-a="st" data-i="${i}" data-d="1">${UI.icon('plus')}</button></div></div>`;
+    const seg = (n, lb, bg, ink) => (n ? `<div style="flex:${n};background:${bg};color:${ink || 'var(--lime-ink)'}">${n >= 2 ? lb + ' ' : ''}${n}s</div>` : '');
     UI.sheet({
-      render: () => `<h3>Metrônomo</h3><div class="desc">${UI.esc(ex.nome)}: marca o ritmo de cada repetição. Cadência <b class="num">${fmt(c)}</b> = desce em ${c[0]} s, segura ${c[1]} s, sobe em ${c[2]} s${c[3] ? ', segura em cima ' + c[3] + ' s' : ''}.</div>
-        <div class="form-row">${box(0, 'Desce')}${box(1, 'Segura embaixo')}</div><div class="form-row">${box(2, 'Sobe')}${box(3, 'Segura em cima')}</div>
-        <div class="field"><label>Som</label><div class="seg"><button class="${m === 'bipe' ? 'on' : ''}" data-a="m" data-v="bipe">Bipes</button><button class="${m === 'voz' ? 'on' : ''}" data-a="m" data-v="voz">Voz</button></div></div>
-        <div class="tiny muted" style="margin-top:6px">${m === 'bipe' ? 'Som grave = desce, agudo = sobe, tique = cada segundo.' : 'A voz diz "desce… 2… 3… segura… sobe".'} Para sozinho quando você marca a série.</div>
-        <div class="btn-row" style="margin-top:16px"><button class="btn ghost" data-a="no">Cancelar</button><button class="btn lime" data-a="ok">Começar</button></div>`,
+      render: () => {
+        const tot = c[0] + c[1] + c[2] + c[3], cur = fmt(c);
+        return `<h3>Metrônomo</h3><div class="desc">Marca o ritmo de cada repetição em ${UI.esc(ex.nome)}. Para sozinho quando você marca a série.</div>
+        <div class="fx-cap">Ritmo</div><div class="fx-pre">${PRESETS.map(([k, l]) => `<button class="${cur === k ? 'on' : ''}" data-a="pre" data-v="${k}"><b class="num">${k}</b><small>${l}</small></button>`).join('')}</div>
+        <div class="fx-tl">${seg(c[0], 'DESCE', 'var(--gold)')}${seg(c[1], 'SEGURA', 'var(--gold-2)')}${seg(c[2], 'SOBE', '#2FB36B', '#fff')}${seg(c[3], 'TOPO', 'rgba(var(--fg-rgb),.25)', 'var(--text)')}</div>
+        <div class="small muted" style="text-align:center">${tot} segundos por repetição · ${reps} repetições ≈ ${UI.secs(tot * reps)}</div>
+        ${custom ? `<div class="form-row" style="margin-top:10px">${box(0, 'Desce')}${box(1, 'Segura embaixo')}</div><div class="form-row">${box(2, 'Sobe')}${box(3, 'Segura em cima')}</div>` : `<button class="fx-link" data-a="custom">${UI.icon('edit', 'sm')}Personalizar tempos</button>`}
+        <div class="fx-cap">Som</div><div class="seg"><button class="${m === 'bipe' ? 'on' : ''}" data-a="m" data-v="bipe">Bipes</button><button class="${m === 'voz' ? 'on' : ''}" data-a="m" data-v="voz">Voz</button></div>
+        <div class="tiny muted" style="margin-top:6px">${m === 'bipe' ? 'Som grave = desce, agudo = sobe, tique = cada segundo.' : 'A voz diz "desce… 2… 3… segura… sobe".'}</div>
+        <button class="btn lime block pl-create" style="margin-top:14px" data-a="ok">${UI.icon('play', 'sm')}Começar</button>`;
+      },
       actions: {
-        no: UI.closeSheet,
+        pre: (ds) => { const n = parse(ds.v); for (let i = 0; i < 4; i++) c[i] = n[i]; UI.sheetRefresh(); },
+        custom: () => { custom = true; UI.sheetRefresh(); },
         st: (ds) => { const i = Number(ds.i); c[i] = Math.max(i === 0 || i === 2 ? 1 : 0, Math.min(10, c[i] + Number(ds.d))); UI.sheetRefresh(); },
         m: (ds) => { m = ds.v; UI.sheetRefresh(); },
         ok: () => { remember(exId, c, m); UI.closeSheet(); onStart(c, m); },

@@ -341,6 +341,7 @@
       this.dur = seconds; this.end = Date.now() + seconds * 1000; this.label = label || '';
       this.over = false; this.cd = {}; this.said10 = false;
       this.swap = !!(opt && opt.swap); this.next = (opt && opt.next) || ''; this.swapExt = false;
+      this.head = (opt && opt.head) || ''; this.detail = (opt && opt.detail) || '';
       if (this.swap) { this.label = 'próximo: ' + this.next; Voice.say('Troca de exercício: ' + Voice.secs(seconds) + '. Próximo: ' + this.next + '.', 'inicio', 0, true); }
       else if (seconds >= 20 && !/^Pausa/.test(this.label)) Voice.say('Descanso de ' + Voice.secs(seconds), 'inicio', 0, true);
       // Descansos de 20 s ou mais também vão para a notificação do Android, com alarme alto no fim.
@@ -354,7 +355,16 @@
     add(d) { if (!this.end) return; if (this.swap && d > 0) this.swapExt = true; if (this.native && !this.over) { try { A.restAdd(d * 1000); } catch (e) { /* ignora */ } } this.end += d * 1000; this.dur = Math.max(5, this.dur + d); if (this.over && this.end > Date.now()) { this.over = false; this.el.classList.remove('over'); } this.paint(); sheetDef && sheetDef.rest && sheetRefresh(); },
     // Guarda, uma vez por troca, se a pessoa pediu mais tempo (para sugerir aumentar o padrão).
     logSwap() { if (this.swap && this.end) { this.swap = false; try { Store.swapLog(this.swapExt); } catch (e) { /* ignora */ } } },
-    stop() { this.logSwap(); if (this.native && A) { try { A.restStop(); } catch (e) { /* ignora */ } } this.native = false; this.end = 0; clearInterval(this.tick); this.tick = null; this.el.classList.remove('show', 'over'); if (sheetDef && sheetDef.rest) closeSheet(); },
+    stop() { this.logSwap(); this.hideAsk(); if (this.native && A) { try { A.restStop(); } catch (e) { /* ignora */ } } this.native = false; this.end = 0; clearInterval(this.tick); this.tick = null; this.el.classList.remove('show', 'over'); if (sheetDef && sheetDef.rest) closeSheet(); },
+    askEffort(opts, cb) {
+      if (!this.askEl) return false;
+      this.askCb = cb; clearTimeout(this.askT);
+      this.askEl.innerHTML = `<span>Como foi essa série?</span><div>${opts.map((f) => `<button data-v="${f.v}"><b>${esc(f.nome)}</b><small>${esc(f.desc)}</small></button>`).join('')}</div>`;
+      this.askEl.classList.add('show');
+      this.askT = setTimeout(() => this.hideAsk(), 10000);
+      return true;
+    },
+    hideAsk() { clearTimeout(this.askT); this.askCb = null; if (this.askEl) this.askEl.classList.remove('show'); },
     left() { return Math.max(0, (this.end - Date.now()) / 1000); },
     // Ao voltar para o app: aplica +15s/Pular que tenham sido tocados na notificação.
     sync() {
@@ -394,11 +404,14 @@
     },
     paint() {
       const left = this.left();
-      const b = this.el.querySelector('b'), sm = this.el.querySelector('small');
+      // v0.45: barra que enche. Tempo grande, "A seguir" numa linha e −15/+15/Pular direto na barra.
+      const b = this.el.querySelector('.tm b'), sm = this.el.querySelector('.tx small'), dt = this.el.querySelector('.tx b');
       b.textContent = this.over ? 'Bora!' : clock(left * 1000 + 999);
-      sm.textContent = this.over ? (this.swap ? 'Troca acabou' : 'Descanso acabou') : (this.swap ? 'Troca · ' : 'Descanso · ') + this.label;
-      const ringEl = this.el.querySelector('.ring .bar');
-      if (ringEl) { const c = parseFloat(ringEl.getAttribute('stroke-dasharray')); ringEl.setAttribute('stroke-dashoffset', c * (1 - left / this.dur)); }
+      if (this.over) { sm.textContent = this.swap ? 'Troca acabou' : 'Descanso acabou'; dt.textContent = this.swap ? this.next : (this.detail || this.label); }
+      else if (this.swap) { sm.textContent = 'Troca · a seguir'; dt.textContent = this.next; }
+      else { sm.textContent = this.head || 'Descanso'; dt.textContent = this.detail || this.label; }
+      const fill = this.el.querySelector('.fill');
+      if (fill) fill.style.width = (this.over ? 100 : Math.min(100, Math.max(0, (1 - left / this.dur) * 100))) + '%';
       const big = document.querySelector('[data-bigrest]');
       if (big) {
         big.querySelector('b').textContent = this.over ? '0:00' : clock(left * 1000 + 999);
@@ -421,12 +434,17 @@
     init() {
       const el = document.createElement('div');
       el.className = 'rest-pill';
-      el.innerHTML = `${ring(42, 4, 1, 'var(--lime)', icon('timer', 'sm'))}<div class="t" data-a="restOpen"><b class="num">0:00</b><small></small></div><button class="mini" data-a="restPlus">+${Store.state.settings.restStep}</button><button class="mini" data-a="restStop">${icon('x', 'sm')}</button>`;
+      const st = () => Store.state.settings.restStep;
+      el.innerHTML = `<div class="fill"></div><div class="in"><span class="tm" data-a="restOpen"><b class="num">0:00</b></span><span class="tx" data-a="restOpen"><small></small><b></b></span><button class="mini" data-a="restMinus">−${st()}</button><button class="mini" data-a="restPlus">+${st()}</button><button class="mini pri" data-a="restStop">Pular</button></div>`;
       document.body.appendChild(el);
       this.el = el;
+      // v0.45: "Como foi essa série?" logo acima da barrinha do descanso (não empurra a tabela de séries).
+      const ask = document.createElement('div'); ask.className = 'rest-ask'; document.body.appendChild(ask); this.askEl = ask;
+      ask.addEventListener('click', (e) => { const b = e.target.closest('[data-v]'); if (!b || !this.askCb) return; const cb = this.askCb; this.hideAsk(); cb(Number(b.dataset.v)); });
       el.addEventListener('click', (e) => {
         const a = e.target.closest('[data-a]'); if (!a) { this.openSheet(); return; }
         if (a.dataset.a === 'restPlus') this.add(Store.state.settings.restStep);
+        else if (a.dataset.a === 'restMinus') this.add(-Store.state.settings.restStep);
         else if (a.dataset.a === 'restStop') this.stop();
         else this.openSheet();
       });
@@ -503,6 +521,7 @@
 
   window.appBack = function () {
     if (window.Splash && Splash.back()) return true;
+    if (UI.overlayBack && UI.overlayBack()) return true;
     if (closeSheet()) return true;
     const t = top(); if (t && t.guardBack && t.guardBack()) return true;
     if (pop()) return true;

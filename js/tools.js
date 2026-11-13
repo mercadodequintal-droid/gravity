@@ -40,21 +40,26 @@
       ${p.resto ? `<div class="tiny" style="color:var(--amber)">Faltam ${nf(p.resto)} kg que não fecham com as anilhas comuns.</div>` : ''}</div>`;
   }
 
-  // ---------- aquecimento ----------
+  // ---------- aquecimento (v0.45: % da carga e anilhas desenhadas por lado) ----------
+  function platesMini(total, bar) {
+    const p = Analytics.plates(total, bar);
+    if (!p.side.length) return '';
+    return `<div class="fx-pl"><span class="bar"></span>${p.side.map((w) => `<i style="height:${12 + w}px;background:${PCOLOR[w]}"></i>`).join('')}</div>`;
+  }
   function warmupSheet(s, item, done) {
     const exId = Store.exOf(s, item), ex = Store.exercise(exId);
     const first = s.sets.find((x) => x.itemId === item.id && !x.sub && !x.done) || s.sets.find((x) => x.itemId === item.id && !x.sub);
-    const work = first ? Number(first.kg) : Number(item.kg) || 0;
-    const list = Analytics.warmup(work, ex.equip, Number(S().settings.bar) || 20);
+    const work = first ? Number(first.kg) : Number(item.kg) || 0, wreps = first ? first.reps : item.reps;
+    const bar = Number(S().settings.bar) || 20;
+    const list = Analytics.warmup(work, ex.equip, bar);
     if (!list.length) { toast('Carga leve: pode ir direto para a série'); return; }
     const isBar = /barra|smith/i.test(ex.equip || '');
+    const sub = (k) => { if (!isBar) return ''; const p = Analytics.plates(k, bar); return p.side.length ? 'por lado: ' + p.side.map((x) => nf(x, 2)).join(' + ') : 'só a barra'; };
+    const step = (k, reps, pc, work) => `<div class="fx-step ${work ? 'work' : ''}"><span class="pc">${pc}%</span><div class="g"><b class="num">${nf(k)} kg × ${esc(reps)}</b><small>${work ? 'série de trabalho' + (sub(k) ? ' · ' + sub(k) : '') : sub(k) || '&nbsp;'}</small></div>${isBar ? platesMini(k, bar) : ''}</div>`;
     sheet({
-      render: () => `<h3>Aquecimento</h3><div class="desc">Para trabalhar com <b>${kg(work)}</b> em ${esc(ex.nome)}. Descanso curto (30 a 60 s) entre elas.</div>
-        <div class="card" style="padding:6px 14px">${list.map((w, i) => {
-          const p = isBar ? Analytics.plates(w.kg, Number(S().settings.bar) || 20) : null;
-          return `<div class="kv" style="align-items:center"><span><b style="color:var(--text)" class="num">${nf(w.kg)} kg × ${w.reps}</b></span><span class="small">${p ? (p.side.length ? 'por lado: ' + p.side.map((x) => nf(x, 2)).join(' + ') : 'só a barra') : Math.round(w.kg / work * 100) + '%'}</span></div>`;
-        }).join('')}</div>
-        <div class="btn-row" style="margin-top:16px"><button class="btn ghost" data-a="no">Fechar</button><button class="btn lime" data-a="add">Adicionar ao treino</button></div>`,
+      render: () => `<h3>Aquecimento</h3><div class="desc">Para chegar em <b>${kg(work)}</b> no ${esc(ex.nome)} sem gastar energia. Descanse 30 a 60 s entre elas.</div>
+        <div class="fx-steps">${list.map((w) => step(w.kg, w.reps, Math.round(w.kg / work * 100), false)).join('')}${step(work, wreps, 100, true)}</div>
+        <div class="fx-btns wide"><button class="btn ghost" data-a="no">Fechar</button><button class="btn lime pl-create" data-a="add">Adicionar ${list.length} ${list.length === 1 ? 'série' : 'séries'}</button></div>`,
       actions: {
         no: closeSheet,
         add: () => { Store.addWarmups(s, item, list); closeSheet(); toast(list.length + ' séries de aquecimento adicionadas'); done && done(); },
@@ -76,17 +81,28 @@
       return { e, score };
     }).filter((c) => c.score >= 3).sort((a, b) => b.score - a.score).slice(0, 8).map((c) => c.e);
   }
+  // v0.45: busca, selo "Mais parecido" no primeiro, grupo e aparelho; chave "Trocar também no plano" no fim.
+  const norm = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
   function swapSheet(s, item, done) {
     const exId = Store.exOf(s, item);
     const list = swapCandidates(exId);
-    let forever = false;
+    let forever = false, q = '';
+    const row = (e, best) => `<button class="fx-sw press ${best ? 'best' : ''}" data-a="pick" data-id="${e.id}">${UI.thumb(e)}<div class="g"><b class="ellipsis">${esc(e.nome)}</b><div class="fx-tags">${best ? '<span class="g">Mais parecido</span>' : ''}<span>${esc(e.grupo)}</span>${e.equip ? `<span>${esc(e.equip.split(/[ ,/]/)[0])}</span>` : ''}</div></div>${icon('next', 'sm')}</button>`;
+    const results = () => {
+      if (!q.trim()) return list.map((e, i) => row(e, i === 0)).join('') || '<div class="card small muted">Nenhum equivalente na biblioteca.</div>';
+      const t = norm(q);
+      const r = Store.allExercises().filter((e) => e.id !== exId && Store.available(e) && norm(e.nome).includes(t)).slice(0, 12);
+      return r.map((e) => row(e, false)).join('') || '<div class="card small muted">Nada encontrado.</div>';
+    };
     sheet({
       render: () => `<h3>Trocar exercício</h3><div class="desc">Aparelho ocupado? Estes trabalham os mesmos músculos de <b>${esc(Store.exercise(exId).nome)}</b>.</div>
-        <div class="switch-row" data-a="forever" style="padding-top:0"><div class="grow">Trocar também no plano<div class="small muted">Desligado: troca só no treino de hoje</div></div><div class="switch ${forever ? 'on' : ''}"></div></div>
-        <div class="list">${list.map((e) => `<button class="card edit-item press" style="width:100%;text-align:left" data-a="pick" data-id="${e.id}">${UI.thumb(e)}<div class="grow"><h4 class="ellipsis">${esc(e.nome)}</h4><div class="meta">${esc(e.grupo)}${e.equip ? ' · ' + esc(e.equip) : ''}</div></div>${icon('next', 'sm')}</button>`).join('') || '<div class="card small muted">Nenhum equivalente na biblioteca.</div>'}</div>
-        ${exId !== item.exId ? `<button class="btn ghost block sm" style="margin-top:12px" data-a="undo">Voltar para ${esc(Store.exercise(item.exId).nome)}</button>` : ''}`,
+        <label class="fx-search">${icon('search', 'sm')}<input type="search" placeholder="Buscar outro exercício" value="${esc(q)}" data-in="q"></label>
+        <div id="swList">${results()}</div>
+        ${exId !== item.exId ? `<button class="btn ghost block sm" style="margin-top:8px" data-a="undo">Voltar para ${esc(Store.exercise(item.exId).nome)}</button>` : ''}
+        <div class="switch-row" data-a="forever" style="padding:8px 0 0"><div class="grow">Trocar também no plano<div class="small muted">Desligado: só no treino de hoje</div></div><div class="switch ${forever ? 'on' : ''}"></div></div>`,
       actions: {
-        forever: () => { forever = !forever; sheetRefresh(); },
+        q: (ds, el) => { q = el.value; const box = document.getElementById('swList'); if (box) box.innerHTML = results(); },
+        forever: () => { forever = !forever; const sw = document.querySelector('.sheet [data-a="forever"] .switch'); if (sw) sw.classList.toggle('on', forever); },
         pick: (ds) => { Store.swapExercise(s, item, ds.id, forever); closeSheet(); toast('Trocado por ' + Store.exercise(ds.id).nome + (forever ? ' (no plano também)' : ' (só hoje)')); done && done(); },
         undo: () => { Store.swapExercise(s, item, item.exId, false); closeSheet(); done && done(); },
       },
@@ -95,14 +111,26 @@
 
   // ---------- nota fixa do exercício (ajuste do banco, pegada…) ----------
   const pinOf = (exId) => ((S().exMeta[exId] || {}).nota || '').trim();
+  // v0.45: sugestões com um toque. As que têm "_" deixam o cursor no lugar do número.
+  const PIN_SUG = ['Banco no furo _', 'Assento na altura _', 'Pino no _', 'Pegada aberta', 'Pegada fechada', 'Usar cinto', 'Pés no banco'];
   function pinSheet(exId, done) {
     sheet({
-      render: () => `<h3>Nota fixa</h3><div class="desc">Aparece sempre neste exercício, em todos os treinos. Ex.: banco no furo 4, assento na altura 3, pegada aberta.</div>
-        <textarea class="note-field" id="pinTxt" style="min-height:90px" placeholder="Ajustes do aparelho, pegada, observações…">${esc(pinOf(exId))}</textarea>
-        <div class="btn-row" style="margin-top:14px"><button class="btn ghost" data-a="no">Cancelar</button><button class="btn lime" data-a="ok">Salvar</button></div>`,
-      after: (el) => setTimeout(() => el.querySelector('#pinTxt').focus(), 350),
+      render: () => `<h3>Nota fixa</h3><div class="desc">Aparece sempre neste exercício, em todos os treinos.</div>
+        <textarea class="note-field" id="pinTxt" style="min-height:80px" placeholder="Ajustes do aparelho, pegada, observações…">${esc(pinOf(exId))}</textarea>
+        <div class="fx-chipsel">${PIN_SUG.map((t, i) => `<button data-a="sug" data-i="${i}">${esc(t)}</button>`).join('')}</div>
+        <div class="small muted" style="margin-top:8px">Toque numa sugestão para completar mais rápido.</div>
+        <div class="fx-btns"><button class="btn ghost" data-a="no">Cancelar</button><button class="btn lime pl-create" data-a="ok">Salvar</button></div>`,
+      after: (el) => setTimeout(() => { const t = el.querySelector('#pinTxt'); if (t && !t.value) t.focus(); }, 350),
       actions: {
         no: closeSheet,
+        sug: (ds, el) => {
+          const t = document.getElementById('pinTxt'), sug = PIN_SUG[Number(ds.i)], blank = sug.indexOf('_');
+          const base = t.value.trim(), sep = base ? (/[.,;]$/.test(base) ? ' ' : ', ') : '';
+          const txt = blank >= 0 ? sug.slice(0, blank) : sug;
+          t.value = base + sep + (base ? txt.charAt(0).toLowerCase() + txt.slice(1) : txt);
+          el.classList.add('on'); Native.vibrate(6);
+          t.focus(); const end = t.value.length; t.setSelectionRange(end, end);
+        },
         ok: () => { const v = document.getElementById('pinTxt').value.trim(); S().exMeta[exId] = Object.assign(S().exMeta[exId] || {}, { nota: v }); Store.save(); closeSheet(); toast(v ? 'Nota salva' : 'Nota removida'); done && done(); },
       },
     });

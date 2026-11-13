@@ -59,7 +59,6 @@
 <script>
   Store.load();
   Theme.apply();
-  document.body.classList.toggle('color-photos', !!Store.state.settings.colorPhotos);
   UI.R.roots = { home: Screens.Home, plans: Screens.Plans, library: Screens.Library, progress: Screens.Progress };
   UI.bind();
   Voice.push();

@@ -799,7 +799,7 @@
           ${window.Android ? `<button class="menu-item" data-a="band"><span class="ic">${icon('timer', 'sm')}</span><span class="grow">Aviso na pulseira ou relógio<div class="small muted">Galaxy Fit, Galaxy Watch e outros: vibra no pulso quando o descanso acaba</div></span>${icon('next', 'sm')}</button>` : ''}
           ${sw('Vibração', 'Ao concluir séries e no fim do descanso', 'vibrate')}
           ${sw('Abertura animada', 'Scouter ao abrir o app (toque para pular)', 'splash')}
-          ${sw('Fotos coloridas', 'Desligado: fotos no tom do tema', 'colorPhotos')}</div>
+</div>
         <div class="section-title"><h2>Lembrete de treino</h2></div><div class="card" style="padding:4px 16px">
           ${sw('Lembrar de treinar', 'Notificação nos dias do plano', 'reminder')}
           ${st().reminder ? `<div class="switch-row"><div class="grow">Horário</div><input class="input" type="time" style="width:130px;height:44px" data-ch="rtime" value="${esc(st().reminderTime)}"></div>` : ''}</div>
@@ -834,7 +834,7 @@
         tips: () => push(TipsFx.Collection()),
         rangeMode: (ds) => { st().rangeMode = ds.v; Store.save(); UI.savedFlash(); refresh(); },
         theme: (ds) => { Theme.apply(ds.v); Store.save(); Native.vibrate(8); UI.savedFlash(); refresh(); },
-        sw: (ds) => { st()[ds.k] = !st()[ds.k]; Store.save(); document.body.classList.toggle('color-photos', !!st().colorPhotos); if (ds.k === 'reminder') { Screens.syncNative(); if (st().reminder) toast('Lembrete às ' + st().reminderTime + ' nos dias do plano'); else UI.savedFlash(); } else UI.savedFlash(); refresh(); },
+        sw: (ds) => { st()[ds.k] = !st()[ds.k]; Store.save(); if (ds.k === 'reminder') { Screens.syncNative(); if (st().reminder) toast('Lembrete às ' + st().reminderTime + ' nos dias do plano'); else UI.savedFlash(); } else UI.savedFlash(); refresh(); },
         voice: () => push(Screens.VoiceSettings()),
         gym: () => push(GymSetup()),
         avatar: () => Profile.sheet(UI.refresh),

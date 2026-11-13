@@ -4,6 +4,13 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.45.0', date: '2026-11-13', items: [
+      { icon: 'play', t: 'Treinar de cara nova', d: 'A tela do treino ganhou foto de capa, os atalhos lado a lado e o botão Começar grande. Depois do treino ela mostra os números do dia, os recordes e o próximo treino.', main: true },
+      { icon: 'timer', t: 'Pouco tempo e descanso', d: 'Arraste a régua até o tempo que você tem e veja quantas séries ficam. O descanso virou uma barra que enche, com a próxima série e os botões −15, +15 e Pular.' },
+      { icon: 'sparkle', t: 'Avisos mais claros', d: 'Um aviso por vez em cada exercício. Na hora de subir a carga, toque em Aplicar: a carga nova entra nas séries que faltam.' },
+      { icon: 'check', t: 'Como você está? em um toque', d: 'Escolha entre Cansado, Normal e Ótimo. O app só pergunta uma vez por dia.' },
+      { icon: 'trophy', t: 'Comemoração nova', d: 'No fim do treino, uma tela cheia com os números, os recordes e o botão Compartilhar. Aquecer, Trocar, Metrônomo, Nota fixa e Dor também ficaram mais rápidos de usar.' },
+    ] },
     { v: '0.44.0', date: '2026-11-12', items: [
       { icon: 'plans', t: 'Planos mais simples', d: 'A aba Planos abre direto no seu plano: semana atual, os treinos com Feito e Hoje, e um toque para editar cada um. Para começar outro plano, toque em Criar novo plano: objetivo, esporte, modelo pronto, do zero ou planilha, tudo num lugar.', main: true },
     ] },
