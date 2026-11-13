@@ -1552,3 +1552,510 @@ body.live-out .rest-ask { visibility: hidden !important; }
 .fm-quote { text-align: center; color: var(--text-2); font-size: 13px; margin-top: 26px; }
 .fm-btns { display: grid; grid-template-columns: 1fr 1.4fr; gap: 8px; padding-top: 12px; }
 .fm-btns .btn { margin: 0 !important; height: 54px; white-space: nowrap; }
+
+/* ===== v0.46.0 · Dourado "amarelo cinema" (Y3) e tela sem balanço ===== */
+:root:not([data-theme]), :root[data-theme="dourado"] {
+  --gold: #f5c518; --gold-2: #ffd95a; --gold-3: #9a7a0e; --lime: #f5c518; --lime-ink: #161108;
+  --gold-grad: linear-gradient(135deg, #ffd95a 0%, #f5c518 55%, #9a7a0e 100%);
+  --acc-rgb: 245, 197, 24; --acc2-rgb: 255, 217, 90;
+  --line: rgba(245, 197, 24, 0.16); --line-2: rgba(245, 197, 24, 0.3);
+  --map-ideal: #f5c518; --map-low: rgba(245, 197, 24, 0.38);
+}
+html, body, .content, .sheet { overscroll-behavior: none; }
+
+/* ===== v0.46.0 · Editar plano (P3), Editar treino (E1 + T4), folha do exercício e técnica (TA + TC) ===== */
+.ed-c { padding-bottom: 120px; }
+.ed-hero { position: relative; height: 150px; border-radius: 14px; overflow: hidden; background: #000; margin-top: 4px; }
+.ed-hero .ph { position: absolute; inset: 0; background-size: auto 175%; background-position: center 92%; filter: var(--photo-filter); }
+.ed-hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.92) 22%, rgba(0,0,0,.1) 80%); }
+.ed-hero .in { position: absolute; left: 14px; right: 14px; bottom: 12px; z-index: 2; color: #fff; }
+.ed-hero .in.row-in { display: flex; align-items: flex-end; gap: 12px; }
+.ed-hero small { display: block; font-size: 12px; opacity: .85; margin-top: 3px; }
+.ed-badge { display: inline-block; font-size: 9.5px; letter-spacing: 1.4px; text-transform: uppercase; padding: 3px 7px; border-radius: 5px; background: var(--gold); color: var(--lime-ink); font-weight: 600; margin-bottom: 6px; }
+.ed-name { display: flex; align-items: center; gap: 8px; color: #fff; background: none; border: 0; padding: 0; max-width: 100%; text-align: left; }
+.ed-name b { font-family: var(--display); font-weight: 400; font-size: 26px; line-height: 1.05; letter-spacing: .3px; }
+.ed-name svg { width: 15px; height: 15px; opacity: .75; flex: none; }
+.ed-lt { width: 52px; height: 52px; border-radius: 14px; display: grid; place-items: center; font-family: var(--display); font-size: 26px; background: var(--gold); color: var(--lime-ink); flex: none; }
+.ed-n3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+.ed-n3 div { border-radius: 12px; background: var(--card-a); border: 1px solid var(--line); padding: 10px 12px; }
+.ed-n3 b { display: block; font-family: var(--display); font-weight: 400; font-size: 24px; line-height: 1.1; color: var(--text); }
+.ed-n3 small { font-size: 10.5px; color: var(--text-2); }
+.ed-box { border-radius: 12px; background: var(--card-a); border: 1px solid var(--line); padding: 12px; margin-top: 10px; }
+.ed-box .l { font-size: 10.5px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-2); display: flex; justify-content: space-between; }
+.ed-box .l span { letter-spacing: .3px; text-transform: none; }
+.ed-dur { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+.ed-dur .stp { display: grid; grid-template-columns: 38px 1fr 38px; align-items: center; border: 1px solid var(--line-2); border-radius: 10px; height: 46px; }
+.ed-dur .stp button { height: 100%; display: grid; place-items: center; color: var(--gold-2); background: none; border: 0; }
+.ed-dur .stp b { text-align: center; font-family: var(--display); font-weight: 400; font-size: 21px; color: var(--text); }
+.ed-dur .dt { position: relative; display: flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--line-2); border-radius: 10px; height: 46px; font-size: 13.5px; color: var(--text); }
+.ed-dur .dt input { position: absolute; inset: 0; opacity: 0; width: 100%; }
+.ed-weeks { display: flex; gap: 4px; margin-top: 12px; }
+.ed-weeks i { flex: 1; height: 8px; border-radius: 4px; background: rgba(var(--fg-rgb), .1); }
+.ed-weeks i.ok { background: var(--gold); }
+.ed-weeks i.cur { background: var(--gold); box-shadow: 0 0 0 2px rgba(var(--acc-rgb), .35); }
+.ed-wl { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-2); margin-top: 6px; }
+.ed-cap { display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-2); margin: 18px 2px 6px; }
+.ed-cap span { letter-spacing: .3px; text-transform: none; color: var(--gold-2); font-size: 12px; }
+.ed-w { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.ed-w .lt { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; font-family: var(--display); font-size: 19px; border: 1px solid var(--line-2); color: var(--gold-2); flex: none; }
+.ed-w .g { flex: 1; min-width: 0; }
+.ed-w b { display: block; font-weight: 500; font-size: 14.5px; }
+.ed-w small { display: block; font-size: 11.5px; color: var(--text-2); margin-top: 2px; }
+.ed-wd { display: flex; gap: 3px; margin-top: 5px; flex-wrap: wrap; }
+.ed-wd span { font-size: 9.5px; letter-spacing: .5px; padding: 2px 5px; border-radius: 4px; border: 1px solid var(--line); color: var(--text-3); }
+.ed-wd span.on { border-color: transparent; background: rgba(var(--acc-rgb), .18); color: var(--gold-2); }
+.ed-grip { color: var(--text-3); display: grid; place-items: center; width: 28px; height: 40px; flex: none; }
+.ed-add { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 52px; border-radius: 12px; border: 1px dashed rgba(var(--acc-rgb), .55); background: none; color: var(--gold-2); font-size: 12.5px; letter-spacing: 1.5px; text-transform: uppercase; margin-top: 12px; }
+.ed-bal > div { display: grid; grid-template-columns: 86px 1fr 34px; align-items: center; gap: 8px; font-size: 12px; color: var(--text-2); margin-top: 7px; }
+.ed-bal i { display: block; height: 7px; border-radius: 4px; background: rgba(var(--fg-rgb), .08); position: relative; overflow: hidden; }
+.ed-bal i .zone { position: absolute; top: 0; bottom: 0; left: 33.3%; width: 33.3%; border-left: 1px dashed rgba(var(--fg-rgb), .35); border-right: 1px dashed rgba(var(--fg-rgb), .35); }
+.ed-bal i em { position: absolute; left: 0; top: 0; bottom: 0; background: var(--gold); border-radius: 4px; }
+.ed-bal i em.lo { background: var(--amber); }
+.ed-bal b { color: var(--text); font-weight: 500; text-align: right; }
+.ed-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 12px; }
+.ed-days button { text-align: center; padding: 9px 0; border-radius: 10px; border: 1px solid var(--line); font-size: 11px; letter-spacing: 1px; color: var(--text-2); background: none; }
+.ed-days button.on { background: var(--gold); color: var(--lime-ink); border-color: transparent; font-weight: 600; }
+.ed-x { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.ed-x .n { font-family: var(--display); color: var(--text-3); font-size: 16px; width: 16px; text-align: center; flex: none; }
+.ed-x .ph { position: relative; flex: none; }
+.ed-x .ph .thumb { width: 48px; height: 48px; border-radius: 9px; }
+.ed-x .bd { position: absolute; right: -5px; bottom: -5px; width: 20px; height: 20px; border-radius: 50%; background: var(--gold); color: var(--lime-ink); display: grid; place-items: center; border: 2px solid var(--bg); }
+.ed-x .bd svg { width: 11px; height: 11px; }
+.ed-x .g { flex: 1; min-width: 0; }
+.ed-x b { display: block; font-weight: 500; font-size: 14px; }
+.ed-x small { display: block; font-size: 11.5px; color: var(--text-2); margin-top: 2px; }
+.ed-x small.tc { color: var(--gold-2); }
+.ed-x.grp { border-left: 3px solid var(--gold); padding-left: 9px; margin-left: -12px; }
+.fs-hero { position: relative; height: 150px; margin: -10px -16px 0; overflow: hidden; border-radius: 18px 18px 0 0; }
+.fs-hero .ph { position: absolute; inset: 0; background-size: cover; background-position: center; }
+.fs-hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, var(--bg-2) 4%, rgba(0,0,0,.05) 70%); }
+.fs-hero .in { position: absolute; left: 16px; right: 16px; bottom: 6px; z-index: 2; }
+.fs-hero h3 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 24px; letter-spacing: .5px; text-transform: uppercase; line-height: 1.05; }
+.fs-hero small { font-size: 12px; color: var(--text-2); }
+.fs-g { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.fs-box { border-radius: 12px; border: 1px solid var(--line-2); padding: 8px 8px 10px; background: var(--card-a); }
+.fs-box .l { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-2); text-align: center; }
+.fs-box .r { display: grid; grid-template-columns: 34px 1fr 34px; align-items: center; margin-top: 4px; }
+.fs-box .r button { height: 34px; border-radius: 8px; display: grid; place-items: center; color: var(--gold-2); background: none; border: 0; }
+.fs-box .r b { text-align: center; font-family: var(--display); font-weight: 400; font-size: 26px; color: var(--text); white-space: nowrap; overflow: hidden; }
+.fs-cap { font-size: 10.5px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-2); margin: 16px 2px 4px; }
+.fs-opt { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 12px 2px; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--text); }
+.fs-opt .ic { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; background: rgba(var(--acc-rgb), .12); color: var(--gold-2); flex: none; }
+.fs-opt .g { flex: 1; min-width: 0; }
+.fs-opt b { display: block; font-weight: 500; font-size: 14px; }
+.fs-opt small { display: block; font-size: 11.5px; color: var(--text-2); margin-top: 1px; }
+.fs-opt .v { font-size: 12.5px; color: var(--gold-2); white-space: nowrap; }
+.fs-swap { flex-wrap: wrap; margin: 8px 0 4px; }
+.fs-btns { display: grid; grid-template-columns: 1fr 1.5fr; gap: 8px; margin-top: 14px; }
+.fs-btns .btn { margin: 0 !important; height: 52px; white-space: nowrap; }
+.fs-rm { color: var(--red) !important; border-color: rgba(200,87,75,.5) !important; }
+.fs-link { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 10px; padding: 6px; font-size: 12.5px; color: var(--gold-2); background: none; border: 0; }
+.tp-cur { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: rgba(var(--acc-rgb), .1); border: 1px solid rgba(var(--acc-rgb), .45); font-size: 12.5px; color: var(--text-2); margin-top: 6px; }
+.tp-cur b { color: var(--gold-2); font-weight: 600; }
+.tp-cur button { margin-left: auto; color: var(--text-2); background: none; border: 0; font-size: 12.5px; text-decoration: underline; }
+.tp-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; background: rgba(var(--fg-rgb), .05); border-radius: 10px; padding: 3px; margin-top: 10px; }
+.tp-tabs button { text-align: center; padding: 8px 2px; font-size: 10.5px; border-radius: 8px; color: var(--text-2); line-height: 1.2; background: none; border: 0; }
+.tp-tabs button.on { background: var(--gold); color: var(--lime-ink); font-weight: 600; }
+.tp-card { display: flex; gap: 12px; align-items: center; width: 100%; text-align: left; padding: 11px 12px; border-radius: 12px; background: var(--card-a); border: 1px solid var(--line); margin-top: 8px; color: var(--text); }
+.tp-card.on { border-color: var(--gold); background: rgba(var(--acc-rgb), .08); }
+.tp-card .g { flex: 1; min-width: 0; }
+.tp-card b { display: block; font-weight: 500; font-size: 14px; }
+.tp-card small { display: block; font-size: 11.5px; color: var(--text-2); margin-top: 2px; line-height: 1.35; }
+.tp-card .tp-n { display: inline; font-size: 10px; color: var(--gold-2); margin-left: 4px; }
+.tp-ok { width: 26px; height: 26px; border-radius: 50%; background: var(--gold); color: var(--lime-ink); display: grid; place-items: center; flex: none; }
+.tp-dia { width: 64px; height: 40px; display: flex; align-items: flex-end; gap: 3px; flex: none; }
+.tp-dia i { flex: 1; border-radius: 3px 3px 0 0; background: var(--gold); }
+.tp-dia i.s { background: rgba(var(--acc-rgb), .45); }
+.tp-dia i.p { background: rgba(var(--fg-rgb), .15); }
+.tp-back { display: flex; align-items: center; gap: 6px; color: var(--text-2); font-size: 12px; background: none; border: 0; padding: 2px 0 6px; }
+.tp-prev { border-radius: 12px; border: 1px solid var(--line); background: var(--card-a); padding: 4px 12px; margin-top: 6px; }
+.tp-prev > div { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.tp-prev > div:last-child { border: 0; }
+.tp-prev > div span { color: var(--text-2); }
+.tp-prev > div.d, .tp-prev > div.d span { color: var(--gold-2); }
+.tp-prev .warn { color: var(--amber); font-size: 12.5px; padding: 8px 0; }
+.fs-btns .btn.lime, .save-btn.dirty { background: var(--gold) !important; background-image: none !important; color: var(--lime-ink) !important; border-color: transparent !important; }
+
+/* ===== v0.46.0 · Biblioteca (L2 + G1), Adicionar exercícios (A2 + Filtros) e ficha FA ===== */
+.lb-c { padding-bottom: 130px; }
+.lb-search { display: flex; align-items: center; gap: 8px; height: 46px; border-radius: 10px; border: 1px solid var(--line); padding: 0 12px; color: var(--text-3); margin-top: 6px; }
+.lb-search input { flex: 1; min-width: 0; background: none; border: 0; outline: 0; color: var(--text); font: inherit; font-size: 14px; height: 100%; }
+.lb-search input::placeholder { color: var(--text-3); }
+.lb-cap { font-size: 10.5px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-2); margin: 16px 2px 8px; }
+.lb-cnt { font-size: 11.5px; color: var(--text-2); margin: 12px 2px 4px; }
+.lb-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.lb-tile { position: relative; height: 92px; border-radius: 12px; overflow: hidden; background: #000; border: 0; text-align: left; }
+.lb-tile .ph { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: .55; }
+.lb-tile .in { position: absolute; left: 10px; bottom: 8px; right: 10px; color: #fff; }
+.lb-tile b { display: block; font-family: var(--display); font-weight: 400; font-size: 21px; letter-spacing: .5px; }
+.lb-tile small { font-size: 11px; opacity: .85; }
+.lb-hero { position: relative; height: 170px; margin: 0 -16px 4px; overflow: hidden; background: #000; }
+.lb-hero .ph { position: absolute; inset: 0; background-size: cover; background-position: center 40%; opacity: .6; }
+.lb-hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, var(--bg) 4%, rgba(0,0,0,.1) 75%); }
+.lb-hero .bk { position: absolute; left: 16px; top: calc(12px + var(--safe-t, 0px)); z-index: 3; }
+.lb-hero .bd { position: absolute; right: 8px; top: calc(10px + var(--safe-t, 0px)); z-index: 3; width: 124px; }
+.lb-hero .bd svg { width: 124px !important; height: auto !important; }
+.lb-hero .in { position: absolute; left: 16px; right: 140px; bottom: 10px; z-index: 2; }
+.lb-hero h2 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 34px; letter-spacing: .5px; text-transform: uppercase; line-height: 1; }
+.lb-hero small { font-size: 12px; color: var(--text-2); }
+.lb-chips { display: flex; gap: 6px; overflow-x: auto; margin: 10px -16px 0; padding: 0 16px; scrollbar-width: none; }
+.lb-chips::-webkit-scrollbar { display: none; }
+.lb-chips button { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 7px 12px; border-radius: 16px; border: 1px solid var(--line); color: var(--text-2); background: none; flex: none; white-space: nowrap; }
+.lb-chips button.on { background: var(--gold); color: var(--lime-ink); border-color: transparent; font-weight: 600; }
+.lb-chips button.f { border-color: var(--line-2); color: var(--gold-2); }
+.lb-chips button.f.act { background: rgba(var(--acc-rgb), .16); border-color: var(--gold); }
+.lb-act { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+.lb-act button { font-size: 11.5px; padding: 5px 10px; border-radius: 14px; background: rgba(var(--acc-rgb), .12); color: var(--gold-2); border: 0; }
+.lb-act a { margin-left: auto; font-size: 12px; color: var(--text-2); text-decoration: underline; }
+.lb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.lb-card { position: relative; border-radius: 12px; border: 1px solid var(--line); background: var(--card-a); overflow: hidden; text-align: left; padding: 0; color: var(--text); }
+.lb-card .im { display: block; height: 100px; background-size: cover; background-position: center; }
+.lb-card .im.noimg { display: grid; place-items: center; color: var(--text-3); }
+.lb-card b { display: block; font-weight: 500; font-size: 13px; padding: 8px 10px 2px; line-height: 1.25; }
+.lb-card small { display: block; font-size: 10.5px; color: var(--text-2); padding: 0 10px 9px; letter-spacing: .5px; text-transform: uppercase; }
+.lb-card .tag { position: absolute; left: 7px; top: 7px; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; padding: 2px 6px; border-radius: 5px; background: var(--gold); color: var(--lime-ink); font-weight: 600; }
+.lb-card.on { border: 2px solid var(--gold); }
+.lb-card .num { position: absolute; right: 8px; top: 8px; width: 26px; height: 26px; border-radius: 50%; background: var(--gold); color: var(--lime-ink); display: grid; place-items: center; font-weight: 700; font-size: 13px; }
+.lb-card .plus { position: absolute; right: 8px; top: 8px; width: 26px; height: 26px; border-radius: 50%; background: rgba(0,0,0,.55); color: #fff; display: grid; place-items: center; font-size: 18px; }
+.lb-row { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 9px 0; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--text); }
+.lb-row .thumb { width: 50px; height: 50px; border-radius: 10px; }
+.lb-row .g { flex: 1; min-width: 0; }
+.lb-row b { display: block; font-weight: 500; font-size: 14px; }
+.lb-row b em { font-style: normal; color: var(--gold-2); }
+.lb-row small { display: block; font-size: 11.5px; color: var(--text-2); margin-top: 2px; }
+.lb-foot { position: absolute; left: 0; right: 0; bottom: 0; z-index: 6; }
+.lb-tray { padding: 10px 16px calc(16px + var(--safe-b)); background: var(--bg-2); border-top: 1px solid var(--line-2); }
+.lb-tray .th { display: flex; gap: 6px; margin-bottom: 10px; align-items: center; }
+.lb-tray .th button { width: 36px; height: 36px; border-radius: 8px; background-size: cover; background-position: center; position: relative; border: 0; flex: none; }
+.lb-tray .th button::after { content: '×'; position: absolute; right: -5px; top: -6px; width: 16px; height: 16px; border-radius: 50%; background: var(--bg); border: 1px solid var(--line-2); font-size: 11px; display: grid; place-items: center; color: var(--text-2); line-height: 1; }
+.lb-tray .th span { font-size: 12px; color: var(--text-2); margin-left: 6px; }
+.lb-tray .btn.lb-add { height: 52px; background: var(--gold) !important; background-image: none !important; color: var(--lime-ink) !important; border-color: transparent !important; }
+.lb-fch { display: flex; flex-wrap: wrap; gap: 6px; }
+.lb-fch button { font-size: 12.5px; padding: 8px 12px; border-radius: 16px; border: 1px solid var(--line-2); color: var(--text-2); background: none; }
+.lb-fch button i { font-style: normal; opacity: .6; }
+.lb-fch button.on { background: rgba(var(--acc-rgb), .16); border-color: var(--gold); color: var(--gold-2); font-weight: 600; }
+.fa-c { position: relative; }
+.fa-hero { position: relative; height: 480px; overflow: hidden; background: #000; }
+.fa-hero .ph { position: absolute; inset: 0; background-size: cover; background-position: center; }
+.fa-hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,.35), rgba(0,0,0,0) 30%, rgba(0,0,0,.15) 55%, rgba(0,0,0,.78)); }
+.fa-top { position: absolute; left: 16px; right: 16px; top: calc(14px + var(--safe-t, 0px)); display: flex; gap: 8px; z-index: 3; }
+.fa-ib { width: 42px; height: 42px; border-radius: 10px; display: grid; place-items: center; background: rgba(18,18,20,.55); border: 1px solid rgba(255,255,255,.1); color: #fff; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+.fa-ib.on { color: var(--gold); }
+.fa-name { position: absolute; left: 18px; right: 18px; bottom: 92px; z-index: 3; color: #fff; }
+.fa-name small { font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; opacity: .85; }
+.fa-name h2 { margin: 4px 0 0; font-family: var(--display); font-weight: 400; font-size: 38px; line-height: .98; letter-spacing: .3px; text-transform: uppercase; }
+.fa-st { position: absolute; left: 16px; right: 16px; bottom: 18px; z-index: 3; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.fa-st div { border-radius: 10px; padding: 9px 12px; background: rgba(18,18,20,.55); border: 1px solid rgba(255,255,255,.1); color: #fff; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+.fa-st b { display: block; font-family: var(--display); font-weight: 400; font-size: 24px; line-height: 1; }
+.fa-st small { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; opacity: .8; }
+.fa-sheet { position: relative; margin-top: -10px; background: var(--bg); border-radius: 18px 18px 0 0; padding: 14px 16px 40px; z-index: 4; min-height: 360px; }
+.fa-tabs { display: flex; gap: 6px; margin-bottom: 4px; }
+.fa-tabs button { padding: 9px 12px; border-radius: 8px; font-size: 12.5px; color: var(--text-2); background: rgba(var(--fg-rgb), .05); border: 0; }
+.fa-tabs button.on { background: var(--gold); color: var(--lime-ink); font-weight: 600; }
+.fa-step { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 14px; align-items: flex-start; }
+.fa-step i { font-style: normal; font-family: var(--display); font-size: 22px; color: var(--gold-2); width: 26px; line-height: 1; flex: none; }
+.fa-err { margin-top: 12px; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(208,128,62,.55); background: rgba(208,128,62,.08); font-size: 12.5px; color: var(--text-2); line-height: 1.45; }
+.fa-err b { color: var(--amber); }
+.fa-evh { display: flex; justify-content: space-between; align-items: baseline; margin: 14px 2px 4px; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-2); }
+.fa-evh .up { color: #2FB36B; letter-spacing: 0; text-transform: none; font-size: 12px; }
+.fa-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; width: 100%; padding: 11px 0; border: 0; border-bottom: 1px solid var(--line); font-size: 13.5px; background: none; color: var(--text); text-align: left; }
+.fa-row span { color: var(--text-2); display: flex; align-items: center; gap: 6px; }
+.fa-row b { font-weight: 500; }
+.fa-rec { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.fa-rec div { border-radius: 10px; background: var(--card-a); border: 1px solid var(--line); padding: 10px 0; text-align: center; }
+.fa-rec b { display: block; font-family: var(--display); font-weight: 400; font-size: 22px; }
+.fa-rec small { font-size: 10px; color: var(--text-2); }
+.fa-vid { position: relative; display: block; width: 100%; height: 190px; border-radius: 12px; margin: 14px 0 4px; background-size: cover; background-position: center; border: 0; }
+.fa-vid span { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 58px; height: 58px; border-radius: 12px; background: var(--gold); color: var(--lime-ink); display: grid; place-items: center; }
+
+/* ===== v0.46.0 · Progresso (D4), Recordes, Histórico, Conquistas, Testes, Corpo e câmera com guia ===== */
+.pg-c { padding-bottom: 120px; }
+.pg-seg { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; background: rgba(var(--fg-rgb), .05); border-radius: 10px; padding: 3px; margin-top: 4px; }
+.pg-seg button { text-align: center; padding: 9px 2px; font-size: 12px; border-radius: 8px; color: var(--text-2); background: none; border: 0; }
+.pg-seg button.on { background: var(--gold); color: var(--lime-ink); font-weight: 600; }
+.pg-n2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.pg-n2 > div { border-radius: 12px; background: var(--card-a); border: 1px solid var(--line); padding: 12px; }
+.pg-n2 b { display: block; font-family: var(--display); font-weight: 400; font-size: 28px; line-height: 1.1; color: var(--text); }
+.pg-n2 b small { font-size: 13px; color: var(--text-2); }
+.pg-n2 > div > small { font-size: 11px; color: var(--text-2); }
+.pg-cap { display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-2); margin: 18px 2px 8px; }
+.pg-cap > span { letter-spacing: .3px; text-transform: none; font-size: 11.5px; }
+.pg-d2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pg-gold, .pg-card { position: relative; height: 190px; border-radius: 12px; overflow: hidden; padding: 12px; text-align: left; border: 0; display: flex; flex-direction: column; align-items: flex-start; }
+.pg-gold { background: linear-gradient(150deg, var(--gold), rgba(var(--acc-rgb), .35)); color: var(--lime-ink); }
+.pg-card { background: var(--card-a); border: 1px solid var(--line); color: var(--text); }
+.pg-gold .k, .pg-card .k { font-size: 9.5px; letter-spacing: 1.5px; text-transform: uppercase; opacity: .75; }
+.pg-card .k { color: var(--text-2); opacity: 1; }
+.pg-gold b, .pg-card b { display: block; font-family: var(--display); font-weight: 400; font-size: 32px; line-height: 1; margin-top: 6px; }
+.pg-gold small, .pg-card small { display: block; font-size: 11.5px; margin-top: 4px; opacity: .85; line-height: 1.3; }
+.pg-card small { color: var(--text-2); opacity: 1; }
+.pg-gold .big { position: absolute; right: -14px; bottom: -14px; opacity: .22; }
+.pg-gold .big svg { width: 110px; height: 110px; }
+.pg-card .bars { display: flex; gap: 4px; margin-top: auto; width: 100%; }
+.pg-card .bars i { flex: 1; height: 26px; border-radius: 5px; background: rgba(var(--fg-rgb), .1); }
+.pg-card .bars i.on { background: var(--gold); }
+.pg-ex { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.pg-ex button { border-radius: 12px; background: var(--card-a); border: 1px solid var(--line); padding: 12px 6px; text-align: center; color: var(--text); display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.pg-ex button svg { width: 20px; height: 20px; color: var(--gold-2); margin-bottom: 4px; }
+.pg-ex b { font-weight: 500; font-size: 12.5px; }
+.pg-ex small { font-size: 10.5px; color: var(--text-2); }
+.pg-ph { position: relative; height: 160px; border-radius: 12px; overflow: hidden; background: #000; border: 0; text-align: left; }
+.pg-ph .ph { position: absolute; inset: 0; background-size: cover; background-position: center; }
+.pg-ph::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.9) 32%, rgba(0,0,0,0) 78%); }
+.pg-ph .bd { position: absolute; left: 10px; top: 10px; z-index: 2; width: 30px; height: 30px; border-radius: 8px; background: var(--gold); color: var(--lime-ink); display: grid; place-items: center; }
+.pg-ph .in { position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 2; color: #fff; }
+.pg-ph .k { font-size: 9.5px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold-2); }
+.pg-ph b { display: block; font-family: var(--display); font-weight: 400; font-size: 28px; line-height: 1; margin-top: 3px; }
+.pg-ph small { display: block; font-size: 11px; opacity: .85; margin-top: 3px; line-height: 1.25; }
+.pr-row { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 10px 0; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--text); }
+.pr-row .thumb { width: 48px; height: 48px; border-radius: 10px; }
+.pr-row .g { flex: 1; min-width: 0; }
+.pr-row b { display: block; font-weight: 500; font-size: 14px; }
+.pr-row small { display: block; font-size: 11.5px; color: var(--text-2); margin-top: 2px; }
+.pr-row .r { text-align: right; }
+.pr-row .r b { font-family: var(--display); font-weight: 400; font-size: 20px; color: var(--gold-2); }
+.pr-row .r small { font-size: 10.5px; }
+.hs-bars { display: flex; align-items: flex-end; gap: 6px; height: 80px; margin-top: 10px; }
+.hs-bars i { flex: 1; border-radius: 4px 4px 0 0; background: var(--gold); position: relative; }
+.hs-bars i.o { background: rgba(var(--fg-rgb), .1); }
+.hs-bars em { position: absolute; top: -16px; left: 0; right: 0; text-align: center; font-style: normal; font-size: 10px; color: var(--text-2); }
+.hs-row { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 10px 0; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--text); }
+.hs-row .d { width: 40px; text-align: center; flex: none; }
+.hs-row .d b { display: block; font-family: var(--display); font-weight: 400; font-size: 22px; line-height: 1; }
+.hs-row .d small { font-size: 10px; color: var(--text-2); text-transform: uppercase; }
+.hs-row .lt { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-family: var(--display); font-size: 16px; background: rgba(var(--fg-rgb), .07); color: var(--gold-2); flex: none; }
+.hs-row .g { flex: 1; min-width: 0; }
+.hs-row .g b { display: block; font-weight: 500; font-size: 14px; }
+.hs-row .g small { font-size: 11.5px; color: var(--text-2); }
+.md-head { display: flex; align-items: center; gap: 12px; margin-top: 6px; }
+.md-head b { font-family: var(--display); font-weight: 400; font-size: 44px; color: var(--gold-2); }
+.md-head b small { font-size: 22px; color: var(--text-2); }
+.md-head span { font-size: 12.5px; color: var(--text-2); line-height: 1.4; }
+.md-nx { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; background: var(--card-a); border: 1px solid var(--line); margin-top: 8px; }
+.md-nx .m { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: rgba(var(--fg-rgb), .06); color: var(--text-3); flex: none; }
+.md-nx .g { flex: 1; min-width: 0; }
+.md-nx b { display: block; font-weight: 500; font-size: 14px; }
+.md-nx small { font-size: 11.5px; color: var(--text-2); }
+.md-nx i { display: block; height: 6px; border-radius: 3px; background: rgba(var(--fg-rgb), .1); margin-top: 6px; overflow: hidden; }
+.md-nx i em { display: block; height: 100%; background: var(--gold); }
+.md-g { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.md-g > div { border-radius: 12px; background: var(--card-a); border: 1px solid var(--line); padding: 12px 6px; text-align: center; font-size: 11.5px; }
+.md-g .m { width: 46px; height: 46px; border-radius: 50%; margin: 0 auto 6px; display: grid; place-items: center; background: var(--gold); color: var(--lime-ink); }
+.md-g b { display: block; font-weight: 500; font-size: 12px; }
+.md-g small { display: block; font-size: 10px; color: var(--text-2); margin-top: 2px; line-height: 1.3; }
+.md-g .off { color: var(--text-3); }
+.md-g .off .m { background: rgba(var(--fg-rgb), .06); color: var(--text-3); }
+.md-g .off b { color: var(--text-3); }
+.ts-next { padding: 12px 14px; border-radius: 12px; background: rgba(var(--acc-rgb), .1); border: 1px solid rgba(var(--acc-rgb), .4); font-size: 13px; line-height: 1.45; margin: 4px 0 6px; }
+.ts-next b { color: var(--gold-2); }
+.ts-card { padding: 12px; border-radius: 12px; background: var(--card-a); border: 1px solid var(--line); margin-top: 8px; }
+.ts-r { display: flex; align-items: center; gap: 10px; }
+.ts-r .g { flex: 1; min-width: 0; }
+.ts-r .g b { display: block; font-weight: 500; font-size: 14px; }
+.ts-r .g small { font-size: 11.5px; color: var(--text-2); }
+.ts-r .v { text-align: right; min-width: 56px; }
+.ts-r .v b { display: block; font-family: var(--display); font-weight: 400; font-size: 22px; }
+.ts-r .v small { font-size: 10.5px; color: var(--text-2); }
+.ts-r .v small.up { color: #2FB36B; }
+.ts-r .v small.dn { color: var(--amber); }
+.ts-sp { flex: none; }
+.cp-first { text-align: center; padding: 26px 16px; border-radius: 12px; background: var(--card-a); border: 1px solid var(--line); margin-top: 8px; }
+.cp-first .ic { width: 60px; height: 60px; border-radius: 12px; margin: 0 auto; display: grid; place-items: center; background: rgba(var(--acc-rgb), .14); color: var(--gold-2); }
+.cp-first h2 { font-family: var(--display); font-weight: 400; font-size: 24px; margin: 12px 0 6px; text-transform: uppercase; }
+.cp-first p { font-size: 13px; color: var(--text-2); margin: 0 0 16px; line-height: 1.4; }
+.btn.lime.cp-save { background: var(--gold) !important; background-image: none !important; color: var(--lime-ink) !important; border-color: transparent !important; height: 52px; margin-top: 14px; }
+.cp-big { display: grid; grid-template-columns: 56px 1fr 56px; align-items: center; gap: 8px; margin-top: 10px; }
+.cp-big button { height: 56px; border-radius: 10px; border: 1px solid var(--line-2); display: grid; place-items: center; color: var(--gold-2); background: none; }
+.cp-big b { text-align: center; font-family: var(--display); font-weight: 400; font-size: 50px; line-height: 1; color: var(--text); }
+.cp-big b small { font-size: 18px; color: var(--text-2); }
+.cp-diff { text-align: center; font-size: 12px; color: var(--text-2); margin-top: 8px; }
+.cp-diff.dn { color: #2FB36B; }
+.cp-f { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.cp-f label span { display: block; font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text-2); margin: 0 2px 4px; }
+.cp-f .input { height: 44px; }
+.cp-w { display: block; width: 100%; text-align: left; color: var(--text); }
+.cp-w .l span.gd { color: #2FB36B; }
+.cp-wv { display: flex; align-items: baseline; gap: 8px; margin-top: 4px; }
+.cp-wv b { font-family: var(--display); font-weight: 400; font-size: 38px; color: var(--text); }
+.cp-wv small { font-size: 12.5px; color: var(--text-2); }
+.cp-wv u { color: var(--gold-2); text-decoration-color: rgba(var(--acc-rgb), .6); }
+.cp-ob { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid rgba(var(--acc-rgb), .6); color: var(--gold-2); font-size: 12px; letter-spacing: .3px; text-transform: none; background: none; margin: -8px 0; }
+.cp-g { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.cp-g button { border-radius: 10px; background: var(--card-a); border: 1px solid var(--line); padding: 10px; text-align: left; color: var(--text); }
+.cp-g .l { display: block; font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--text-2); }
+.cp-g b { display: block; font-family: var(--display); font-weight: 400; font-size: 20px; margin-top: 2px; }
+.cp-g small { font-size: 10.5px; color: var(--text-2); }
+.cp-g small.gd { color: #2FB36B; }
+.cp-g small.bd { color: var(--amber); }
+.cp-ph { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; background: none; border: 0; padding: 0; }
+.cp-ph span { position: relative; height: 200px; border-radius: 10px; background-size: cover; background-position: center top; }
+.cp-ph em { position: absolute; left: 8px; bottom: 8px; font-style: normal; font-size: 11px; padding: 3px 8px; border-radius: 6px; background: rgba(0,0,0,.6); color: #fff; }
+.cp-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.cp-head b { font-family: var(--display); font-weight: 400; font-size: 44px; color: var(--text); }
+.cp-head span { font-size: 12.5px; color: var(--text-2); }
+.cp-pose { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+.cp-pose button { border-radius: 10px; border: 1px solid var(--line-2); height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 10px; font-size: 12.5px; position: relative; color: var(--text-2); background: none; }
+.cp-pose button.on { border-color: var(--gold); color: var(--gold-2); background: rgba(var(--acc-rgb), .08); }
+.cp-sil { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 34px; opacity: .8; }
+.cp-sil svg { width: 34px; height: auto; }
+.cam-full { position: fixed; inset: 0; z-index: 90; background: #000; }
+.cam-full video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.cam-full video.mirror { transform: scaleX(-1); }
+.cam-full .ghost { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+.cam-full .sil { position: absolute; left: 50%; top: 52%; transform: translate(-50%, -50%); width: 52%; pointer-events: none; }
+.cam-full .sil svg { width: 100%; height: auto; }
+.cam-top { position: absolute; left: 14px; right: 14px; top: calc(14px + var(--safe-t, 0px)); display: flex; align-items: center; gap: 10px; color: #fff; font-size: 12.5px; z-index: 2; }
+.cam-top span { flex: 1; text-align: center; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
+.cam-tip { position: absolute; left: 20px; right: 20px; bottom: calc(130px + var(--safe-b)); text-align: center; color: #fff; font-size: 12.5px; text-shadow: 0 1px 3px rgba(0,0,0,.9); }
+.cam-bot { position: absolute; left: 0; right: 0; bottom: calc(24px + var(--safe-b)); display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.cam-op { width: 60%; accent-color: var(--gold); }
+.cam-shot { width: 72px; height: 72px; border-radius: 50%; border: 5px solid #fff; background: rgba(255,255,255,.25); }
+
+/* ===== v0.46.0 · "Como fazer" em folha no treino ===== */
+.cf-mus { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+.cf-mus .b { flex: 0 0 110px; }
+.cf-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.cf-chips span { font-size: 11.5px; padding: 5px 10px; border-radius: 14px; background: rgba(var(--acc-rgb), .12); color: var(--gold-2); }
+.cf-chips span.s { background: rgba(var(--fg-rgb), .06); color: var(--text-2); }
+.cf-steps { counter-reset: s; margin: 8px 0 0; padding: 0; list-style: none; }
+.cf-steps li { counter-increment: s; display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; line-height: 1.4; }
+.cf-steps li::before { content: counter(s); flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--gold); color: var(--lime-ink); font-size: 11px; font-weight: 700; display: grid; place-items: center; margin-top: 1px; }
+.cf-err { margin-top: 10px; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(208,128,62,.5); background: rgba(208,128,62,.08); font-size: 12.5px; color: var(--text); line-height: 1.45; }
+.cf-err b { color: var(--amber); }
+
+/* ===== v0.46.0 · Tema Dourado sem contorno (aprovado em 13/11): a separação fica pela cor do fundo. ===== */
+/* Gerado varrendo as telas: elementos com borda nos 4 lados e cantos arredondados. A barra de baixo não muda; */
+/* o que está escolhido (.on, .sel, .best…) e o tema escolhido em Configurações mantêm o contorno. */
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .add-set:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .btn.ghost:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .btn.ghost.block:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .btn.ghost.fs-rm:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .btn.ghost.pl-share:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .btn.lime:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .btn.lime.block:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .btn.lime.save-btn:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .card:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .card.bal-card:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .card.h2-tile:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .card.h2-tile.h2-next:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .card.h2-tile.mini:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .card.h2-tile.mini.h2-lvl3:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .card.h2-tile.wide:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .card.pct-card:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .card.pw-card:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .card.small.muted:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .card.tile:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .cf-err:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .check:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .chip.blue:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .chip.count:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .ck-faces > button:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .cp-big > button:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .cp-g > button:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .cp-ob:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .cp-pose > button:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .dt:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .ed-box:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .ed-box.cp-w:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .ed-days > button:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .ed-n3 > div:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .ed-wd > span:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .f:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .fa-err:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .fa-rec > div:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .feel > button:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .fm-hl:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .fm-tiles > div:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .fs-box:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .fx-chipsel > button:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .fx-grid > button:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .fx-lv > button:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .fx-pre > button:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .fx-search:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .fx-step:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .fx-step.work:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .fx-sw:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .fx-tags > span:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .h2-tag:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .ic:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .icon-btn:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .input:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .lb-card:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .lb-chips > button:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .lb-fch > button:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .lb-search:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .lt:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .lt.late:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .md-g > div:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .md-nx:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .mini:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .n:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .note-field:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .pc:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .pct-schemes > div:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .pg-card:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .pg-ex > button:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .pg-n2 > div:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .pin-note:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .pl-hero:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .pl-row:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .quick-row > button:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .rest-ask button:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .rest-pill:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .seg:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .seg.body-switch:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .seg.body-switch.mb-switch:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .stepper:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .stp:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .th-prev > i:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .theme-opt:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .thumb:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .thumb.noimg:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .tools > button:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .tp-card:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .tp-cur:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .tp-prev:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .ts-card:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .ts-next:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .tt-row:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .wk-links > button:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .wk-tag.fill:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .wk-tag.late:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri) { border-color: transparent !important; box-shadow: none !important; }
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .add-set:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .check:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .ck-faces > button:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .cp-big > button:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .cp-ob:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .cp-pose > button:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .dt:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .ed-days > button:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .ed-wd > span:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .f:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .feel > button:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .fx-chipsel > button:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .fx-grid > button:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .fx-lv > button:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .fx-pre > button:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .fx-search:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .fx-tags > span:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .ic:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .lb-chips > button:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .lb-fch > button:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .lb-search:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .lt:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .lt.late:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .mini:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .n:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .pc:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .pct-schemes > div:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .pin-note:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .quick-row > button:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .rest-ask button:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .stp:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .wk-links > button:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .wk-tag.fill:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .wk-tag.late:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri) { background-color: rgba(var(--fg-rgb), 0.055) !important; }
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .btn.lime:not(.save-btn) { background: var(--gold) !important; background-image: none !important; color: var(--lime-ink) !important; }
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .btn.lime:not(.save-btn) .arrow { background: rgba(0,0,0,.15) !important; color: var(--lime-ink) !important; border: 0 !important; }
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .save-btn:not(.dirty) { background: rgba(var(--fg-rgb), 0.055) !important; color: var(--text-2) !important; }
+:is(:root:not([data-theme]), :root[data-theme="dourado"]) .theme-opt.on { border-color: var(--gold) !important; }

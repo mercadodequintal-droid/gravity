@@ -72,57 +72,132 @@
   }
 
   // ====================== BIBLIOTECA ======================
+  // v0.46 (aprovado em 13/11): aba Exercícios = L2 "Escolha o músculo" → página do músculo G1 (grade com filtros);
+  // Adicionar exercícios (pick) = A2 "Grade numerada" com a folha Filtros e a bandeja dos escolhidos.
+  const LIB_KINDS = [['all', 'Todos'], ['novo', 'Novos'], ['maquina', 'Máquinas'], ['moda', 'Em alta'], ['hyrox', 'HYROX'], ['cal', 'Calistenia']];
+  const libNorm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/puley/g, 'pulley').replace(/cros+ ?over/g, 'crossover').replace(/scot\b/g, 'scott');
+  const FILT_IC = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg>';
+  const planExIds = () => { const p = Store.activePlan(); return new Set(p ? p.workouts.flatMap((w) => w.items.map((it) => it.exId)) : []); };
+  function libGroups() { return Store.GROUPS.filter((g) => Store.allExercises().some((e) => e.grupo === g && g !== 'Cardio')).concat(Store.allExercises().some((e) => e.grupo === 'Cardio') ? ['Cardio'] : []); }
   function Library(opts) {
     opts = opts || {};
-    let q = '', group = 'Todos', kind = 'all';
-    const picked = new Set();
-    const KINDS = [['all', 'Todos'], ['novo', 'Novos'], ['maquina', 'Máquinas'], ['moda', 'Em alta'], ['hyrox', 'HYROX'], ['cal', 'Calistenia']];
+    const pick = !!opts.pick;
+    let q = '', group = opts.group || (pick ? 'Todos' : null), kind = opts.kind || 'all';
+    const eqSel = new Set(opts.eq || []);
+    const picked = [];
+    const inPlan = planExIds();
+    const nF = () => (kind !== 'all' ? 1 : 0) + eqSel.size + (S().settings.gymOnly ? 1 : 0);
+    const match = (e, o) => {
+      o = o || {};
+      const g = o.group !== undefined ? o.group : group, k = o.kind || kind, eqs = o.eq || eqSel;
+      if (g && g !== 'Todos' && e.grupo !== g) return false;
+      if (k === 'novo' ? !e.novo : k !== 'all' && e.tag !== k) return false;
+      if (eqs.size && !eqs.has(e.equip || 'Outro')) return false;
+      if (S().settings.gymOnly && !Store.available(e)) return false;
+      if (o.q !== false && q) { const hay = libNorm(e.nome + ' ' + e.grupo + ' ' + (e.equip || '') + ' ' + (e.alias || '')); if (!libNorm(q).split(/\s+/).filter(Boolean).every((w) => hay.includes(w))) return false; }
+      return true;
+    };
+    const list = () => Store.allExercises().filter((e) => match(e));
+    const card = (e) => {
+      const k = picked.indexOf(e.id) + 1;
+      return `<button class="lb-card press ${k ? 'on' : ''}" data-a="ex" data-id="${e.id}">${(e.img && e.img[0]) ? `<span class="im" style="background-image:url('${e.img[0]}')"></span>` : `<span class="im noimg">${icon('dumbbell')}</span>`}
+        ${pick ? (k ? `<span class="num">${k}</span>` : '<span class="plus">+</span>') : inPlan.has(e.id) ? '<span class="tag">No plano</span>' : e.novo && window.LIB_TAGS && LIB_TAGS[e.tag] ? `<span class="tag">${LIB_TAGS[e.tag]}</span>` : ''}
+        <b>${esc(e.nome)}</b><small>${esc(e.equip || e.grupo)}</small></button>`;
+    };
+    const gridHTML = () => { const L = list(); return L.length ? `<div class="lb-grid">${L.map(card).join('')}</div>` : `<div class="empty">Nenhum exercício encontrado.<br><button class="btn ghost sm" style="margin-top:12px" data-a="new">Criar “${esc(q || 'novo')}”</button></div>`; };
+    const activeChips = () => (nF() ? `<div class="lb-act">${kind !== 'all' ? `<button data-a="rmKind">${esc(LIB_KINDS.find((x) => x[0] === kind)[1])} ×</button>` : ''}${[...eqSel].map((x) => `<button data-a="rmEq" data-v="${esc(x)}">${esc(x)} ×</button>`).join('')}${S().settings.gymOnly ? '<button data-a="gymOnly">Minha academia ×</button>' : ''}<a data-a="clear">Limpar</a></div>` : '');
+    const filtBtn = () => `<button class="f ${nF() ? 'act' : ''}" data-a="filters">${FILT_IC}Filtros${nF() ? ' · ' + nF() : ''}</button>`;
+    const search = (ph) => `<label class="lb-search">${icon('search', 'sm')}<input type="search" placeholder="${ph}" value="${esc(q)}" data-in="q"></label>`;
+    const trayHTML = () => (picked.length ? `<div class="lb-tray"><div class="th">${picked.slice(0, 7).map((id) => { const e = Store.exercise(id); return `<button data-a="unpick" data-id="${id}" style="background-image:url('${(e.img || [])[0] || ''}')"></button>`; }).join('')}<span>${picked.length} ${picked.length === 1 ? 'escolhido' : 'escolhidos'} · toque para tirar</span></div>
+      <button class="btn lime block lb-add" data-a="done">${icon('plus', 'sm')}Adicionar ${picked.length} ${picked.length === 1 ? 'exercício' : 'exercícios'}</button></div>` : '');
+    const paintList = () => { const g = def.el && def.el.querySelector('[data-grid]'); if (g) g.innerHTML = body(); const t = def.el && def.el.querySelector('[data-tray]'); if (t) t.innerHTML = trayHTML(); const c = def.el && def.el.querySelector('[data-cnt]'); if (c) c.textContent = cntLabel(); };
+    const cntLabel = () => (group && group !== 'Todos' ? group + ' · ' : '') + list().length + ' exercícios';
+    // Busca na tela dos músculos: lista com o trecho em dourado e chips por músculo.
+    function searchResults() {
+      const L = Store.allExercises().filter((e) => match(e, { group: null }));
+      const words = libNorm(q).split(/\s+/).filter(Boolean);
+      const hl = (t) => { let out = esc(t); const w = words[0]; if (!w) return out; const i = libNorm(t).indexOf(w); return i < 0 ? out : esc(t.slice(0, i)) + '<em>' + esc(t.slice(i, i + w.length)) + '</em>' + esc(t.slice(i + w.length)); };
+      if (!L.length) return `<div class="empty">Nada encontrado para “${esc(q)}”.<br><button class="btn ghost sm" style="margin-top:12px" data-a="new">Criar “${esc(q)}”</button></div>`;
+      return `<div class="lb-cnt">${L.length} ${L.length === 1 ? 'resultado' : 'resultados'}</div>` + L.slice(0, 60).map((e) => `<button class="lb-row press" data-a="ex" data-id="${e.id}">${thumb(e)}<span class="g"><b>${hl(e.nome)}</b><small>${esc(e.grupo)}${e.equip ? ' · ' + esc(e.equip) : ''}</small></span>${icon('next', 'sm')}</button>`).join('');
+    }
+    function body() {
+      if (!pick && !group) return q ? searchResults() : `<div class="lb-cap">Escolha o músculo</div><div class="lb-tiles">${libGroups().map((g) => { const L = Store.allExercises().filter((e) => e.grupo === g); const ph = L.filter((e) => e.img && e.img.length); const im = ph[Math.min(2, ph.length - 1)]; return `<button class="lb-tile press" data-a="grp" data-g="${esc(g)}">${im ? `<span class="ph" style="background-image:url('${im.img[0]}')"></span>` : ''}<span class="in"><b>${esc(g)}</b><small>${L.length} exercícios</small></span></button>`; }).join('')}</div>`;
+      return gridHTML();
+    }
+    function heroHTML() {
+      const L = Store.allExercises().filter((e) => group === 'Todos' || e.grupo === group), ph = L.filter((e) => e.img && e.img.length && (kind === 'all' || match(e, { q: false }))), im = ph[Math.min(2, ph.length - 1)];
+      const reg = {}; L.forEach((e) => { const m = Analytics.musclesOf(e); Object.keys(m).forEach((k) => { if (m[k] === 1) reg[k] = (reg[k] || 0) + 1; }); });
+      const top = Math.max(1, ...Object.values(reg));
+      const bd = Screens.bodySVG((k) => (reg[k] && reg[k] >= top * 0.25 ? 'var(--gold)' : ''), 120);
+      const np = L.filter((e) => inPlan.has(e.id)).length;
+      return `<div class="lb-hero">${im ? `<span class="ph" style="background-image:url('${im.img[0]}')"></span>` : ''}<button class="icon-btn bk" data-a="back">${icon('back')}</button><span class="bd">${bd}</span>
+        <div class="in"><h2>${esc(opts.title || group)}</h2><small>${L.length} exercícios${np ? ' · ' + np + ' no seu plano' : ''}</small></div></div>`;
+    }
+    const EQS = () => { const c = {}; Store.allExercises().filter((e) => match(e, { eq: new Set(), q: false })).forEach((e) => { const k = e.equip || 'Outro'; c[k] = (c[k] || 0) + 1; }); return Object.entries(c).sort((a, b) => b[1] - a[1]); };
+    const filtersSheet = () => {
+      let tKind = kind, tEq = new Set(eqSel), tGym = !!S().settings.gymOnly;
+      const cnt = () => Store.allExercises().filter((e) => { const prev = S().settings.gymOnly; S().settings.gymOnly = tGym; const r = match(e, { kind: tKind, eq: tEq }); S().settings.gymOnly = prev; return r; }).length;
+      const off = Object.keys(S().settings.gymOff || {}).length;
+      sheet({
+        render: () => `<h3>Filtros</h3><div class="desc">Combinam com a busca${group && group !== 'Todos' ? ' e com ' + esc(group) : ' e o músculo escolhido'}.</div>
+          <div class="fs-cap">Tipo</div><div class="lb-fch">${LIB_KINDS.map(([k, l]) => `<button class="${k === tKind ? 'on' : ''}" data-a="k" data-v="${k}">${l}</button>`).join('')}</div>
+          <div class="fs-cap" style="display:flex;justify-content:space-between">Aparelho<span style="letter-spacing:.3px;text-transform:none;color:var(--gold-2)">pode marcar mais de um</span></div>
+          <div class="lb-fch">${EQS().map(([k, n]) => `<button class="${tEq.has(k) ? 'on' : ''}" data-a="e" data-v="${esc(k)}">${esc(k)} <i>${n}</i></button>`).join('')}</div>
+          <div class="fs-cap">Minha academia</div>
+          <div class="fs-opt" data-a="g" style="border:0"><span class="g"><b>Só o que tem na minha academia</b><small>${off ? off + (off === 1 ? ' aparelho marcado' : ' aparelhos marcados') + ' como "não tem"' : 'Marque os aparelhos que sua academia não tem'}</small></span><span class="switch ${tGym ? 'on' : ''}"></span></div>
+          <button class="fs-link" style="justify-content:flex-start" data-a="gym">${icon('edit', 'sm')} Ajustar aparelhos da academia</button>
+          <div class="fs-btns"><button class="btn ghost" data-a="clr">Limpar</button><button class="btn lime" data-a="ok">Ver ${cnt()} exercícios</button></div>`,
+        actions: {
+          k: (ds) => { tKind = ds.v; sheetRefresh(); },
+          e: (ds) => { tEq.has(ds.v) ? tEq.delete(ds.v) : tEq.add(ds.v); Native.vibrate(6); sheetRefresh(); },
+          g: () => { tGym = !tGym; sheetRefresh(); },
+          gym: () => { closeSheet(); push(GymSetup()); },
+          clr: () => { tKind = 'all'; tEq = new Set(); tGym = false; sheetRefresh(); },
+          ok: () => { kind = tKind; eqSel.clear(); tEq.forEach((x) => eqSel.add(x)); S().settings.gymOnly = tGym; Store.save(); closeSheet(); refresh(); },
+        },
+      });
+    };
     const def = {
-      hideNav: !!opts.pick,
+      hideNav: pick || !!opts.group,
       render() {
-        def.footer = !!opts.pick;
-        const groups = ['Todos'].concat(Store.GROUPS.filter((g) => Store.allExercises().some((e) => e.grupo === g)));
-        const right = `<button class="icon-btn" data-a="new">${icon('plus')}</button>`;
-        return topbar(opts.pick ? 'Adicionar exercícios' : 'Exercícios', right, !opts.pick) +
-          `<div class="content"><div class="search">${icon('search', 'sm')}<input type="search" placeholder="Buscar exercício" value="${esc(q)}" data-in="q"></div>
-          <div class="filters">${groups.map((g) => `<button class="filter ${g === group ? 'on' : ''}" data-a="group" data-g="${g}">${g}</button>`).join('')}</div>
-          <div class="filters kinds">${KINDS.map(([k, l]) => `<button class="filter ${k === kind ? 'on' : ''}" data-a="kind" data-k="${k}">${l}</button>`).join('')}</div>
-          <div class="gym-row"><div class="switch-row" data-a="gymOnly"><div class="grow"><div>Só o que tem na minha academia</div><div class="small muted">${Object.keys(S().settings.gymOff || {}).length ? Object.keys(S().settings.gymOff).length + ' aparelhos marcados como “não tem”' : 'Marque os aparelhos que sua academia não tem'}</div></div><div class="switch ${S().settings.gymOnly ? 'on' : ''}"></div></div><button class="link small gold" data-a="gym">Minha academia</button></div>
-          <div class="ex-grid" style="margin-top:14px" data-grid>${gridHTML()}</div></div>` +
-          (opts.pick ? `<div class="footer"><button class="btn ghost" style="flex:0 0 auto" data-a="back">Cancelar</button><button class="btn lime" data-a="done">Adicionar${picked.size ? ' (' + picked.size + ')' : ''}</button></div>` : '');
+        def.footer = pick;
+        if (!pick && group) {
+          const eqTop = EQS().slice(0, 6).map((x) => x[0]);
+          return `<div class="content lb-c" style="padding-top:0">${heroHTML()}${search('Buscar em ' + esc(group))}
+            <div class="lb-chips">${filtBtn()}<button class="${eqSel.size ? '' : 'on'}" data-a="eqAll">Todos</button>${eqTop.map((x) => `<button class="${eqSel.size === 1 && eqSel.has(x) ? 'on' : ''}" data-a="eqOne" data-v="${esc(x)}">${esc(x)}</button>`).join('')}</div>
+            ${activeChips()}<div class="lb-cap" data-cnt>${cntLabel()}</div><div data-grid>${body()}</div></div>`;
+        }
+        const right = `<button class="icon-btn" data-a="new" aria-label="Novo exercício">${icon('plus')}</button>`;
+        if (pick) {
+          return topbar('Adicionar exercícios', right) + `<div class="content lb-c">${search('Buscar exercício')}
+            <div class="lb-chips">${filtBtn()}${['Todos'].concat(libGroups()).map((g) => `<button class="${g === group ? 'on' : ''}" data-a="grpChip" data-g="${esc(g)}">${esc(g)}</button>`).join('')}</div>
+            ${activeChips()}<div class="lb-cap" data-cnt>${cntLabel()}</div><div data-grid>${body()}</div></div><div class="lb-foot" data-tray>${trayHTML()}</div>`;
+        }
+        return topbar('Exercícios', right, true) + `<div class="content lb-c">${search('Buscar exercício')}<div data-grid>${body()}</div></div>`;
       },
+      after(el) { const c = el.querySelector('.lb-chips .on'); if (c && pick) c.scrollIntoView({ inline: 'center', block: 'nearest' }); },
       actions: {
         back: pop,
-        q: (ds, el) => { q = el.value; def.el.querySelector('[data-grid]').innerHTML = gridHTML(); },
-        group: (ds) => { group = ds.g; def.el.querySelectorAll('.filter[data-g]').forEach((b) => b.classList.toggle('on', b.dataset.g === group)); def.el.querySelector('[data-grid]').innerHTML = gridHTML(); },
-        kind: (ds) => { kind = ds.k; def.el.querySelectorAll('.filter[data-k]').forEach((b) => b.classList.toggle('on', b.dataset.k === kind)); def.el.querySelector('[data-grid]').innerHTML = gridHTML(); },
+        q: (ds, el) => { q = el.value; paintList(); },
+        grp: (ds) => push(Library({ group: ds.g })),
+        grpChip: (ds) => { group = ds.g; refresh(); },
+        eqAll: () => { eqSel.clear(); refresh(); },
+        eqOne: (ds) => { eqSel.clear(); eqSel.add(ds.v); refresh(); },
+        filters: filtersSheet,
+        rmKind: () => { kind = 'all'; refresh(); },
+        rmEq: (ds) => { eqSel.delete(ds.v); refresh(); },
         gymOnly: () => { S().settings.gymOnly = !S().settings.gymOnly; Store.save(); refresh(); },
-        gym: () => push(GymSetup()),
-        ex: (ds, el) => {
-          if (opts.pick) {
-            picked.has(ds.id) ? picked.delete(ds.id) : picked.add(ds.id);
-            el.classList.toggle('sel', picked.has(ds.id)); Native.vibrate(8);
-            def.el.querySelector('[data-a="done"]').textContent = 'Adicionar' + (picked.size ? ' (' + picked.size + ')' : '');
-          } else push(ExerciseDetail(ds.id));
+        clear: () => { kind = 'all'; eqSel.clear(); S().settings.gymOnly = false; Store.save(); refresh(); },
+        ex: (ds) => {
+          if (!pick) { push(ExerciseDetail(ds.id)); return; }
+          const k = picked.indexOf(ds.id); if (k >= 0) picked.splice(k, 1); else picked.push(ds.id);
+          Native.vibrate(8); paintList();
         },
-        new: () => push(ExerciseForm(null, (ex) => { if (opts.pick) picked.add(ex.id); })),
-        done: () => { if (!picked.size) { toast('Selecione ao menos um exercício'); return; } opts.pick([...picked]); pop(); },
+        unpick: (ds) => { const k = picked.indexOf(ds.id); if (k >= 0) picked.splice(k, 1); paintList(); },
+        new: () => push(ExerciseForm(null, (ex) => { if (pick && !picked.includes(ex.id)) picked.push(ex.id); })),
+        done: () => { if (!picked.length) { toast('Selecione ao menos um exercício'); return; } opts.pick(picked.slice()); pop(); },
       },
     };
-    function gridHTML() {
-      // Busca por palavras (em qualquer ordem), sem acento, incluindo os nomes usados na academia.
-      const n = (s) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/puley/g, 'pulley').replace(/cros+ ?over/g, 'crossover').replace(/scot\b/g, 'scott');
-      const words = n(q || '').split(/\s+/).filter(Boolean);
-      const list = Store.allExercises().filter((e) => {
-        if (group !== 'Todos' && e.grupo !== group) return false;
-        if (kind === 'novo' ? !e.novo : kind !== 'all' && e.tag !== kind) return false;
-        if (S().settings.gymOnly && !Store.available(e)) return false;
-        const hay = n(e.nome + ' ' + e.grupo + ' ' + (e.equip || '') + ' ' + (e.alias || ''));
-        return words.every((w) => hay.includes(w));
-      });
-      if (!list.length) return `<div class="empty" style="grid-column:1/-1">Nenhum exercício encontrado.<br><button class="btn ghost sm" style="margin-top:12px" data-a="new">Criar “${esc(q || 'novo')}”</button></div>`;
-      return list.map((e) => `<div class="card ex-card press ${picked.has(e.id) ? 'sel' : ''}" data-a="ex" data-id="${e.id}"><span class="selmark">${icon('check', 'sm')}</span>${imgHTML(e, '', false)}<div class="t">${e.novo && window.LIB_TAGS[e.tag] ? `<span class="ex-tag">${window.LIB_TAGS[e.tag]}</span>` : ''}<h4>${esc(e.nome)}</h4><div class="g">${esc(e.grupo)}${e.equip ? ' · ' + esc(e.equip) : ''}</div></div></div>`).join('');
-    }
     return def;
   }
 
@@ -156,8 +231,12 @@
   }
 
   // ====================== FICHA DO EXERCÍCIO ======================
-  function ExerciseDetail(exId) {
-    let metric = 'maxKg';
+  // v0.46 · Ficha do exercício "FA imersiva" (aprovada em 13/11): foto grande, botões em vidro escuro (cantos
+  // quadrados, sem brilho), nome e 3 números por cima da foto e uma folha com 4 abas.
+  const STAR = (on) => `<svg viewBox="0 0 24 24" width="18" height="18" fill="${on ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.8"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg>`;
+  function ExerciseDetail(exId, startTab) {
+    let tab = startTab || 'como';
+    const meta = () => S().exMeta[exId] || {};
     const def = {
       hideNav: true,
       render() {
@@ -166,37 +245,61 @@
         const best = hist.length ? Math.max(...hist.map((h) => h.maxKg)) : 0;
         const best1 = hist.length ? Math.max(...hist.map((h) => h.e1rm)) : 0;
         const last = hist[hist.length - 1];
-        const pts = hist.slice(-12).map((h) => ({ label: shortDate(h.date), v: h[metric] }));
-        return `<div class="topbar" style="position:absolute;left:0;right:0;z-index:3"><button class="icon-btn" data-a="back">${icon('back')}</button><div class="grow"></div>${ex.custom ? `<button class="icon-btn" data-a="edit">${icon('edit', 'sm')}</button>` : ''}</div>
-          <div class="content" style="padding-top:0"><div class="detail-hero">${imgHTML(ex, 'slow', true)}<div class="fade"></div></div>
-          <div class="detail-title">${esc(ex.nome)}</div>
-          <div class="chip-row" style="margin-top:0"><span class="chip blue">${esc(ex.grupo)}</span>${ex.equip ? `<span class="chip">${esc(ex.equip)}</span>` : ''}</div>
-          ${ex.musculos && ex.musculos.length ? `<div class="small muted" style="margin-top:12px"><b style="color:var(--text)">Músculos:</b> ${esc(ex.musculos.join(', '))}${ex.secundarios && ex.secundarios.length ? ' · <span class="faint">auxiliares: ' + esc(ex.secundarios.join(', ')) + '</span>' : ''}</div>` : ''}
-          ${Store.gymDependent(ex) && !ex.custom ? `<div class="switch-row" data-a="avail" style="margin-top:6px"><div class="grow"><div>Tem na minha academia</div><div class="small muted">Desligado: o app não sugere este aparelho nas trocas e nos planos que monta</div></div><div class="switch ${Store.available(ex) ? 'on' : ''}"></div></div>` : ''}
-          <button class="pin-note" style="margin-top:12px" data-a="pin">${icon('note', 'sm')}<span>${Tools.pinOf(exId) ? esc(Tools.pinOf(exId)) : 'Adicionar nota fixa (ajuste do banco, assento, pegada…)'}</span></button>
-          <div class="btn-row" style="margin-top:16px"><button class="btn blue" data-a="video">${icon('video', 'sm')}Ver vídeo</button><button class="btn ghost" data-a="setVideo">${icon('edit', 'sm')}Link próprio</button></div>
-          ${ex.dicas && ex.dicas.length ? `<div class="section-title"><h2>Como executar</h2></div><div class="card"><ol class="tips">${ex.dicas.map((d) => `<li>${esc(d)}</li>`).join('')}</ol></div>` : ''}
-          <div class="section-title"><h2>Sua evolução</h2></div>
-          ${hist.length ? `<div class="tiles"><div class="card tile"><div class="v num pr">${nf(best)}<small>kg</small></div><div class="l">Recorde</div></div><div class="card tile"><div class="v num">${nf(best1, 0)}<small>kg</small></div><div class="l">1RM estimado</div></div><div class="card tile"><div class="v num">${hist.length}</div><div class="l">Sessões</div></div></div>
-          <div class="card" style="margin-top:12px"><div class="seg" style="margin-bottom:12px"><button class="${metric === 'maxKg' ? 'on' : ''}" data-a="metric" data-m="maxKg">Carga máx.</button><button class="${metric === 'e1rm' ? 'on' : ''}" data-a="metric" data-m="e1rm">1RM est.</button><button class="${metric === 'volume' ? 'on' : ''}" data-a="metric" data-m="volume">Volume</button></div>${lineChart(pts, { color: 'var(--lime)' })}</div>
-          <div class="card" style="margin-top:12px"><div class="caps" style="margin-bottom:8px">Recordes</div>${Screens.recordsTable(Analytics.bestOf(exId))}</div>
-          ${Tools.pctTable(exId)}
-          <div class="card" style="margin-top:12px"><div class="small muted">Última vez · ${shortDate(last.date)}</div><div style="margin-top:6px;font-weight:600" class="num">${last.sets.map((x) => nf(x.kg) + ' kg × ' + x.reps).join('  ·  ')}</div></div>`
-          : '<div class="card small muted">Você ainda não registrou este exercício. Os gráficos aparecem depois do primeiro treino.</div>'}
-          ${(() => { const pl = Store.painsFor(exId).slice(-6).reverse(); return pl.length ? `<div class="section-title"><h2>Dores registradas</h2><span class="small muted">${Store.painsFor(exId).length}</span></div><div class="card">${pl.map((p) => `<div class="kv"><span>${p.date.split('-').reverse().slice(0, 2).join('/')} · ${esc(p.where)}</span><span class="small ${p.lvl === 2 ? 'late-txt' : 'muted'}">${Store.PAIN_LEVELS[p.lvl]}${p.note ? ' · ' + esc(p.note) : ''}</span></div>`).join('')}</div>` : ''; })()}
-          ${ex.img && ex.img.length && (/^ex/.test(ex.id) || ex.foto === 'fedb') ? '<div class="tiny faint" style="margin-top:18px">Imagens: Free Exercise DB (domínio público).</div>' : ''}</div>`;
+        // Evolução das últimas 4 semanas (1RM estimado).
+        const since = Store.iso(Store.addDays(Store.today(), -28));
+        const old = hist.filter((h) => h.date < since).pop() || hist.find((h) => h.date >= since);
+        const gain = old && last && old !== last && old.e1rm ? Math.round((last.e1rm / old.e1rm - 1) * 100) : null;
+        const fav = !!meta().fav;
+        const stats = `<div class="fa-st"><div><b class="num">${hist.length ? nf(best) : '—'}</b><small>recorde kg</small></div><div><b class="num">${hist.length ? nf(best1, 0) : '—'}</b><small>1RM kg</small></div><div><b class="num">${gain == null ? (hist.length ? hist.length : '—') : (gain > 0 ? '+' : '') + gain + '%'}</b><small>${gain == null ? (hist.length === 1 ? 'sessão' : 'sessões') : '4 semanas'}</small></div></div>`;
+        let pane = '';
+        if (tab === 'como') {
+          pane = (ex.dicas && ex.dicas.length ? ex.dicas.map((d, i) => `<div class="fa-step"><i>${String(i + 1).padStart(2, '0')}</i><span>${esc(d)}</span></div>`).join('') : '<div class="small muted" style="padding:10px 2px">Sem passo a passo para este exercício.</div>')
+            + (ex.erro ? `<div class="fa-err"><b>Erro comum:</b> ${esc(ex.erro)}</div>` : '')
+            + (ex.musculos && ex.musculos.length ? `<div class="small muted" style="margin-top:12px"><b style="color:var(--text);font-weight:500">Músculos:</b> ${esc(ex.musculos.join(', '))}${ex.secundarios && ex.secundarios.length ? ' · auxiliares: ' + esc(ex.secundarios.join(', ')) : ''}</div>` : '')
+            + `<button class="pin-note" style="margin-top:12px" data-a="pin">${icon('note', 'sm')}<span>${Tools.pinOf(exId) ? esc(Tools.pinOf(exId)) : 'Adicionar nota fixa (ajuste do banco, assento, pegada…)'}</span></button>`
+            + (Store.gymDependent(ex) && !ex.custom ? `<div class="switch-row" data-a="avail" style="margin-top:6px"><div class="grow"><div>Tem na minha academia</div><div class="small muted">Desligado: o app não sugere este aparelho nas trocas e nos planos</div></div><div class="switch ${Store.available(ex) ? 'on' : ''}"></div></div>` : '');
+        } else if (tab === 'evo') {
+          const pts = hist.slice(-12).map((h) => ({ label: shortDate(h.date), v: h.e1rm }));
+          const pains = Store.painsFor(exId).slice(-4).reverse();
+          pane = hist.length ? `<div class="fa-evh"><span>1RM estimado</span>${gain != null ? `<span class="${gain >= 0 ? 'up' : ''}">${gain >= 0 ? '↑' : '↓'} ${Math.abs(gain)}% em 4 semanas</span>` : ''}</div>${lineChart(pts, { color: 'var(--gold)', h: 150 })}
+            ${hist.slice(-5).reverse().map((h) => `<div class="fa-row"><span>${shortDate(h.date)}</span><b class="num">${nf(h.maxKg)} kg · 1RM ${nf(h.e1rm, 0)} kg</b></div>`).join('')}
+            ${pains.length ? `<div class="fs-cap">Dores registradas</div>${pains.map((p) => `<div class="fa-row"><span>${shortDate(p.date)} · ${esc(p.where)}</span><b>${Store.PAIN_LEVELS[p.lvl]}${p.note ? ' · ' + esc(p.note) : ''}</b></div>`).join('')}` : ''}`
+            : '<div class="small muted" style="padding:14px 2px">Você ainda não registrou este exercício. O gráfico aparece depois do primeiro treino.</div>';
+        } else if (tab === 'rec') {
+          const b = Analytics.bestOf(exId) || { rm: {} };
+          const cells = [[1, '1 rep'], [3, '3 reps'], [5, '5 reps'], [10, '10 reps']].map(([n, l]) => [l, b.rm && b.rm[n] ? b.rm[n] : null]);
+          pane = hist.length ? `<div class="fs-cap">Maior carga por repetições</div><div class="fa-rec">${cells.map(([l, v]) => `<div><b class="num">${v == null ? '—' : nf(v)}</b><small>${l}</small></div>`).join('')}<div><b class="num">${nf(best1, 0)}</b><small>1RM</small></div></div>
+            <div style="margin-top:14px">${Tools.pctTable(exId)}</div>`
+            : '<div class="small muted" style="padding:14px 2px">Os recordes aparecem depois do primeiro treino com este exercício.</div>';
+        } else {
+          const own = meta().video || ex.video;
+          pane = `<button class="fa-vid" data-a="video" style="background-image:url('${(ex.img || [])[1] || (ex.img || [])[0] || ''}')"><span>${icon('play')}</span></button>
+            ${own ? `<button class="fa-row press" data-a="video"><span>${icon('video', 'sm')} Vídeo cadastrado</span><b>Assistir</b></button>` : ''}
+            <button class="fa-row press" data-a="yt"><span>${icon('search', 'sm')} Buscar no YouTube</span><b>Abrir</b></button>
+            <button class="fa-row press" data-a="setVideo"><span>${icon('edit', 'sm')} ${meta().video ? 'Trocar o meu link' : 'Usar meu próprio link'}</span><b>${meta().video ? 'Trocar' : 'Adicionar'}</b></button>`;
+        }
+        const tabs = [['como', 'Como fazer'], ['evo', 'Evolução'], ['rec', 'Recordes'], ['vid', 'Vídeo']];
+        return `<div class="content fa-c" style="padding:0">
+          <div class="fa-hero">${(ex.img && ex.img[0]) ? `<span class="ph" style="background-image:url('${ex.img[0]}')"></span>` : '<span class="ph noimg"></span>'}
+            <div class="fa-top"><button class="fa-ib" data-a="back" aria-label="Voltar">${icon('back')}</button><span class="grow"></span>${ex.custom ? `<button class="fa-ib" data-a="edit">${icon('edit', 'sm')}</button>` : ''}<button class="fa-ib ${fav ? 'on' : ''}" data-a="fav" aria-label="Favorito">${STAR(fav)}</button><button class="fa-ib" data-a="share" aria-label="Compartilhar">${icon('share', 'sm')}</button></div>
+            <div class="fa-name"><small>${esc(ex.grupo)}${ex.equip ? ' · ' + esc(ex.equip) : ''}</small><h2>${esc(ex.nome)}</h2></div>${stats}</div>
+          <div class="fa-sheet"><div class="fa-tabs">${tabs.map(([k, l]) => `<button class="${k === tab ? 'on' : ''}" data-a="tab" data-t="${k}">${l}</button>`).join('')}</div>${pane}
+          ${ex.img && ex.img.length && (/^ex/.test(ex.id) || ex.foto === 'fedb') ? '<div class="tiny faint" style="margin-top:18px">Imagens: Free Exercise DB (domínio público).</div>' : ''}</div></div>`;
       },
       actions: {
         back: pop,
-        metric: (ds) => { metric = ds.m; refresh(); },
+        tab: (ds) => { tab = ds.t; refresh(); },
+        fav: () => { S().exMeta[exId] = Object.assign(meta(), { fav: !meta().fav }); Store.save(); Native.vibrate(8); refresh(); },
+        share: () => { const ex = Store.exercise(exId); Native.share(ex.nome, ex.nome + (ex.dicas && ex.dicas.length ? '\n\n' + ex.dicas.map((d, i) => (i + 1) + '. ' + d).join('\n') : '') + (ex.erro ? '\n\nErro comum: ' + ex.erro : '') + '\n\nGravity'); },
         avail: () => { Store.setAvailable(exId, !Store.available(exId)); refresh(); },
         pin: () => Tools.pinSheet(exId, refresh),
         video: () => Native.open(Store.videoUrl(Store.exercise(exId))),
+        yt: () => Native.open('https://www.youtube.com/results?search_query=' + encodeURIComponent(Store.exercise(exId).nome + ' execução correta')),
         setVideo: () => {
-          const meta = S().exMeta[exId] || {};
+          const m = meta();
           sheet({
-            render: () => `<h3>Link do vídeo</h3><div class="desc">Cole um link do YouTube (ou outro) para este exercício. Em branco, o app busca no YouTube.</div><input class="input" id="vurl" type="url" placeholder="https://youtube.com/…" value="${esc(meta.video || '')}"><div class="btn-row" style="margin-top:16px"><button class="btn ghost" data-a="no">Cancelar</button><button class="btn lime" data-a="ok">Salvar</button></div>`,
-            actions: { no: closeSheet, ok: () => { const v = document.getElementById('vurl').value.trim(); S().exMeta[exId] = Object.assign(meta, { video: v }); Store.save(); closeSheet(); toast(v ? 'Link salvo' : 'Link removido'); } },
+            render: () => `<h3>Link do vídeo</h3><div class="desc">Cole um link do YouTube (ou outro) para este exercício. Em branco, o app busca no YouTube.</div><input class="input" id="vurl" type="url" placeholder="https://youtube.com/…" value="${esc(m.video || '')}"><div class="fs-btns"><button class="btn ghost" data-a="no">Cancelar</button><button class="btn lime" data-a="ok">Salvar</button></div>`,
+            actions: { no: closeSheet, ok: () => { const v = document.getElementById('vurl').value.trim(); S().exMeta[exId] = Object.assign(m, { video: v }); Store.save(); closeSheet(); toast(v ? 'Link salvo' : 'Link removido'); refresh(); } },
           });
         },
         edit: () => push(ExerciseForm(exId)),
@@ -368,93 +471,106 @@
   // ====================== SEÇÕES DO PROGRESSO (deslizar entre elas) ======================
   // Músculos, Recordes, Corpo, Testes e Conquistas ganham uma barra de abas e trocam com o deslizar do dedo.
   // Antes de Músculos fica o Resumo (a própria tela de Progresso).
-  const PSEC = [['Músculos', () => Screens.MuscleMap()], ['Recordes', () => Screens.Records()], ['Corpo', () => Screens.Body()], ['Testes', () => Screens.Tests()], ['Conquistas', () => Screens.Medals()]];
-  function progSection(i) {
-    const def = PSEC[i][1]();
-    const render = def.render.bind(def), after = def.after;
-    def.render = () => {
-      const html = render();
-      const tabs = [['Resumo']].concat(PSEC).map(([l], j) => `<button class="${j - 1 === i ? 'on' : ''}" data-a="ptab" data-i="${j - 1}">${l}</button>`).join('');
-      const k = html.indexOf('<div class="content">');
-      return k < 0 ? html : html.slice(0, k) + `<div class="ptabs">${tabs}</div>` + html.slice(k);
-    };
-    def.actions = Object.assign({}, def.actions, { ptab: (ds) => goSection(i, Number(ds.i)) });
-    def.after = (el, re) => {
-      if (after) after.call(def, el, re);
-      const on = el.querySelector('.ptabs .on'); if (on) on.scrollIntoView({ inline: 'center', block: 'nearest' });
-      if (!re) UI.onSwipe(el, (d) => goSection(i, i + d));
-    };
-    return def;
-  }
-  function goSection(from, to) {
-    if (to === from || to >= PSEC.length) return;
-    if (to < 0) { pop(); return; }
-    Native.vibrate(8);
-    UI.replace(progSection(to), to > from ? 1 : -1);
-  }
-
   // ====================== EDITOR DE PLANO ======================
+  // v0.46 (P3 "Resumo e equilíbrio", aprovado em 13/11): capa com o nome, 3 números, Duração com a barra
+  // das semanas, treinos com os dias e a alça para arrastar, equilíbrio por músculo depois da lista e menu ⋯.
+  const GRIP = '<span class="ed-grip" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>';
+  const MORE = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>';
+  const DAYS_ORDER = [1, 2, 3, 4, 5, 6, 0];
+  // Séries por semana de cada grupo muscular (cada treino feito uma vez por semana).
+  function planSetsByGroup(p) {
+    const g = {};
+    p.workouts.forEach((w) => w.items.forEach((it) => { const ex = Store.exercise(it.exId); if (!ex || Store.isCardio(ex)) return; g[ex.grupo] = (g[ex.grupo] || 0) + (Number(it.sets) || 0); }));
+    return Object.entries(g).sort((a, b) => b[1] - a[1]);
+  }
   function PlanEditor(pid) {
+    const nameSheet = () => {
+      const p = Store.plan(pid);
+      sheet({
+        render: () => `<h3>Nome do plano</h3><div class="field"><label>Nome</label><input class="input" id="pnName" value="${esc(p.name)}"></div>
+          <div class="field"><label>Objetivo</label><input class="input" id="pnGoal" value="${esc(p.goal || '')}" placeholder="Ex.: Hipertrofia · 5 dias"></div>
+          <button class="btn lime block" style="margin-top:16px" data-a="ok">Pronto</button>`,
+        actions: { ok: () => { p.name = document.getElementById('pnName').value.trim() || p.name; p.goal = document.getElementById('pnGoal').value.trim(); closeSheet(); refresh(); } },
+      });
+    };
+    const menuSheet = () => {
+      const p = Store.plan(pid), active = S().activePlanId === p.id;
+      sheet({
+        render: () => `<h3>${esc(p.name)}</h3><div class="list">
+          <button class="menu-item" data-a="share"><span class="ic">${icon('share', 'sm')}</span><span class="grow">Compartilhar plano<div class="small muted">Planilha CSV para Excel ou Google Planilhas</div></span></button>
+          <button class="menu-item" data-a="dup"><span class="ic">${icon('copy', 'sm')}</span><span class="grow">Duplicar plano</span></button>
+          ${active ? `<button class="menu-item" data-a="other"><span class="ic">${icon('repeat', 'sm')}</span><span class="grow">Usar outro plano</span></button>` : `<button class="menu-item" data-a="activate"><span class="ic">${icon('check', 'sm')}</span><span class="grow">Usar este plano</span></button>`}
+          <button class="menu-item" data-a="del" style="color:var(--red)"><span class="ic">${icon('trash', 'sm')}</span><span class="grow">Excluir plano</span></button></div>`,
+        actions: {
+          share: () => { closeSheet(); Native.share('Plano ' + p.name, Store.exportPlanCSV(p), p.name.replace(/[^\w\- ]+/g, '') + '.csv'); },
+          dup: () => {
+            closeSheet();
+            const c = JSON.parse(JSON.stringify(p)); c.id = Store.uid('p'); c.name += ' (cópia)';
+            c.workouts.forEach((w) => { w.id = Store.uid('w'); w.items.forEach((it) => { it.id = Store.uid('i'); }); });
+            S().plans.push(c); Store.save(); pop(); toast('Plano duplicado');
+          },
+          other: () => { closeSheet(); pop(); setTimeout(() => { if (Screens.PlansList) Screens.PlansList(); }, 380); },
+          activate: () => { S().activePlanId = pid; Store.save(); closeSheet(); toast('Plano ativado'); refresh(); },
+          del: () => { closeSheet(); setTimeout(() => confirmSheet('Excluir plano?', 'Os treinos já registrados continuam no histórico, mas o plano some.', 'Excluir', () => {
+            S().plans = S().plans.filter((x) => x.id !== pid);
+            if (S().activePlanId === pid) S().activePlanId = S().plans[0] ? S().plans[0].id : null;
+            Store.save(); pop();
+          }, true), 380); },
+        },
+      });
+    };
     const def = {
       hideNav: true,
       render() {
         const p = Store.plan(pid);
         if (!p) return topbar('Plano') + '<div class="content"></div>';
         const active = S().activePlanId === p.id;
-        return topbar('Editar plano', `<button class="icon-btn" data-a="menu">${icon('share', 'sm')}</button>`) +
-          `<div class="content"><div class="field" style="margin-top:0"><label>Nome do plano</label><input class="input" data-in="f" data-k="name" value="${esc(p.name)}"></div>
-          <div class="field"><label>Objetivo</label><input class="input" data-in="f" data-k="goal" value="${esc(p.goal || '')}" placeholder="Ex.: Hipertrofia · 5 dias"></div>
-          <div class="form-row"><div class="field"><label>Duração (semanas)</label><div class="stepper big"><button data-a="wk" data-d="-1">${icon('minus')}</button><div class="val"><b class="num">${p.weeks}</b></div><button data-a="wk" data-d="1">${icon('plus')}</button></div></div>
-          <div class="field"><label>Início</label><input class="input" type="date" data-ch="date" value="${p.startDate}"></div></div>
-          <div class="section-title"><h2>Treinos</h2><span class="small muted">${p.workouts.length}</span></div>
-          ${p.workouts.length > 1 ? '<div class="sort-hint">Segure um treino e arraste para mudar a ordem</div>' : ''}
-          <div class="list" data-sort>${p.workouts.map((w, i) => `<div class="card wo press" data-a="w" data-id="${w.id}" data-i="${i}"><div class="letter">${esc(w.letter)}</div><div class="grow"><h4 class="ellipsis">${esc(w.name)}</h4><div class="meta">${Screens.daysText(w.days)} · ${w.items.length} exercícios</div></div>
-            <div class="ord" style="display:flex;flex-direction:column"><button class="icon-btn" style="width:32px;height:28px;border-radius:9px" data-a="mv" data-i="${i}" data-d="-1">${icon('up', 'sm')}</button><button class="icon-btn" style="width:32px;height:28px;border-radius:9px;margin-top:4px" data-a="mv" data-i="${i}" data-d="1">${icon('down', 'sm')}</button></div></div>`).join('')}</div>
-          ${Screens.balanceWarnHTML(p) ? `<div style="margin-top:12px">${Screens.balanceWarnHTML(p)}</div>` : ''}
-          <button class="add-set" style="margin-top:12px;height:52px" data-a="addW">${icon('plus', 'sm')}Adicionar treino</button>
-          <div class="divider" style="margin-top:22px"></div>
-          ${!active ? `<button class="btn lime block" data-a="activate">Usar este plano</button>` : '<div class="small muted" style="text-align:center;margin-bottom:6px">Este é o seu plano ativo.</div>'}
-          <div class="btn-row" style="margin-top:10px"><button class="btn ghost sm" data-a="dup">${icon('copy', 'sm')}Duplicar</button><button class="btn danger sm" data-a="del">${icon('trash', 'sm')}Excluir</button></div></div>`;
+        const ws = p.workouts, perWeek = ws.filter((w) => w.days.length).reduce((a, w) => a + w.days.length, 0) || ws.length;
+        const sets = ws.reduce((a, w) => a + w.items.reduce((b, it) => b + (Number(it.sets) || 0), 0), 0);
+        const mins = ws.reduce((a, w) => a + Screens.estMinutes(w), 0);
+        const pw = Store.planWeek(p), cur = Math.max(0, Math.min(p.weeks, pw.n));
+        const end = Store.addDays(Store.parseISO(p.startDate), p.weeks * 7 - 1);
+        const bal = planSetsByGroup(p);
+        return topbar('Editar plano', `<button class="icon-btn" data-a="menu" aria-label="Mais opções">${MORE}</button>`) +
+          `<div class="content ed-c">
+          <div class="ed-hero"><div class="ph" style="background-image:url('${Screens.homePhoto(Store.today().getTime() + 4 * Store.DAY)}')"></div><div class="in">${active ? '<span class="ed-badge">Plano ativo</span>' : ''}
+            <button class="ed-name" data-a="name"><b>${esc(p.name)}</b>${icon('edit', 'sm')}</button><small>${esc(p.goal || 'Sem objetivo')} · ${ws.length} ${ws.length === 1 ? 'treino' : 'treinos'} por semana</small></div></div>
+          <div class="ed-n3"><div><b class="num">${perWeek}</b><small>treinos/sem.</small></div><div><b class="num">${sets}</b><small>séries/sem.</small></div><div><b class="num">${nf(mins / 60, 1)} h</b><small>por semana</small></div></div>
+          <div class="ed-box"><div class="l">Duração</div>
+            <div class="ed-dur"><div class="stp"><button data-a="wk" data-d="-1">${icon('minus', 'sm')}</button><b class="num">${p.weeks} sem</b><button data-a="wk" data-d="1">${icon('plus', 'sm')}</button></div>
+            <label class="dt">${icon('calendar', 'sm')}<span>Início ${shortDate(p.startDate)}</span><input type="date" data-ch="date" value="${p.startDate}"></label></div>
+            <div class="ed-weeks">${Array.from({ length: Math.min(p.weeks, 26) }, (_, i) => `<i class="${i + 1 < cur ? 'ok' : i + 1 === cur ? 'cur' : ''}"></i>`).join('')}</div>
+            <div class="ed-wl"><span>${cur > 0 && cur <= p.weeks ? 'Semana ' + cur + ' de ' + p.weeks : cur > p.weeks ? 'Plano concluído' : 'Começa em ' + shortDate(p.startDate)}</span><span>termina em ${shortDate(Store.iso(end))}</span></div></div>
+          <div class="ed-cap">Treinos${ws.length > 1 ? '<span>Segure ⋮⋮ para mudar a ordem</span>' : ''}</div>
+          <div data-sort>${ws.map((w, i) => `<div class="ed-w press" data-a="w" data-id="${w.id}" data-i="${i}"><span class="lt">${esc(w.letter)}</span><div class="g"><b class="ellipsis">${esc(w.name)}</b><small>${w.items.length} exercícios · ~${Screens.estMinutes(w)} min</small>
+            <div class="ed-wd">${DAYS_ORDER.map((d) => `<span class="${w.days.includes(d) ? 'on' : ''}">${Store.WEEKDAYS[d]}</span>`).join('')}</div></div>${GRIP}</div>`).join('')}</div>
+          <button class="ed-add press" data-a="addW">${icon('plus', 'sm')}Adicionar treino</button>
+          ${bal.length ? `<div class="ed-cap">Equilíbrio do plano</div><div class="ed-box"><div class="l">Séries por semana<span>faixa ideal 10–20</span></div>
+            <div class="ed-bal">${bal.map(([g, n]) => `<div><span>${esc(g)}</span><i><span class="zone"></span><em class="${n < 10 ? 'lo' : ''}" style="width:${Math.min(100, n / 30 * 100)}%"></em></i><b class="num">${n}</b></div>`).join('')}</div></div>
+            ${Screens.balanceWarnHTML(p) ? `<div style="margin-top:10px">${Screens.balanceWarnHTML(p)}</div>` : ''}` : ''}
+          </div>`;
       },
-      after(el) { UI.sortable(el.querySelector('[data-sort]'), '.card.wo', (a, b) => { UI.moveIn(Store.plan(pid).workouts, a, b); Store.save(); refresh(); }); },
+      after(el) { UI.sortable(el.querySelector('[data-sort]'), '.ed-w', (a, b) => { UI.moveIn(Store.plan(pid).workouts, a, b); Store.save(); refresh(); }); },
       actions: {
         back: pop,
-        f: (ds, el) => { Store.plan(pid)[ds.k] = el.value; Store.save(); },
-        date: (ds, el) => { if (el.value) { Store.plan(pid).startDate = el.value; Store.save(); } },
-        wk: (ds) => { const p = Store.plan(pid); p.weeks = Math.max(1, Math.min(52, p.weeks + Number(ds.d))); Store.save(); refresh(); },
-        w: (ds, el, e) => { if (e.target.closest('[data-a="mv"]')) return; push(WorkoutEditor(pid, ds.id)); },
-        mv: (ds) => { const p = Store.plan(pid), i = Number(ds.i), j = i + Number(ds.d); if (j < 0 || j >= p.workouts.length) return; [p.workouts[i], p.workouts[j]] = [p.workouts[j], p.workouts[i]]; Store.save(); refresh(); },
+        menu: menuSheet,
+        name: nameSheet,
+        date: (ds, el) => { if (el.value) { Store.plan(pid).startDate = el.value; Store.save(); refresh(); } },
+        wk: (ds) => { const p = Store.plan(pid); p.weeks = Math.max(1, Math.min(52, p.weeks + Number(ds.d))); Store.save(); Native.vibrate(6); refresh(); },
+        w: (ds) => push(WorkoutEditor(pid, ds.id)),
         addW: () => {
           const p = Store.plan(pid);
           const letter = String.fromCharCode(65 + p.workouts.length);
           const w = { id: Store.uid('w'), letter, name: 'Treino ' + letter, days: [], items: [] };
           p.workouts.push(w); Store.save(); push(WorkoutEditor(pid, w.id));
         },
-        activate: () => { S().activePlanId = pid; Store.save(); toast('Plano ativado'); refresh(); },
-        dup: () => {
-          const p = JSON.parse(JSON.stringify(Store.plan(pid)));
-          p.id = Store.uid('p'); p.name += ' (cópia)'; p.workouts.forEach((w) => { w.id = Store.uid('w'); w.items.forEach((it) => { it.id = Store.uid('i'); }); });
-          S().plans.push(p); Store.save(); pop(); toast('Plano duplicado');
-        },
-        del: () => confirmSheet('Excluir plano?', 'Os treinos já registrados continuam no histórico, mas o plano some.', 'Excluir', () => {
-          S().plans = S().plans.filter((p) => p.id !== pid);
-          if (S().activePlanId === pid) S().activePlanId = S().plans[0] ? S().plans[0].id : null;
-          Store.save(); pop();
-        }, true),
-        menu: () => {
-          const p = Store.plan(pid);
-          Native.share('Plano ' + p.name, Store.exportPlanCSV(p), p.name.replace(/[^\w\- ]+/g, '') + '.csv');
-        },
       },
     };
     // Botão Salvar + pergunta ao sair. Compara os dados do plano e a ordem dos treinos.
     return UI.editable(def, {
+      label: 'plano',
       snap: () => { const p = Store.plan(pid); return p && { name: p.name, goal: p.goal, weeks: p.weeks, startDate: p.startDate, order: p.workouts.map((w) => w.id) }; },
-      restore: (o) => {
-        const p = Store.plan(pid); if (!p) return;
-        Object.assign(p, { name: o.name, goal: o.goal, weeks: o.weeks, startDate: o.startDate });
-        p.workouts = o.order.map((id) => p.workouts.find((w) => w.id === id)).filter(Boolean);
-      },
+      restore: (o) => { const p = Store.plan(pid); if (!p) return; Object.assign(p, { name: o.name, goal: o.goal, weeks: o.weeks, startDate: o.startDate }); p.workouts.sort((a, b) => o.order.indexOf(a.id) - o.order.indexOf(b.id)); },
     });
   }
 
@@ -465,30 +581,56 @@
     const g = TECH.groupOf(items, i); if (g && i < g.end) return '';
     const b = Store.swapBase(items[i]); return b ? ` <span class="swap-txt">· troca ${restLabel(b)}</span>` : '';
   }
+  // v0.46 (E1 "Capa e lista" + T4 "Selo na foto", aprovados em 13/11).
   function WorkoutEditor(pid, wid) {
     const W = () => Store.plan(pid).workouts.find((w) => w.id === wid);
+    const nameSheet = () => {
+      const w = W();
+      sheet({
+        render: () => `<h3>Nome do treino</h3><div class="form-row" style="grid-template-columns:90px 1fr"><div class="field"><label>Letra</label><input class="input" id="wnL" maxlength="2" style="text-align:center;font-weight:800;font-size:20px" value="${esc(w.letter)}"></div>
+          <div class="field"><label>Nome</label><input class="input" id="wnN" value="${esc(w.name)}" placeholder="Ex.: Peito e Tríceps"></div></div>
+          <button class="btn lime block" style="margin-top:16px" data-a="ok">Pronto</button>`,
+        actions: { ok: () => { const l = document.getElementById('wnL').value.trim().toUpperCase(); w.letter = l || w.letter; w.name = document.getElementById('wnN').value.trim() || w.name; closeSheet(); refresh(); } },
+      });
+    };
+    const menuSheet = () => sheet({
+      render: () => `<h3>${esc(W().name)}</h3><div class="list"><button class="menu-item" data-a="del" style="color:var(--red)"><span class="ic">${icon('trash', 'sm')}</span><span class="grow">Excluir treino<div class="small muted">O histórico de treinos já feitos continua salvo.</div></span></button></div>`,
+      actions: { del: () => { closeSheet(); setTimeout(() => confirmSheet('Excluir treino?', 'O histórico de treinos já feitos continua salvo.', 'Excluir', () => {
+        const p = Store.plan(pid); p.workouts = p.workouts.filter((w) => w.id !== wid); Store.save(); pop();
+      }, true), 380); } },
+    });
+    // Linha de um exercício: selo na foto (chama = técnica, setas = grupo) e texto dourado embaixo.
+    function rowHTML(w, it, i) {
+      const ex = Store.exercise(it.exId), g = TECH.groupOf(w.items, i), t = it.tech && TECH.get(it.tech.id);
+      const det = (ex.tipo === 'tempo' || Store.isCardio(ex) ? Tools.repsText(it, ex) : it.sets + ' × ' + esc(it.reps)) + (Tools.loadText(it.kg, ex) ? ' · ' + Tools.loadText(it.kg, ex) : '') + (Store.isCardio(ex) ? ' · sem descanso' : ' · ' + restLabel(it.rest)) + swapTxt(w.items, i);
+      const under = [];
+      if (t) under.push(esc(TECH.chip(it)));
+      if (g) under.push(g.size === 2 ? esc(g.tech.nome) + (g.pos === 1 ? ' com o próximo' : ' com o anterior') : esc(g.tech.nome) + ' · ' + g.pos + ' de ' + g.size);
+      const badge = g ? icon('repeat', 'sm') : t ? icon('flame', 'sm') : '';
+      return `<div class="ed-x press ${g ? 'grp' : ''}" data-a="item" data-i="${i}"><span class="n num">${i + 1}</span><div class="ph">${thumb(ex)}${badge ? `<span class="bd">${badge}</span>` : ''}</div>
+        <div class="g"><b class="ellipsis">${esc(ex.nome)}</b><small class="num">${det}</small>${under.length ? `<small class="tc">${under.join(' · ')}</small>` : ''}</div>${GRIP}</div>`;
+    }
     const def = {
       hideNav: true,
       render() {
         const w = W(); if (!w) return topbar('Treino') + '<div class="content"></div>';
-        return topbar('Editar treino') +
-          `<div class="content"><div class="form-row" style="grid-template-columns:90px 1fr"><div class="field" style="margin-top:0"><label>Letra</label><input class="input" style="text-align:center;font-weight:800;font-size:20px" maxlength="2" data-in="f" data-k="letter" value="${esc(w.letter)}"></div>
-          <div class="field" style="margin-top:0"><label>Nome</label><input class="input" data-in="f" data-k="name" value="${esc(w.name)}" placeholder="Ex.: Peito e Tríceps"></div></div>
-          <div class="field"><label>Dias da semana</label><div class="days-pick">${[0, 1, 2, 3, 4, 5, 6].map((d) => `<button class="${w.days.includes(d) ? 'on' : ''}" data-a="day" data-d="${d}">${Store.WEEKDAYS[d]}</button>`).join('')}</div></div>
-          <div class="section-title"><h2>Exercícios</h2><span class="small muted">${w.items.length} · ~${Screens.estMinutes(w)} min</span></div>
-          ${w.items.length > 1 ? '<div class="sort-hint">Segure um exercício e arraste para mudar a ordem</div>' : ''}
-          <div class="list" data-sort>${w.items.map((it, i) => { const ex = Store.exercise(it.exId); const g = TECH.groupOf(w.items, i); return `${g && g.pos === 1 ? `<div class="group-label">${icon('repeat', 'sm')}${esc(g.tech.nome)} · ${g.size} exercícios sem descanso entre eles</div>` : ''}<div class="card edit-item press ${g ? 'grouped' : ''}" data-a="item" data-i="${i}">${thumb(ex)}<div class="grow"><h4 class="ellipsis">${esc(ex.nome)}</h4><div class="meta num">${ex.tipo === 'tempo' ? Tools.repsText(it, ex) : it.sets + ' × ' + esc(it.reps)}${Tools.loadText(it.kg, ex) ? ' · ' + Tools.loadText(it.kg, ex) : ''}${Store.isCardio(ex) ? ' · sem descanso' : ' · ' + restLabel(it.rest)}${swapTxt(w.items, i)}</div>${it.tech && TECH.get(it.tech.id) ? `<div class="chip-row" style="margin-top:6px"><span class="chip blue tchip">${icon('flame', 'sm')}${esc(TECH.chip(it))}</span></div>` : ''}</div>
-            <div class="ord"><button data-a="mv" data-i="${i}" data-d="-1">${icon('up', 'sm')}</button><button data-a="mv" data-i="${i}" data-d="1">${icon('down', 'sm')}</button></div></div>`; }).join('') || '<div class="card small muted">Nenhum exercício ainda.</div>'}</div>
-          <button class="btn blue block" style="margin-top:14px" data-a="add">${icon('plus', 'sm')}Adicionar exercícios</button>
-          <button class="btn danger block sm" style="margin-top:24px" data-a="del">${icon('trash', 'sm')}Excluir treino</button></div>`;
+        const sets = w.items.reduce((a, it) => a + (Number(it.sets) || 0), 0);
+        return topbar('Editar treino', `<button class="icon-btn" data-a="menu" aria-label="Mais opções">${MORE}</button>`) +
+          `<div class="content ed-c">
+          <div class="ed-hero"><div class="ph" style="background-image:url('${Screens.homePhoto(Store.today().getTime())}')"></div><div class="in row-in"><span class="ed-lt">${esc(w.letter)}</span>
+            <div class="grow" style="min-width:0"><button class="ed-name" data-a="name"><b class="ellipsis">${esc(w.name)}</b>${icon('edit', 'sm')}</button><small>${w.items.length} exercícios · ~${Screens.estMinutes(w)} min · ${sets} séries</small></div></div></div>
+          <div class="ed-days">${DAYS_ORDER.map((d) => `<button class="${w.days.includes(d) ? 'on' : ''}" data-a="day" data-d="${d}">${Store.WEEKDAYS[d]}</button>`).join('')}</div>
+          <div class="ed-cap">Exercícios${w.items.length > 1 ? '<span>Segure ⋮⋮ para mudar a ordem</span>' : ''}</div>
+          <div data-sort>${w.items.map((it, i) => rowHTML(w, it, i)).join('') || '<div class="small muted" style="padding:10px 2px">Nenhum exercício ainda.</div>'}</div>
+          <button class="ed-add press" data-a="add">${icon('plus', 'sm')}Adicionar exercício</button></div>`;
       },
-      after(el) { UI.sortable(el.querySelector('[data-sort]'), '.card.edit-item', (a, b) => { UI.moveIn(W().items, a, b); Store.save(); refresh(); }); },
+      after(el) { UI.sortable(el.querySelector('[data-sort]'), '.ed-x', (a, b) => { UI.moveIn(W().items, a, b); Store.save(); refresh(); }); },
       actions: {
         back: pop,
-        f: (ds, el) => { W()[ds.k] = ds.k === 'letter' ? el.value.toUpperCase() : el.value; Store.save(); },
+        menu: menuSheet,
+        name: nameSheet,
         day: (ds) => { const w = W(), d = Number(ds.d); w.days = w.days.includes(d) ? w.days.filter((x) => x !== d) : w.days.concat(d).sort(); Store.save(); Native.vibrate(8); refresh(); },
-        mv: (ds) => { const w = W(), i = Number(ds.i), j = i + Number(ds.d); if (j < 0 || j >= w.items.length) return; [w.items[i], w.items[j]] = [w.items[j], w.items[i]]; Store.save(); refresh(); },
-        item: (ds, el, e) => { if (e.target.closest('[data-a="mv"]')) return; itemSheet(W(), Number(ds.i)); },
+        item: (ds) => itemSheet(W(), Number(ds.i)),
         add: () => push(Library({ pick: (ids) => {
           const w = W();
           ids.forEach((id) => {
@@ -496,90 +638,91 @@
             // Cardio: 1 × 20 min, sem descanso. Outros por tempo: 3 × 30 s.
             w.items.push({ id: Store.uid('i'), exId: id, sets: cardio ? 1 : 3, reps: cardio ? '1200' : ex.tipo === 'tempo' ? '30' : '10', kg: 0, rest: cardio ? 0 : S().settings.restDefault, note: '' });
           });
-          Store.save(); toast(ids.length + ' exercício(s) adicionado(s)');
+          Store.save(); toast(ids.length + (ids.length === 1 ? ' exercício adicionado' : ' exercícios adicionados'));
         } })),
-        del: () => confirmSheet('Excluir treino?', 'O histórico de treinos já feitos continua salvo.', 'Excluir', () => {
-          const p = Store.plan(pid); p.workouts = p.workouts.filter((w) => w.id !== wid); Store.save(); pop();
-        }, true),
       },
     };
     // Botão Salvar + pergunta ao sair. Compara o treino inteiro (nome, dias, exercícios e ajustes).
     return UI.editable(def, {
+      label: 'treino',
       snap: () => W() || null,
       restore: (o) => { const p = Store.plan(pid); const k = p ? p.workouts.findIndex((w) => w.id === wid) : -1; if (k >= 0) p.workouts[k] = o; },
     });
   }
 
-  // Folha para ajustar séries, repetições, carga, descanso e observação de um exercício do treino.
+  // v0.46 · Folha do exercício (aprovada em 13/11): foto grande, 4 quadros com − / + e a lista de Opções.
   function itemSheet(w, i) {
-    const it = w.items[i], ex = Store.exercise(it.exId), cardio = Store.isCardio(ex);
-    const step = (label, key, d, fmt) => `<div class="field"><label>${label}</label><div class="stepper big"><button data-a="st" data-k="${key}" data-d="${-d}">${icon('minus')}</button><div class="val" data-a="ed" data-k="${key}"><b class="num">${fmt ? fmt(it[key]) : nf(it[key])}</b></div><button data-a="st" data-k="${key}" data-d="${d}">${icon('plus')}</button></div></div>`;
-    // Peso do corpo: só o corpo, com peso extra (lastro, kg positivo) ou com ajuda (graviton/elástico, kg negativo).
+    const it = w.items[i], ex = Store.exercise(it.exId), cardio = Store.isCardio(ex), timed = ex.tipo === 'tempo';
+    const bwEx = Store.isBodyweight(ex);
     const bwMode = () => (Number(it.kg) > 0 ? 'mais' : Number(it.kg) < 0 ? 'menos' : 'corpo');
-    const bwHTML = () => {
-      const bw = Store.bodyWeight();
-      return `<div class="field"><label>Carga</label><div class="seg">${[['corpo', 'Só o corpo'], ['mais', '+ Peso extra'], ['menos', '− Ajuda']].map(([v, l]) => `<button class="${bwMode() === v ? 'on' : ''}" data-a="bw" data-v="${v}">${l}</button>`).join('')}</div>
-        <div class="small muted" style="margin:6px 2px 0">${bwMode() === 'menos' ? 'Ajuda do graviton ou do elástico: o quanto ele tira do seu peso.' : bwMode() === 'mais' ? 'Lastro: cinto com anilha, colete ou halter entre as pernas.' : 'Só o peso do corpo.'} ${bw ? `Conta como <b>${nf(Math.max(0, bw + (Number(it.kg) || 0)))} kg</b> no volume e nos recordes (seu peso: ${nf(bw)} kg).` : 'Registre seu peso em Progresso → Corpo para ele contar no volume.'}</div></div>`;
+    const box = (label, val, minus, plus, ed) => `<div class="fs-box"><div class="l">${label}</div><div class="r"><button data-a="${minus[0]}" ${minus[1] || ''}>${icon('minus', 'sm')}</button><b class="num" data-a="${ed}">${val}</b><button data-a="${plus[0]}" ${plus[1] || ''}>${icon('plus', 'sm')}</button></div></div>`;
+    const repsVal = () => (timed ? restLabel(Number(it.reps) || 30) : esc(it.reps));
+    const boxes = () => {
+      if (cardio) return `<div class="fs-g">${box('Séries', it.sets, ['st', 'data-k="sets" data-d="-1"'], ['st', 'data-k="sets" data-d="1"'], 'edSets')}${box('Minutos', Tools.minText(Number(it.reps) || 1200).replace(' min', ''), ['mins', 'data-d="-5"'], ['mins', 'data-d="5"'], 'minsEd')}</div>
+        <div class="small muted" style="margin:8px 2px 0">Cardio não tem descanso: o treino segue direto para o próximo exercício.</div>`;
+      const load = bwEx ? (bwMode() === 'corpo' ? 'Corpo' : (bwMode() === 'mais' ? '+' : '−') + nf(Math.abs(Number(it.kg)))) : nf(it.kg);
+      return `<div class="fs-g">${box('Séries', it.sets, ['st', 'data-k="sets" data-d="-1"'], ['st', 'data-k="sets" data-d="1"'], 'edSets')}
+        ${box(timed ? 'Tempo' : 'Repetições', repsVal(), ['rp', 'data-d="-1"'], ['rp', 'data-d="1"'], 'edReps')}
+        ${box(bwEx ? 'Carga (corpo)' : 'Carga (kg)', load, [bwEx ? 'bwst' : 'st', bwEx ? 'data-d="-1"' : `data-k="kg" data-d="${-(S().settings.incKg || 1)}"`], [bwEx ? 'bwst' : 'st', bwEx ? 'data-d="1"' : `data-k="kg" data-d="${S().settings.incKg || 1}"`], bwEx ? 'bwed' : 'edKg')}
+        ${box('Descanso', restLabel(it.rest).replace(' min', ''), ['st', 'data-k="rest" data-d="-15"'], ['st', 'data-k="rest" data-d="15"'], 'edRest')}</div>
+        ${bwEx ? `<div class="seg" style="margin-top:10px">${[['corpo', 'Só o corpo'], ['mais', '+ Peso extra'], ['menos', '− Ajuda']].map(([v, l]) => `<button class="${bwMode() === v ? 'on' : ''}" data-a="bw" data-v="${v}">${l}</button>`).join('')}</div>` : ''}`;
     };
-    const bwStep = () => `<div class="field"><label>${bwMode() === 'menos' ? 'Ajuda (kg)' : 'Peso extra (kg)'}</label><div class="stepper big"><button data-a="bwst" data-d="-1">${icon('minus')}</button><div class="val" data-a="bwed"><b class="num">${nf(Math.abs(Number(it.kg) || 0))}</b></div><button data-a="bwst" data-d="1">${icon('plus')}</button></div></div>`;
-    // Troca de exercício (v0.41): descanso maior só depois da última série deste exercício.
-    const swapHTML = () => {
-      const on = Number(it.restLast) > 0, add = Number(S().settings.restSwap) || 0;
-      const sub = on ? 'Tempo para trocar de aparelho antes do próximo exercício'
-        : add ? 'Usando o padrão das Configurações: ' + restLabel((Number(it.rest) || S().settings.restDefault) + add) : 'Tempo para trocar de aparelho antes do próximo exercício';
-      return `<div class="switch-row" data-a="swapOn" style="margin-top:6px"><div class="grow">Descanso maior depois da última série<div class="small muted">${sub}</div></div><div class="switch ${on ? 'on' : ''}"></div></div>
-        ${on ? `<div class="field"><label>Depois da última série</label><div class="filters" style="flex-wrap:wrap;margin:0 0 10px">${[120, 150, 180, 240].map((o) => `<button class="filter ${Number(it.restLast) === o ? 'on' : ''}" data-a="swapSet" data-v="${o}">${restLabel(o)}</button>`).join('')}</div>
-          <div class="stepper big"><button data-a="st" data-k="restLast" data-d="-15">${icon('minus')}</button><div class="val" data-a="ed" data-k="restLast"><b class="num">${restLabel(Number(it.restLast))}</b></div><button data-a="st" data-k="restLast" data-d="15">${icon('plus')}</button></div></div>` : ''}`;
+    const opts = () => {
+      const t = it.tech && TECH.get(it.tech.id), g = TECH.groupOf(w.items, i);
+      const swapOn = Number(it.restLast) > 0;
+      return `<div class="fs-cap">Opções</div>
+        <button class="fs-opt" data-a="pick"><span class="ic">${icon('flame', 'sm')}</span><span class="g"><b>Técnica avançada</b><small>${g ? esc(g.tech.nome) + ' · ' + g.pos + ' de ' + g.size : t ? esc(t.cue(TECH.params(it.tech))) : 'Drop set, rest-pause, pirâmide…'}</small></span><span class="v">${g ? esc(g.tech.nome) : t ? esc(t.nome) : 'Nenhuma'}</span>${icon('next', 'sm')}</button>
+        ${cardio ? '' : `<div class="fs-opt" data-a="swapOn"><span class="ic">${icon('timer', 'sm')}</span><span class="g"><b>Troca de exercício</b><small>Descanso maior depois da última série${swapOn ? ': ' + restLabel(Number(it.restLast)) : ''}</small></span><span class="switch ${swapOn ? 'on' : ''}"></span></div>
+          ${swapOn ? `<div class="filters fs-swap">${[120, 150, 180, 240].map((o) => `<button class="filter ${Number(it.restLast) === o ? 'on' : ''}" data-a="swapSet" data-v="${o}">${restLabel(o)}</button>`).join('')}</div>` : ''}`}
+        ${timed || cardio ? '' : `<div class="fs-opt" data-a="uni"><span class="ic">${icon('repeat', 'sm')}</span><span class="g"><b>Unilateral</b><small>Direito e esquerdo separados</small></span><span class="switch ${Store.isUni(it, ex) ? 'on' : ''}"></span></div>`}
+        <button class="fs-opt" data-a="noteEd" style="border:0"><span class="ic">${icon('note', 'sm')}</span><span class="g"><b>Observação</b><small class="ellipsis">${esc(it.note || 'Ex.: pegada fechada')}</small></span>${icon('next', 'sm')}</button>`;
     };
-    // Parâmetros ajustáveis de cada técnica
-    const PL = { qtd: ['Quantas vezes', 1, 1], pct: ['Redução de carga (%)', 5, 0], pausa: ['Pausa (s)', 5, 3], reps: ['Repetições', 1, 1], seg: ['Segundos', 1, 1], extra: ['Repetições a mais', 1, 0] };
-    const techHTML = () => {
-      const g = TECH.groupOf(w.items, i);
-      const t = it.tech && TECH.get(it.tech.id);
-      const p = TECH.params(it.tech);
-      let h = `<div class="field"><label>Técnica avançada</label><button class="tech-banner" style="margin-top:0" data-a="pick"><span class="tb-ic">${icon(t ? 'flame' : 'plus', 'sm')}</span><span class="grow"><b>${t ? esc(t.nome) : 'Nenhuma'}</b><small>${t ? esc(t.cue(p)) : 'Drop set, rest-pause, FST-7, pirâmide…'}</small></span>${icon('next', 'sm')}</button></div>`;
-      if (t) {
-        const keys = Object.keys(t.params).filter((k) => PL[k] && !(k === 'pct' && t.id !== 'drop' && t.id !== 'backoff'));
-        if (keys.length) h += `<div class="form-row">${keys.map((k) => `<div class="field"><label>${PL[k][0]}</label><div class="stepper"><button data-a="tp" data-k="${k}" data-d="${-PL[k][1]}">${icon('minus', 'sm')}</button><div class="val"><b class="num">${p[k]}</b></div><button data-a="tp" data-k="${k}" data-d="${PL[k][1]}">${icon('plus', 'sm')}</button></div></div>`).join('')}</div>`;
-        if ('todas' in t.params) h += `<div class="switch-row" data-a="todas" style="margin-top:8px"><div class="grow">Em todas as séries<div class="small muted">Desligado: só na última série</div></div><div class="switch ${p.todas ? 'on' : ''}"></div></div>`;
-        if ('tempo' in t.params) h += `<div class="field"><label>Cadência (desce-pausa-sobe)</label><input class="input" data-in="tempo" value="${esc(p.tempo)}" placeholder="3-1-1"></div>`;
-      }
-      if (g) h += `<div class="small muted" style="margin-top:10px">${icon('repeat', 'sm')} Faz parte de um <b style="color:var(--gold)">${esc(g.tech.nome)}</b> (${g.pos} de ${g.size}). <button class="link" style="color:var(--gold);text-decoration:underline" data-a="ungroup">Desfazer grupo</button></div>`;
-      return h;
-    };
+    const again = () => setTimeout(() => itemSheet(w, i), 380);
     sheet({
-      render: () => `<div class="row" style="margin-bottom:6px">${thumb(ex)}<div class="grow"><h3 class="ellipsis">${esc(ex.nome)}</h3><div class="small muted">${esc(ex.grupo)}</div></div></div>
-        ${cardio
-          ? `<div class="form-row">${step('Séries', 'sets', 1)}<div class="field"><label>Tempo (minutos)</label><div class="stepper big"><button data-a="mins" data-d="-5">${icon('minus')}</button><div class="val" data-a="minsEd"><b class="num">${Tools.minText(Number(it.reps) || 1200)}</b></div><button data-a="mins" data-d="5">${icon('plus')}</button></div></div></div>
-            <div class="small muted" style="margin:-2px 2px 4px">Cardio não tem descanso: o treino segue direto para o próximo exercício.</div>`
-          : `<div class="form-row">${step('Séries', 'sets', 1)}<div class="field"><label>${ex.tipo === 'tempo' ? 'Tempo (segundos)' : 'Repetições'}</label><input class="input num" style="height:54px;text-align:center;font-size:19px;font-weight:700" data-in="reps" value="${esc(it.reps)}" placeholder="10 ou 8-12"></div></div>
-        ${Store.isBodyweight(ex) ? bwHTML() : ''}<div class="form-row">${Store.isBodyweight(ex) ? (Number(it.kg) ? bwStep() : '') : step('Carga sugerida (kg)', 'kg', S().settings.incKg || 1)}${step('Descanso', 'rest', 15, restLabel)}</div>${swapHTML()}`}
-        ${ex.tipo === 'tempo' ? '' : `<div class="switch-row" data-a="uni" style="margin-top:6px"><div class="grow">Unilateral<div class="small muted">Conta as repetições do lado direito e do esquerdo separadas</div></div><div class="switch ${Store.isUni(it, ex) ? 'on' : ''}"></div></div>`}
-        ${techHTML()}
-        <div class="field"><label>Observação</label><input class="input" data-in="note" value="${esc(it.note || '')}" placeholder="Ex.: pegada fechada"></div>
-        <div class="btn-row" style="margin-top:18px"><button class="btn danger" style="flex:0 0 56px;padding:0" data-a="rm">${icon('trash')}</button><button class="btn ghost" style="flex:0 0 auto" data-a="info">${icon('info', 'sm')}</button><button class="btn lime" data-a="ok">Salvar</button></div>`,
+      render: () => `<div class="fs-hero"><div class="ph" style="background-image:url('${(ex.img || [])[0] || ''}')"></div><div class="in"><h3>${esc(ex.nome)}</h3><small>${esc(ex.grupo)}${ex.equip ? ' · ' + esc(ex.equip) : ''}</small></div></div>
+        ${boxes()}${opts()}
+        <div class="fs-btns"><button class="btn ghost fs-rm" data-a="rm">${icon('trash', 'sm')}Remover</button><button class="btn lime" data-a="ok">Salvar</button></div>
+        <button class="fs-link" data-a="info">${icon('info', 'sm')} Ver como fazer</button>`,
       actions: {
-        st: (ds) => { const min = ds.k === 'sets' ? 1 : ds.k === 'rest' ? 5 : ds.k === 'restLast' ? 30 : 0; it[ds.k] = Math.max(min, Math.round((Number(it[ds.k]) + Number(ds.d)) * 100) / 100); Store.save(); Native.vibrate(6); sheetRefresh(); },
+        st: (ds) => { const min = ds.k === 'sets' ? 1 : ds.k === 'rest' ? 5 : 0; it[ds.k] = Math.max(min, Math.round((Number(it[ds.k]) + Number(ds.d)) * 100) / 100); Store.save(); Native.vibrate(6); sheetRefresh(); },
+        rp: (ds) => {
+          const d = Number(ds.d);
+          if (timed) it.reps = String(Math.max(5, (Number(it.reps) || 30) + d * 5));
+          else { const n = String(it.reps).match(/\d+/g); if (!n) it.reps = '10'; else it.reps = String(it.reps).replace(/\d+/g, (x) => String(Math.max(1, Number(x) + d))); }
+          Store.save(); Native.vibrate(6); sheetRefresh();
+        },
+        edSets: () => numberSheet('Séries', it.sets, 1, (v) => { it.sets = Math.max(1, Math.round(v)); Store.save(); refresh(); again(); }),
+        edKg: () => numberSheet('Carga (kg)', it.kg, 0.5, (v) => { it.kg = Math.max(0, v); Store.save(); refresh(); again(); }),
+        edRest: () => numberSheet('Descanso (segundos)', it.rest, 5, (v) => { it.rest = Math.max(5, Math.round(v)); Store.save(); refresh(); again(); }),
+        edReps: () => {
+          if (timed) { numberSheet('Tempo (segundos)', Number(it.reps) || 30, 5, (v) => { it.reps = String(Math.max(5, Math.round(v))); Store.save(); refresh(); again(); }); return; }
+          sheet({
+            render: () => `<h3>Repetições</h3><div class="desc">Um número (10) ou uma faixa (8-12).</div><input class="input num" id="repsIn" value="${esc(it.reps)}" style="font-size:24px;height:60px;text-align:center;font-weight:700">
+              <div class="filters" style="flex-wrap:wrap;margin:12px 0 0">${['6-8', '8-10', '8-12', '10-12', '12-15', '5', '10', '15'].map((r) => `<button class="filter" data-a="set" data-v="${r}">${r}</button>`).join('')}</div>
+              <button class="btn lime block" style="margin-top:16px" data-a="ok">Pronto</button>`,
+            after: (el) => setTimeout(() => el.querySelector('#repsIn').focus(), 300),
+            actions: { set: (ds) => { document.getElementById('repsIn').value = ds.v; }, ok: () => { it.reps = document.getElementById('repsIn').value.trim() || '10'; Store.save(); closeSheet(); refresh(); again(); } },
+          });
+        },
         swapOn: () => { if (Number(it.restLast) > 0) delete it.restLast; else it.restLast = Math.max(120, Math.ceil(((Number(it.rest) || S().settings.restDefault) + 60) / 30) * 30); Store.save(); Native.vibrate(6); sheetRefresh(); },
         swapSet: (ds) => { it.restLast = Number(ds.v); Store.save(); Native.vibrate(6); sheetRefresh(); },
-        ed: (ds) => numberSheet(ds.k === 'kg' ? 'Carga (kg)' : ds.k === 'rest' ? 'Descanso (segundos)' : ds.k === 'restLast' ? 'Depois da última série (segundos)' : 'Séries', it[ds.k], 1, (v) => { it[ds.k] = Math.max(0, v); Store.save(); refresh(); setTimeout(() => itemSheet(w, i), 380); }),
-        reps: (ds, el) => { it.reps = el.value.trim() || '10'; Store.save(); },
         uni: () => { it.uni = !Store.isUni(it, ex); Store.save(); Native.vibrate(6); sheetRefresh(); },
         bw: (ds) => { const m = Math.abs(Number(it.kg) || 0) || 5; it.kg = ds.v === 'corpo' ? 0 : ds.v === 'mais' ? m : -m; Store.save(); Native.vibrate(6); sheetRefresh(); },
         bwst: (ds) => {
+          if (bwMode() === 'corpo') { it.kg = Number(ds.d) > 0 ? (S().settings.incKg || 1) : 0; Store.save(); sheetRefresh(); return; }
           const sign = Number(it.kg) < 0 ? -1 : 1, inc = S().settings.incKg || 1;
-          const m = Math.max(inc, Math.round((Math.abs(Number(it.kg) || 0) + Number(ds.d) * inc) * 100) / 100);
-          it.kg = sign * m; Store.save(); Native.vibrate(6); sheetRefresh();
+          const m = Math.round((Math.abs(Number(it.kg) || 0) + Number(ds.d) * inc) * 100) / 100;
+          it.kg = m <= 0 ? 0 : sign * m; Store.save(); Native.vibrate(6); sheetRefresh();
         },
-        bwed: () => { const sign = Number(it.kg) < 0 ? -1 : 1; numberSheet(sign < 0 ? 'Ajuda (kg)' : 'Peso extra (kg)', Math.abs(Number(it.kg) || 0), 0.5, (v) => { it.kg = sign * Math.max(0, v); Store.save(); refresh(); setTimeout(() => itemSheet(w, i), 380); }); },
+        bwed: () => { const sign = Number(it.kg) < 0 ? -1 : 1; numberSheet(sign < 0 ? 'Ajuda (kg)' : 'Peso extra (kg)', Math.abs(Number(it.kg) || 0), 0.5, (v) => { it.kg = sign * Math.max(0, v); Store.save(); refresh(); again(); }); },
         mins: (ds) => { it.reps = String(Math.max(60, Math.round((Number(it.reps) || 1200) / 60 + Number(ds.d)) * 60)); it.rest = 0; Store.save(); Native.vibrate(6); sheetRefresh(); },
-        minsEd: () => numberSheet('Tempo (minutos)', Math.round((Number(it.reps) || 1200) / 60), 1, (v) => { it.reps = String(Math.max(1, Math.round(v)) * 60); it.rest = 0; Store.save(); refresh(); setTimeout(() => itemSheet(w, i), 380); }, 'min'),
-        note: (ds, el) => { it.note = el.value; Store.save(); },
+        minsEd: () => numberSheet('Tempo (minutos)', Math.round((Number(it.reps) || 1200) / 60), 1, (v) => { it.reps = String(Math.max(1, Math.round(v)) * 60); it.rest = 0; Store.save(); refresh(); again(); }, 'min'),
+        noteEd: () => sheet({
+          render: () => `<h3>Observação</h3><div class="desc">${esc(ex.nome)} · aparece neste treino.</div><input class="input" id="noteIn" value="${esc(it.note || '')}" placeholder="Ex.: pegada fechada"><button class="btn lime block" style="margin-top:16px" data-a="ok">Pronto</button>`,
+          after: (el) => setTimeout(() => el.querySelector('#noteIn').focus(), 300),
+          actions: { ok: () => { it.note = document.getElementById('noteIn').value; Store.save(); closeSheet(); again(); } },
+        }),
         pick: () => techPicker(w, i),
-        tp: (ds) => { const p = TECH.params(it.tech); it.tech[ds.k] = Math.max(PL[ds.k][2], Number(p[ds.k]) + Number(ds.d)); Store.save(); Native.vibrate(6); sheetRefresh(); },
-        todas: () => { const p = TECH.params(it.tech); it.tech.todas = !p.todas; Store.save(); sheetRefresh(); },
-        tempo: (ds, el) => { it.tech.tempo = el.value.trim() || '3-1-1'; Store.save(); },
-        ungroup: () => { const g = TECH.groupOf(w.items, i); for (let k = g.start; k <= g.end; k++) w.items[k].group = null; Store.save(); refresh(); sheetRefresh(); },
         info: () => { closeSheet(); push(ExerciseDetail(it.exId)); },
         rm: () => { w.items.splice(i, 1); Store.save(); closeSheet(); refresh(); },
         ok: () => { closeSheet(); refresh(); const t = UI.R.stack[UI.R.stack.length - 1]; if (t && t.commit) t.commit('✓ Exercício salvo'); else toast('✓ Exercício salvo'); },
@@ -587,38 +730,91 @@
     });
   }
 
-  // Escolha da técnica: por categoria, com resumo de cada uma.
+  // v0.46 · Técnica avançada: TA "Abas e desenho" para escolher + TC "Prévia antes de aplicar" (aprovadas em 13/11).
+  // Desenho de cada técnica: barras (altura em %); 's' = mini-série, 'p' = pausa.
+  const TDIAG = {
+    drop: [100, 70, 45], mecanico: [100, 's80'], restpause: [100, 's35', 's30'], myoreps: [90, 's30', 's30', 's30'], parciais: [100, 's40'], forcadas: [100, 's50'], backoff: [100, 'p20', 's65'],
+    fst7: [60, 60, 60, 60, 60, 60, 60], gvt: [50, 50, 50, 50, 50, 50, 50, 50, 50, 50], pircresc: [40, 55, 70, 85, 100], pirdecr: [100, 85, 70, 55, 40], w531: [70, 80, 95], cluster: [60, 'p15', 60, 'p15', 60], r21: [45, 45, 90],
+    biset: [80, 80], superset: [80, 's80'], preexaustao: ['s60', 90], posexaustao: [90, 's60'], triset: [70, 70, 70], gigante: [60, 60, 60, 60],
+    negativa: [30, 60, 90], isometria: [70, 70, 70], cadencia: [40, 80, 40], umaemeia: [60, 100, 60],
+  };
+  const diag = (id) => `<span class="tp-dia">${(TDIAG[id] || [70, 70, 70]).map((v) => { const s = String(v), k = s[0] === 's' ? 's' : s[0] === 'p' ? 'p' : '', h = parseFloat(s.replace(/[sp]/, '')); return `<i class="${k}" style="height:${h}%"></i>`; }).join('')}</span>`;
+  const PL = { qtd: ['Quantas vezes', 1, 1], pct: ['Tira da carga (%)', 5, 0], pausa: ['Pausa (s)', 5, 3], reps: ['Repetições', 1, 1], seg: ['Segundos', 1, 1], extra: ['Repetições a mais', 1, 0] };
   function techPicker(w, i) {
     const it = w.items[i];
+    let cat = (it.tech && TECH.get(it.tech.id) && TECH.get(it.tech.id).cat) || (it.group && it.group.type && TECH.get(it.group.type) && 'combinar') || TECH.CATS[0].id;
+    const back = () => setTimeout(() => itemSheet(w, i), 380);
+    const chosenG = () => TECH.groupOf(w.items, i), chosenT = () => it.tech && TECH.get(it.tech.id);
     sheet({
-      render: () => `<h3>Técnica avançada</h3><div class="desc">${esc(Store.exercise(it.exId).nome)} · toque para aplicar</div>
-        ${TECH.CATS.map((c) => `<div class="section-title" style="margin-top:16px"><h2>${esc(c.nome)}</h2></div><div class="small muted" style="margin:-4px 2px 8px">${esc(c.desc)}</div>
-          <div class="list">${TECH.LIST.filter((t) => t.cat === c.id).map((t) => {
-            const on = (it.tech && it.tech.id === t.id) || (it.group && it.group.type === t.id && TECH.groupOf(w.items, i));
-            return `<button class="card tech-opt press ${on ? 'on' : ''}" data-a="use" data-t="${t.id}"><b>${esc(t.nome)}</b>${t.mode === 'group' ? `<span class="chip blue" style="margin-left:6px;height:20px;font-size:10px">${t.size}${t.size === 4 ? '+' : ''} exercícios</span>` : ''}<small>${esc(t.resumo)}</small></button>`;
-          }).join('')}</div>`).join('')}
-        <div class="btn-row" style="margin-top:18px"><button class="btn ghost" data-a="none">Sem técnica</button><button class="btn ghost" data-a="guide">Ver guia</button></div>`,
+      render: () => {
+        const g = chosenG(), t = chosenT();
+        const cur = g ? g.tech.nome + ' · ' + g.pos + ' de ' + g.size : t ? t.nome + ' · ' + TECH.chip(it).replace(t.nome, '').replace(/^\s*·?\s*/, '') : '';
+        return `<h3>Técnica avançada</h3><div class="desc">${esc(Store.exercise(it.exId).nome)} · toque para ver e aplicar</div>
+          ${cur ? `<div class="tp-cur">${icon(g ? 'repeat' : 'flame', 'sm')}<span>Escolhida: <b>${esc(cur.replace(/ · $/, ''))}</b></span><button data-a="none">Tirar</button></div>` : ''}
+          <div class="tp-tabs">${TECH.CATS.map((c) => `<button class="${c.id === cat ? 'on' : ''}" data-a="cat" data-c="${c.id}">${esc(c.nome)}</button>`).join('')}</div>
+          <div class="small muted" style="margin:8px 2px 2px">${esc(TECH.CATS.find((c) => c.id === cat).desc)}</div>
+          ${TECH.LIST.filter((x) => x.cat === cat).map((x) => { const on = (t && t.id === x.id) || (g && g.tech.id === x.id); return `<button class="tp-card ${on ? 'on' : ''}" data-a="see" data-t="${x.id}">${diag(x.id)}<span class="g"><b>${esc(x.nome)}${x.mode === 'group' ? ` <small class="tp-n">${x.size}${x.size === 4 ? '+' : ''} exercícios</small>` : ''}</b><small>${esc(x.resumo)}</small></span>${on ? `<span class="tp-ok">${icon('check', 'sm')}</span>` : ''}</button>`; }).join('')}
+          <button class="fs-link" data-a="guide">${icon('info', 'sm')} Ver guia das técnicas</button>`;
+      },
       actions: {
-        use: (ds) => {
-          const t = TECH.get(ds.t);
-          if (t.mode === 'group') {
-            if (i + t.size > w.items.length) { toast(`${t.nome} precisa de ${t.size} exercícios a partir deste. Adicione ou reordene.`); return; }
-            const gid = Store.uid('g');
-            // tira os itens de grupos antigos que seriam quebrados
-            for (let k = i; k < i + t.size; k++) { const old = TECH.groupOf(w.items, k); if (old) for (let m = old.start; m <= old.end; m++) w.items[m].group = null; }
-            for (let k = i; k < i + t.size; k++) w.items[k].group = { id: gid, type: t.id };
-            toast(`${t.nome}: ${t.size} exercícios agrupados`);
-          } else {
-            it.tech = { id: t.id };
-            if (TECH.applyScheme(it, t.id)) toast('Séries, repetições e descanso ajustados para ' + t.nome);
-          }
-          Store.save(); closeSheet(); refresh(); setTimeout(() => itemSheet(w, i), 380);
-        },
-        none: () => { it.tech = null; Store.save(); closeSheet(); refresh(); setTimeout(() => itemSheet(w, i), 380); },
+        cat: (ds) => { cat = ds.c; sheetRefresh(); },
+        see: (ds) => { closeSheet(); setTimeout(() => techPreview(w, i, ds.t), 300); },
+        none: () => { const g = chosenG(); if (g) for (let k = g.start; k <= g.end; k++) w.items[k].group = null; it.tech = null; Store.save(); closeSheet(); refresh(); back(); },
         guide: () => { closeSheet(); push(TechGuide()); },
       },
     });
   }
+  const repsOf = (r) => { const m = String(r).match(/\d+/g); return m ? Number(m[m.length - 1]) : 10; };
+  function techPreview(w, i, tid) {
+    const it = w.items[i], t = TECH.get(tid), ex = Store.exercise(it.exId);
+    const draft = JSON.parse(JSON.stringify(it));
+    if (t.mode !== 'group') { draft.tech = Object.assign({ id: tid }, (it.tech && it.tech.id === tid) ? it.tech : {}); TECH.applyScheme(draft, tid); }
+    const p = () => TECH.params(draft.tech);
+    const preview = () => {
+      if (t.mode === 'group') {
+        if (i + t.size > w.items.length) return `<div class="tp-prev"><div class="warn">${esc(t.nome)} precisa de ${t.size} exercícios a partir deste. Adicione ou reordene antes.</div></div>`;
+        return `<div class="tp-prev">${w.items.slice(i, i + t.size).map((x, k) => `<div><span>${k + 1}. ${esc(Store.exercise(x.exId).nome)}</span><b>${x.sets} × ${esc(x.reps)}</b></div>${k < t.size - 1 ? '<div class="d"><span>↳ sem descanso</span><b></b></div>' : ''}`).join('')}<div class="d"><span>↳ descanso depois do grupo</span><b>${restLabel(w.items[i + t.size - 1].rest)}</b></div></div>`;
+      }
+      let rows = [];
+      try { rows = TECH.buildSets(draft, null, S().settings.incKg || 2, repsOf, 1); } catch (e) { rows = []; }
+      const kgT = (k) => (Number(k) ? nf(k) + ' kg' : Store.isBodyweight(ex) ? 'corpo' : '—');
+      const mains = rows.filter((r) => !r.sub), firstSub = rows.findIndex((r) => r.sub);
+      const out = [];
+      if (firstSub > 1 && rows.slice(0, firstSub).every((r) => !r.sub && r.kg === rows[0].kg && String(r.reps) === String(rows[0].reps))) out.push([`Séries 1 a ${firstSub}`, kgT(rows[0].kg) + ' × ' + rows[0].reps, '']);
+      rows.forEach((r, k) => { if (firstSub > 1 && k < firstSub && out.length) return; out.push([r.sub ? '↳ ' + (r.label || 'extra') : 'Série ' + r.n, kgT(r.kg) + ' × ' + (r.sub && !r.target ? 'até a falha' : (r.target || r.reps)), r.sub ? 'd' : '']); });
+      return `<div class="tp-prev">${out.slice(0, 9).map(([a, b, c]) => `<div class="${c}"><span>${esc(a)}</span><b>${esc(String(b))}</b></div>`).join('')}${out.length > 9 ? `<div><span>… mais ${out.length - 9}</span><b></b></div>` : ''}${!mains.length ? '' : ''}</div>`;
+    };
+    const keys = () => (t.mode === 'group' ? [] : Object.keys(t.params || {}).filter((k) => PL[k] && !(k === 'pct' && tid !== 'drop' && tid !== 'backoff')));
+    sheet({
+      render: () => `<button class="tp-back" data-a="back">${icon('back', 'sm')}${esc(TECH.CATS.find((c) => c.id === t.cat).nome)}</button>
+        <h3>${esc(t.nome)}</h3><div class="desc">${esc(t.resumo)}</div>
+        ${keys().length || (t.params && ('todas' in t.params || 'tempo' in t.params)) ? `<div class="fs-cap">Ajuste</div><div class="fs-g">${keys().map((k) => `<div class="fs-box"><div class="l">${PL[k][0]}</div><div class="r"><button data-a="tp" data-k="${k}" data-d="${-PL[k][1]}">${icon('minus', 'sm')}</button><b class="num">${p()[k]}${k === 'pct' ? '%' : ''}</b><button data-a="tp" data-k="${k}" data-d="${PL[k][1]}">${icon('plus', 'sm')}</button></div></div>`).join('')}</div>
+          ${t.params && 'todas' in t.params ? `<div class="fs-opt" data-a="todas" style="border:0"><span class="g"><b>Em todas as séries</b><small>Desligado: só na última</small></span><span class="switch ${p().todas ? 'on' : ''}"></span></div>` : ''}
+          ${t.params && 'tempo' in t.params ? `<div class="field"><label>Cadência (desce-pausa-sobe)</label><input class="input" data-in="tempo" value="${esc(p().tempo)}" placeholder="3-1-1"></div>` : ''}` : ''}
+        <div class="fs-cap">Como fica no treino</div>${preview()}
+        <div class="fs-btns"><button class="btn ghost" data-a="back">Voltar</button><button class="btn lime" data-a="apply" ${t.mode === 'group' && i + t.size > w.items.length ? 'disabled' : ''}>Aplicar ${esc(t.nome.toLowerCase())}</button></div>`,
+      actions: {
+        back: () => { closeSheet(); setTimeout(() => techPicker(w, i), 300); },
+        tp: (ds) => { draft.tech[ds.k] = Math.max(PL[ds.k][2], Number(p()[ds.k]) + Number(ds.d)); Native.vibrate(6); sheetRefresh(); },
+        todas: () => { draft.tech.todas = !p().todas; sheetRefresh(); },
+        tempo: (ds, el) => { draft.tech.tempo = el.value.trim() || '3-1-1'; },
+        apply: () => {
+          if (t.mode === 'group') {
+            const gid = Store.uid('g');
+            for (let k = i; k < i + t.size; k++) { const old = TECH.groupOf(w.items, k); if (old) for (let m = old.start; m <= old.end; m++) w.items[m].group = null; }
+            for (let k = i; k < i + t.size; k++) w.items[k].group = { id: gid, type: t.id };
+            toast(`${t.nome}: ${t.size} exercícios agrupados`);
+          } else {
+            Object.assign(it, { tech: draft.tech, sets: draft.sets, reps: draft.reps, rest: draft.rest });
+            toast(t.nome + ' aplicado');
+          }
+          Store.save(); closeSheet(); refresh(); setTimeout(() => itemSheet(w, i), 380);
+        },
+      },
+    });
+  }
+
+
 
   // ====================== GUIA DE TÉCNICAS ======================
   function TechGuide() {
@@ -639,103 +835,60 @@
   }
 
   // ====================== PROGRESSO ======================
+  // v0.46 · Progresso P1 com os Destaques D4 (aprovado em 13/11): período, 4 números, dois blocos de destaque
+  // (Recordes no período e Sequência) e Explorar com 6 atalhos. As subpáginas abrem sem a fileira de abas.
   function Progress() {
-    let period = 8, exSel = null;
+    let period = 8;
     return {
       render() {
-        const weeks = Store.weeksBack(period);
-        const from = weeks[0].startISO;
-        const ss = S().sessions.filter((s) => s.date >= from && s.sets.some((x) => x.done));
         const head = `<div class="hello"><div class="t"><h1>Progresso<span>e evolução</span></h1></div></div>`;
-        if (!S().sessions.some((s) => s.sets.some((x) => x.done))) {
-          return head + `<div class="content"><div class="card empty appear"><div class="ic">${icon('chart', 'lg')}</div><h3>Seus gráficos aparecem aqui</h3><p>Registre o primeiro treino para acompanhar constância, cargas e volume.</p><button class="btn ghost sm" data-a="demo">Ver com dados de exemplo</button></div></div>`;
+        const done = (s) => s.sets.some((x) => x.done);
+        if (!S().sessions.some(done)) {
+          return head + `<div class="content"><div class="card empty appear"><div class="ic">${icon('chart', 'lg')}</div><h3>Seus gráficos aparecem aqui</h3><p>Registre o primeiro treino para acompanhar constância, cargas e volume.</p><button class="btn ghost sm" style="margin-top:14px" data-a="demo">Ver com dados de exemplo</button></div>
+            <div class="pg-cap">Explorar</div>${explore(0, 0)}</div>`;
         }
-        const p = Store.activePlan();
-        const planned = p ? p.workouts.length : 0;
-        const perWeek = weeks.map((w) => {
-          const inW = S().sessions.filter((s) => s.date >= w.startISO && s.date <= w.endISO && s.sets.some((x) => x.done));
-          const doneWorkouts = new Set(inW.filter((s) => { const pr = Store.sessionProgress(s); return pr.total && pr.complete >= pr.total; }).map((s) => s.workoutId)).size;
-          return { label: w.start.getDate() + '/' + (w.start.getMonth() + 1), a: doneWorkouts, b: planned, vol: inW.reduce((a, s) => a + Store.sessionVolume(s), 0) };
-        });
-        const totalVol = ss.reduce((a, s) => a + Store.sessionVolume(s), 0);
-        const totalSets = ss.reduce((a, s) => a + s.sets.filter((x) => x.done).length, 0);
-        const fin = ss.filter((s) => s.end);
-        const avgMin = fin.length ? Math.round(fin.reduce((a, s) => a + Store.sessionDuration(s), 0) / fin.length) : 0;
-        let streak = 0; for (let i = perWeek.length - 2; i >= 0 && planned && perWeek[i].a >= planned; i--) streak++;
-        if (planned && perWeek[perWeek.length - 1].a >= planned) streak++;
-
-        // Exercícios com histórico, do mais feito para o menos
-        const freq = {};
-        ss.forEach((s) => new Set(s.sets.filter((x) => x.done).map((x) => x.exId)).forEach((id) => { freq[id] = (freq[id] || 0) + 1; }));
-        const exIds = Object.keys(freq).sort((a, b) => freq[b] - freq[a]);
-        if (!exSel || !freq[exSel]) exSel = exIds[0];
-        const hist = exSel ? Store.exerciseHistory(exSel).filter((h) => h.date >= from) : [];
-        const pts = hist.map((h) => ({ label: shortDate(h.date), v: h.e1rm }));
-        const first = hist[0], lastH = hist[hist.length - 1];
-        const gain = first && lastH && first.e1rm ? Math.round((lastH.e1rm / first.e1rm - 1) * 100) : 0;
-
-        // Séries por grupo muscular
-        const byGroup = {};
-        ss.forEach((s) => s.sets.filter((x) => x.done).forEach((x) => { const g = Store.exercise(x.exId).grupo; byGroup[g] = (byGroup[g] || 0) + 1; }));
-        const groups = Object.entries(byGroup).sort((a, b) => b[1] - a[1]);
-        const gmax = groups.length ? groups[0][1] : 1;
-
-        const recent = S().sessions.filter((s) => s.sets.some((x) => x.done)).sort((a, b) => b.start - a.start).slice(0, 12);
-        return head + `<div class="content">
-          <div class="quick-nav">${[['muscles', 'chart', 'Músculos'], ['records', 'trophy', 'Recordes'], ['body', 'weight', 'Corpo'], ['tests', 'target', 'Testes'], ['medals', 'star', 'Conquistas']].map(([a, ic, l]) => `<button class="card press" data-a="${a}">${icon(ic, 'sm')}<span>${l}</span></button>`).join('')}</div>
-          <div class="seg" style="margin-top:12px">${[[4, '4 sem'], [8, '8 sem'], [12, '3 meses'], [52, '1 ano']].map(([n, l]) => `<button class="${period === n ? 'on' : ''}" data-a="period" data-n="${n}">${l}</button>`).join('')}</div>
-          <div class="tiles two" style="margin-top:12px">
-            <div class="card tile"><div class="ic" style="color:var(--lime)">${icon('check', 'sm')}</div><div class="v num">${ss.length}</div><div class="l">Treinos registrados</div></div>
-            <div class="card tile"><div class="ic" style="color:var(--amber)">${icon('flame', 'sm')}</div><div class="v num">${streak}<small>sem</small></div><div class="l">Semanas completas seguidas</div></div>
-            <div class="card tile"><div class="ic" style="color:var(--blue)">${icon('weight', 'sm')}</div><div class="v num">${volume(totalVol)}</div><div class="l">Volume levantado</div></div>
-            <div class="card tile"><div class="ic" style="color:var(--violet)">${icon('clock', 'sm')}</div><div class="v num">${avgMin}<small>min</small></div><div class="l">Duração média · ${totalSets} séries</div></div></div>
-          <button class="card month-btn press" data-a="month">${icon('calendar', 'sm')}<span class="grow"><b>Resumo de ${Analytics.MONTHS_PT[new Date().getMonth()].toLowerCase()}</b><small>Treinos, recordes, músculos e imagem para compartilhar</small></span>${icon('next', 'sm')}</button>
-          <div class="section-title"><h2>Força</h2><span class="small muted">o nível de poder de verdade</span></div>${Screens.strengthCard(true)}
-          ${(() => {
-            const since = new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);
-            const pl = (S().pain || []).filter((p) => p.date >= since);
-            if (!pl.length) return '';
-            const by = {};
-            pl.forEach((p) => { const k = p.where; by[k] = by[k] || { n: 0, ex: new Set() }; by[k].n++; by[k].ex.add(Store.exercise(p.exId).nome); });
-            return `<div class="section-title"><h2>Dores · 30 dias</h2><span class="small muted">${pl.length} ${pl.length === 1 ? 'registro' : 'registros'}</span></div><div class="card">${Object.keys(by).sort((a, b) => by[b].n - by[a].n).map((k) => `<div class="kv"><span><b>${esc(k)}</b> · ${by[k].n}×</span><span class="small muted ellipsis" style="max-width:60%">${esc([...by[k].ex].join(', '))}</span></div>`).join('')}</div>`;
-          })()}
-          <div class="section-title"><h2>Constância</h2><span class="small muted">treinos completos por semana</span></div>
-          <div class="card">${barChart(perWeek, { color: 'var(--lime)' })}<div class="legend"><span><i style="background:var(--lime)"></i>Completos</span><span><i style="background:rgba(var(--fg-rgb),.1)"></i>Planejados</span></div></div>
-          <div class="section-title"><h2>Evolução de força</h2>${gain ? `<span class="chip ${gain > 0 ? 'done' : 'late'}">${gain > 0 ? '+' : ''}${gain}%</span>` : ''}</div>
-          <div class="card"><div class="filters" style="margin:0 -16px 12px;padding:0 16px">${exIds.slice(0, 15).map((id) => `<button class="filter ${id === exSel ? 'on' : ''}" data-a="ex" data-id="${id}">${esc(Store.exercise(id).nome)}</button>`).join('')}</div>
-          ${lineChart(pts, { color: 'var(--blue)' })}<div class="legend"><span><i style="background:var(--blue)"></i>1RM estimado (kg)</span><span><i style="background:var(--gold-2);border-radius:50%;box-shadow:0 0 6px rgba(243, 212, 140,.9)"></i>Recorde</span></div></div>
-          <div class="section-title"><h2>Volume semanal</h2></div>
-          <div class="card">${barChart(perWeek.map((w) => ({ label: w.label, a: w.vol })), { color: 'var(--blue)', fmt: (v) => (v >= 1000 ? nf(v / 1000, 0) + 't' : nf(v, 0)) })}</div>
-          <div class="section-title"><h2>Músculos da semana</h2><button class="link" data-a="muscles">Ver mapa</button></div>
-          ${Screens.muscleCard()}
-          <div class="section-title"><h2>Frequência</h2></div>
-          ${Screens.calendarCard()}
-          <div class="section-title"><h2>Séries por grupo</h2><span class="small muted">no período</span></div>
-          <div class="card">${groups.map(([g, n]) => `<div class="hbar"><span class="ellipsis">${esc(g)}</span><div class="track"><i style="width:${(n / gmax) * 100}%"></i></div><span class="v num">${n}</span></div>`).join('')}</div>
-          <div class="section-title"><h2>Histórico</h2></div>
-          <div class="list">${recent.map((s) => { const fw = Store.findWorkout(s.workoutId); const pr = Store.sessionProgress(s); const d = Store.parseISO(s.date); const ok = pr.total && pr.complete >= pr.total;
-            return `<div class="card hist press" data-a="sess" data-id="${s.id}"><div class="d"><b class="num">${d.getDate()}</b><span>${UI.MONTHS[d.getMonth()]}</span></div><div class="grow"><div style="font-weight:600" class="ellipsis">${fw ? 'Treino ' + esc(fw.workout.letter) + ' · ' + esc(fw.workout.name) : 'Treino removido'}</div><div class="small muted num">${s.end ? Store.sessionDuration(s) + ' min · ' : ''}${volume(Store.sessionVolume(s))} · ${pr.setsDone} séries</div></div><span class="chip ${ok ? 'done' : 'partial'}">${ok ? 'Feito' : pr.complete + '/' + pr.total}</span></div>`; }).join('')}</div>
-          </div>`;
+        const weeks = Store.weeksBack(period), from = weeks[0].startISO;
+        const prevFrom = Store.iso(Store.addDays(Store.parseISO(from), -7 * period));
+        const ss = S().sessions.filter((s) => s.date >= from && done(s));
+        const prev = S().sessions.filter((s) => s.date >= prevFrom && s.date < from && done(s));
+        const vol = ss.reduce((a, s) => a + Store.sessionVolume(s), 0);
+        const fin = ss.filter((s) => s.end), avg = fin.length ? Math.round(fin.reduce((a, s) => a + Store.sessionDuration(s), 0) / fin.length) : 0;
+        // Semanas seguidas com pelo menos um treino (contando a atual só se já tiver treino).
+        const wk = Store.weeksBack(52).reverse();
+        let streak = 0;
+        for (let i = 0; i < wk.length; i++) { const has = S().sessions.some((s) => done(s) && s.date >= wk[i].startISO && s.date <= wk[i].endISO); if (has) streak++; else if (i > 0) break; }
+        const last6 = Store.weeksBack(6).map((w) => S().sessions.some((s) => done(s) && s.date >= w.startISO && s.date <= w.endISO));
+        // Recordes no período: quantos e o maior salto.
+        const recs = [];
+        ss.slice().sort((a, b) => a.start - b.start).forEach((s) => Store.sessionRecords(s).forEach((r) => recs.push(r)));
+        const big = recs.slice().sort((a, b) => (b.kg - b.prev) - (a.kg - a.prev))[0];
+        const diff = ss.length - prev.length;
+        return head + `<div class="content pg-c">
+          <div class="pg-seg">${[[4, '4 sem'], [8, '8 sem'], [12, '3 meses'], [52, '1 ano']].map(([n, l]) => `<button class="${period === n ? 'on' : ''}" data-a="period" data-n="${n}">${l}</button>`).join('')}</div>
+          <div class="pg-n2"><div><b class="num">${ss.length}</b><small>treinos${prev.length || diff ? ' · ' + (diff >= 0 ? '↑ ' : '↓ ') + Math.abs(diff) + ' vs. antes' : ''}</small></div><div><b class="num">${volume(vol)}</b><small>volume levantado</small></div>
+            <div><b class="num">${streak}<small> sem</small></b><small>seguidas treinando</small></div><div><b class="num">${avg}<small> min</small></b><small>duração média</small></div></div>
+          <div class="pg-cap">Destaques</div>
+          <div class="pg-d2"><button class="pg-gold press" data-a="records"><span class="k">Recordes no período</span><b class="num">${recs.length}</b><small>${big ? 'o maior: ' + esc(Store.exercise(big.exId).nome) + '<br>' + kg(big.prev) + ' → ' + kg(big.kg) : 'Bata uma marca para ver aqui'}</small><span class="big">${icon('trophy')}</span></button>
+            <button class="pg-card press" data-a="hist"><span class="k">Sequência</span><b class="num">${streak} ${streak === 1 ? 'semana' : 'semanas'}</b><small>treinando sem falhar</small><span class="bars">${last6.map((x) => `<i class="${x ? 'on' : ''}"></i>`).join('')}</span></button></div>
+          <div class="pg-cap">Explorar</div>${explore(recs.length, ss.length)}</div>`;
       },
       actions: {
         period: (ds) => { period = Number(ds.n); refresh(); },
-        ex: (ds) => { exSel = ds.id; refresh(); },
-        sess: (ds) => push(SessionDetail(ds.id)),
         demo: () => { if (!Store.activePlan()) { toast('Escolha um plano primeiro, em Planos'); return; } Store.seedDemo(); refresh(); toast('Dados de exemplo criados. Remova em Configurações.'); },
-        muscles: () => push(progSection(0)),
-        pwWeight: () => Screens.measureSheet(() => refresh()),
-        month: () => push(Screens.MonthSummary()),
-        records: () => push(progSection(1)),
-        body: () => push(progSection(2)),
-        tests: () => push(progSection(3)),
-        medals: () => push(progSection(4)),
-      },
-      after: (el, re) => {
-        const c = el.querySelector('[data-cal]'); if (c) c.scrollLeft = c.scrollWidth;
-        // Deslizar para a esquerda no Progresso abre a primeira seção (Músculos).
-        if (!re) UI.onSwipe(el, (d) => { if (d > 0 && UI.R.stack[UI.R.stack.length - 1] === UI.R.stack[0] && UI.R.tab === 'progress') push(progSection(0)); });
+        muscles: () => push(Screens.MuscleMap()),
+        records: () => push(Screens.Records()),
+        body: () => push(Screens.Body()),
+        tests: () => push(Screens.Tests()),
+        medals: () => push(Screens.Medals()),
+        hist: () => push(Screens.History()),
       },
     };
+    function explore(nRec, nSess) {
+      const got = Analytics.earned().size;
+      const T = [['muscles', 'chart', 'Músculos', 'mapa e equilíbrio'], ['records', 'trophy', 'Recordes', nRec ? nRec + (nRec === 1 ? ' novo' : ' novos') : 'suas marcas'], ['body', 'weight', 'Corpo', 'peso e fotos'],
+        ['tests', 'target', 'Testes', 'salto, sprint…'], ['medals', 'star', 'Conquistas', got + ' de ' + Analytics.MEDALS.length], ['hist', 'calendar', 'Histórico', nSess ? nSess + ' treinos' : 'seus treinos']];
+      return `<div class="pg-ex">${T.map(([a, ic, l, d]) => `<button class="press" data-a="${a}">${icon(ic, 'sm')}<b>${l}</b><small>${d}</small></button>`).join('')}</div>`;
+    }
   }
 
   // ====================== DETALHE DA SESSÃO ======================
@@ -852,5 +1005,5 @@
     };
   }
 
-  Object.assign(window.Screens, { PlansCreate: () => Plans().actions.create(), GymSetup, lineChart, TechGuide, Library, ExerciseDetail, ExerciseForm, Plans, PlanEditor, WorkoutEditor, Progress, SessionDetail, Settings });
+  Object.assign(window.Screens, { PlansCreate: () => Plans().actions.create(), PlansList: () => Plans().actions.plans(), GymSetup, lineChart, TechGuide, Library, ExerciseDetail, ExerciseForm, Plans, PlanEditor, WorkoutEditor, Progress, SessionDetail, Settings });
 })();

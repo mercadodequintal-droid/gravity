@@ -76,7 +76,7 @@
     const gold = !color || /gold|lime/.test(color);
     const id = 'rg' + ++ringId;
     const defs = gold ? `<defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--gold-2)"/><stop offset=".5" style="stop-color:var(--gold)"/><stop offset="1" style="stop-color:var(--gold-3)"/></linearGradient></defs>` : '';
-    const glow = gold ? ' style="filter:drop-shadow(0 0 5px rgba(217, 178, 95,.55))"' : '';
+    const glow = gold ? ' style="filter:drop-shadow(0 0 5px rgba(var(--acc-rgb),.55))"' : '';
     return `<div class="ring" style="width:${size}px;height:${size}px"><svg width="${size}" height="${size}">${defs}<circle class="track" cx="${size / 2}" cy="${size / 2}" r="${r}" stroke-width="${stroke}"/><circle class="bar" cx="${size / 2}" cy="${size / 2}" r="${r}" stroke-width="${stroke}" stroke="${gold ? 'url(#' + id + ')' : color}" stroke-dasharray="${c}" stroke-dashoffset="${off}"${glow}/></svg><div class="label">${inner || ''}</div></div>`;
   }
 
@@ -361,7 +361,7 @@
       this.askCb = cb; clearTimeout(this.askT);
       this.askEl.innerHTML = `<span>Como foi essa série?</span><div>${opts.map((f) => `<button data-v="${f.v}"><b>${esc(f.nome)}</b><small>${esc(f.desc)}</small></button>`).join('')}</div>`;
       this.askEl.classList.add('show');
-      this.askT = setTimeout(() => this.hideAsk(), 10000);
+      this.askT = setTimeout(() => this.hideAsk(), 4000);
       return true;
     },
     hideAsk() { clearTimeout(this.askT); this.askCb = null; if (this.askEl) this.askEl.classList.remove('show'); },
@@ -462,7 +462,7 @@
     const paint = () => {
       const b = def.el && def.el.querySelector('[data-save]'); if (!b) return;
       const d = dirty(); b.classList.toggle('dirty', d); b.disabled = !d;
-      b.innerHTML = d ? 'Salvar alterações' : icon('check', 'sm') + 'Tudo salvo';
+      b.innerHTML = d ? (o.label ? icon('check', 'sm') + 'Salvar ' + o.label : 'Salvar alterações') : icon('check', 'sm') + 'Tudo salvo';
     };
     const commit = (msg) => { Store.save(true); base = json(); Native.vibrate(15); toast(msg || '✓ Alterações salvas'); paint(); };
     const render = def.render.bind(def), after = def.after;

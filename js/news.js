@@ -4,6 +4,12 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.46.0', date: '2026-11-13', items: [
+      { icon: 'sparkle', t: 'Dourado novo', d: 'O tema Dourado ganhou um amarelo mais forte e ficou sem contorno nos quadros e botões: a tela ficou mais limpa.', main: true, go: 'theme' },
+      { icon: 'dumbbell', t: 'Exercícios por músculo', d: 'A aba Exercícios abre nos músculos. Em cada um, filtros por aparelho e o que já está no seu plano. A ficha ganhou foto grande, abas e o erro mais comum de cada exercício.' },
+      { icon: 'edit', t: 'Editar plano e treino', d: 'Telas novas para montar o plano: equilíbrio por músculo, dias de cada treino, técnica avançada com prévia de como fica e grade numerada para adicionar exercícios.' },
+      { icon: 'chart', t: 'Progresso e Corpo', d: 'Destaques de recordes e sequência, Histórico novo, metas de peso, lembrete para se pesar e câmera com guia para as fotos de progresso.' },
+    ] },
     { v: '0.45.0', date: '2026-11-13', items: [
       { icon: 'play', t: 'Treinar de cara nova', d: 'A tela do treino ganhou foto de capa, os atalhos lado a lado e o botão Começar grande. Depois do treino ela mostra os números do dia, os recordes e o próximo treino.', main: true },
       { icon: 'timer', t: 'Pouco tempo e descanso', d: 'Arraste a régua até o tempo que você tem e veja quantas séries ficam. O descanso virou uma barra que enche, com a próxima série e os botões −15, +15 e Pular.' },
@@ -103,7 +109,7 @@
       { icon: 'camera', t: 'Mapa com a sua foto corrigido', d: 'Na tela Músculos, a sua foto agora aparece com os músculos pintados, também no modo Recuperação.', go: 'myBody' },
     ] },
     { v: '0.29.0', date: '2026-11-04', items: [
-      { icon: 'dumbbell', t: '134 exercícios novos', d: 'Agora são 326: máquinas novas (pêndulo, belt squat, hip thrust na máquina, remadas iso-laterais), exercícios em alta (rosca bayesiana, Kelso, tibial), HYROX, calistenia e mobilidade. Filtre por Novos, Máquinas, Em alta, HYROX ou Calistenia.', go: 'libNew', img: 'img/news/0.29.0.jpg', main: true, dot: { tab: 'library', sel: '[data-a="kind"][data-k="novo"]' } },
+      { icon: 'dumbbell', t: '134 exercícios novos', d: 'Agora são 326: máquinas novas (pêndulo, belt squat, hip thrust na máquina, remadas iso-laterais), exercícios em alta (rosca bayesiana, Kelso, tibial), HYROX, calistenia e mobilidade. Filtre por Novos, Máquinas, Em alta, HYROX ou Calistenia.', go: 'libNew', img: 'img/news/0.29.0.jpg', main: true },
       { icon: 'target', t: 'Minha academia', d: 'Desligue os aparelhos que a sua academia não tem: eles somem das trocas sugeridas e dos planos que o app monta.', go: 'gym', dot: { sel: '[data-a="gym"]' },
         tour: [['[data-a="gymOnly"]', 'Ligue para ver só o que tem na sua academia'], ['[data-a="gym"]', 'Toque aqui para marcar os aparelhos']] },
       { icon: 'play', t: 'Voz: escolha cada aviso', d: 'Em Voz no treino, cada aviso falado tem a sua chave: fim do descanso, próxima série, técnicas, 10 segundos finais, recordes e resumo.', go: 'voice' },
@@ -170,7 +176,7 @@
   }
   // Atalhos do "Ver agora".
   const GO = {
-    libNew: () => { UI.switchTab('library', true); setTimeout(() => { const b = document.querySelector('[data-a="kind"][data-k="novo"]'); if (b) b.click(); spotlight('[data-a="kind"][data-k="novo"]', 'Os exercícios novos'); }, 300); },
+    libNew: () => { UI.switchTab('library', true); setTimeout(() => UI.push(Screens.Library({ group: 'Todos', kind: 'novo', title: 'Novos' })), 300); },
     gym: () => { UI.switchTab('library', true); },
     voice: () => { UI.push(Screens.Settings()); setTimeout(() => UI.push(Screens.VoiceSettings()), 300); },
     balance: () => { UI.switchTab('home', true); setTimeout(() => { UI.push(Screens.MuscleMap()); setTimeout(() => spotlight('.bal-card', 'Equilíbrio entre os músculos'), 450); }, 250); },

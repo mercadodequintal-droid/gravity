@@ -181,7 +181,7 @@
         medals: () => push(Screens.Medals()),
         avatar: () => Profile.sheet(UI.refresh),
         editPlan: () => push(Screens.PlanEditor(Store.activePlan().id)),
-        pwOpen: () => UI.switchTab('progress'),
+        pwOpen: () => push(Screens.Records()),
         updNow: () => Updater.install(),
         updLater: () => Updater.later(),
         bkNow: () => { Native.share('Backup Gravity', Store.exportBackup(), 'gravity-backup-' + Store.iso(Store.today()) + '.json'); Store.backupDone(); UI.refresh(); },
@@ -615,6 +615,25 @@
     if (s.deload) m.push(m.length ? 'semana leve' : 'Semana leve');
     return m.length ? `<span class="av-top" data-a="modeInfo">${m.join(' · ')}</span>` : '';
   }
+  // v0.46 · "Como fazer" em folha, sem sair do treino (aprovado em 13/11): boneco com os músculos,
+  // passos numerados, "Erro comum" e Fechar / Ver vídeo. A ficha completa continua na biblioteca.
+  function howtoSheet(exId) {
+    const ex = Store.exercise(exId), reg = Analytics.musclesOf(ex);
+    const body = Screens.bodySVG((k) => (reg[k] === 1 ? Screens.VCOL.ideal : reg[k] ? Screens.VCOL.pouco : ''), 96);
+    sheet({
+      render: () => `<h3>Como fazer</h3><div class="desc">${esc(ex.nome)}</div>
+        <div class="cf-mus"><div class="b">${body}</div><div class="cf-chips">${(ex.musculos || []).map((m) => `<span>${esc(m)}</span>`).join('')}${(ex.secundarios || []).map((m) => `<span class="s">${esc(m)}</span>`).join('')}</div></div>
+        ${ex.dicas && ex.dicas.length ? `<ol class="cf-steps">${ex.dicas.map((d) => `<li>${esc(d)}</li>`).join('')}</ol>` : ''}
+        ${ex.erro ? `<div class="cf-err"><b>Erro comum:</b> ${esc(ex.erro)}</div>` : ''}
+        <div class="fs-btns"><button class="btn ghost" data-a="no">Fechar</button><button class="btn lime" data-a="vid">${icon('video', 'sm')}Ver vídeo</button></div>
+        <button class="fs-link" data-a="full">${icon('info', 'sm')} Ficha completa</button>`,
+      actions: {
+        no: closeSheet,
+        vid: () => { closeSheet(); Native.open(Store.videoUrl(Store.exercise(exId))); },
+        full: () => { closeSheet(); push(Screens.ExerciseDetail(exId)); },
+      },
+    });
+  }
   function Player(sid, startIdx) {
     let idx = startIdx || 0, elapsedT = null, scrollT = null, rirFor = null, rirT = null;
     const avOpen = {}; // itens com "ver todos" aberto
@@ -950,7 +969,7 @@
         warm: (ds) => { const { s, items } = ctx(); const i = Number(ds.i); Tools.warmupSheet(s, items[i], () => updatePage(i)); },
         swap: (ds) => { const { s, items } = ctx(); const i = Number(ds.i); Tools.swapSheet(s, items[i], () => updatePage(i)); },
         pin: (ds) => { const { s, items } = ctx(); const i = Number(ds.i); Tools.pinSheet(exIdOf(s, items[i]), () => updatePage(i)); },
-        howto: (ds) => { const { s, items } = ctx(); push(Screens.ExerciseDetail(exIdOf(s, items[Number(ds.i)]))); },
+        howto: (ds) => { const { s, items } = ctx(); howtoSheet(exIdOf(s, items[Number(ds.i)])); },
         techInfo: (ds) => techSheet(ds.t, ctx().items[Number(ds.i)]),
         video: (ds) => { const { s, items } = ctx(); Native.open(Store.videoUrl(Store.exercise(exIdOf(s, items[Number(ds.i)])))); },
         note: (ds, el) => { const { s } = ctx(); s.notes = s.notes || {}; s.notes[ds.item] = el.value; Store.save(); },
@@ -1084,5 +1103,5 @@
     });
   }
 
-  window.Screens = Object.assign(window.Screens || {}, { finishSheet, firstOpenIndex, Home, WorkoutScreen, Player, trainNow, emblem, techSheet, techChips, restSheet, STATUS, daysText, estMinutes });
+  window.Screens = Object.assign(window.Screens || {}, { homePhoto, finishSheet, firstOpenIndex, Home, WorkoutScreen, Player, trainNow, emblem, techSheet, techChips, restSheet, STATUS, daysText, estMinutes });
 })();

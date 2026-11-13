@@ -3,7 +3,7 @@
 (function () {
   'use strict';
   const LIST = [
-    { id: 'dourado', nome: 'Dourado', desc: 'Grafite e dourado', bar: '#121214', light: false, sw: ['#121214', '#202024', '#d9b25f', '#f3d48c'] },
+    { id: 'dourado', nome: 'Dourado', desc: 'Grafite e amarelo ouro', bar: '#121214', light: false, sw: ['#121214', '#202024', '#f5c518', '#ffd95a'] },
     { id: 'galaxia', nome: 'Galáxia', desc: 'Preto com o roxo do logo', bar: '#07060b', light: false, sw: ['#07060b', '#16131f', '#a875ff', '#d6bfff'] },
     { id: 'titanio', nome: 'Titânio', desc: 'Grafite e prata', bar: '#0b0c0e', light: false, sw: ['#0b0c0e', '#191b1e', '#cdd3db', '#f1f4f7'] },
     { id: 'azul', nome: 'Azul', desc: 'Azul-marinho e azul elétrico', bar: '#0B1733', light: false, sw: ['#0B1733', '#172548', '#2F7BFF', '#7FB2FF'] },

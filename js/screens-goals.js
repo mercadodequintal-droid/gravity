@@ -82,16 +82,21 @@
       },
     });
   }
+  // v0.46: último resultado, minigráfico, quanto melhorou e "refazer em 2 semanas".
+  function spark(vals) {
+    if (vals.length < 2) return '';
+    const mn = Math.min(...vals), mx = Math.max(...vals), r = mx - mn || 1;
+    const xy = vals.map((v, i) => [4 + i * 62 / (vals.length - 1), 26 - (v - mn) / r * 20]);
+    return `<svg class="ts-sp" viewBox="0 0 70 30" width="70" height="30"><path d="M${xy.map((p) => p.join(',')).join(' L')}" fill="none" stroke="var(--gold)" stroke-width="2.2"/>${xy.map((p, i) => `<circle cx="${p[0]}" cy="${p[1]}" r="${i === xy.length - 1 ? 3 : 2}" fill="var(--gold)"/>`).join('')}</svg>`;
+  }
   function testCard(t, open) {
-    const r = Goals.results(t.id), last = r[r.length - 1], first = r[0];
+    const r = Goals.results(t.id), last = r[r.length - 1], prev = r[r.length - 2];
     let delta = '';
-    if (r.length >= 2) {
-      const d = last.v - first.v, better = t.up ? d > 0 : d < 0;
-      const pct = first.v ? Math.abs(d / first.v) * 100 : 0;
-      delta = d ? `<span class="chip ${better ? 'done' : 'late'}">${better ? '▲' : '▼'} ${nf(pct, 1)}%</span>` : '';
-    }
-    return `<div class="card test press" data-a="open" data-id="${t.id}"><div class="row"><div class="grow"><b>${esc(t.nome)}</b><div class="small muted">${last ? 'Último: ' + Goals.fmtVal(t, last.v) + ' · ' + shortDate(last.date) : 'Ainda não registrado'}</div></div>${delta}<button class="icon-btn" data-a="add" data-id="${t.id}">${icon('plus', 'sm')}</button></div>
-      ${open ? `<div class="small muted" style="margin-top:10px">${esc(t.how)}</div>${r.length >= 2 ? Screens.lineChart(r.slice(-12).map((x) => ({ label: shortDate(x.date), v: x.v })), { color: 'var(--blue)', h: 130 }) : ''}
+    if (prev) { const d = last.v - prev.v, better = t.up ? d > 0 : d < 0; delta = d ? `<small class="${better ? 'up' : 'dn'}">${d > 0 ? '+' : '−'}${Goals.fmtVal(t, Math.abs(d))}</small>` : '<small>igual</small>'; }
+    const days = last ? Math.round((Store.today() - Store.parseISO(last.date)) / Store.DAY) : null;
+    const hint = !last ? 'registre o primeiro' : days >= 14 ? 'hora de refazer' : 'refazer em ' + Math.max(1, Math.ceil((14 - days) / 7)) + (Math.ceil((14 - days) / 7) > 1 ? ' semanas' : ' semana');
+    return `<div class="ts-card press" data-a="open" data-id="${t.id}"><div class="ts-r"><span class="g"><b>${esc(t.nome)}</b><small>${hint}</small></span>${spark(r.slice(-6).map((x) => x.v))}<span class="v"><b class="num">${last ? Goals.fmtVal(t, last.v) : '—'}</b>${delta || (last ? '' : '<small>ainda não feito</small>')}</span><button class="icon-btn" data-a="add" data-id="${t.id}">${icon('plus', 'sm')}</button></div>
+      ${open ? `<div class="small muted" style="margin-top:10px">${esc(t.how)}</div>${r.length >= 2 ? Screens.lineChart(r.slice(-12).map((x) => ({ label: shortDate(x.date), v: x.v })), { color: 'var(--gold)', h: 130 }) : ''}
         ${r.length ? `<div style="margin-top:6px">${r.slice().reverse().slice(0, 6).map((x) => `<div class="kv"><span>${shortDate(x.date)}</span><span class="num">${Goals.fmtVal(t, x.v)}</span></div>`).join('')}</div>` : ''}` : ''}</div>`;
   }
   function Tests() {
@@ -101,7 +106,12 @@
       render() {
         const sug = Goals.suggestedTests(), others = Goals.TESTS.filter((t) => !sug.includes(t.id));
         const p = Store.activePlan();
+        // Próximo teste sugerido: o do objetivo (ou qualquer) feito há mais tempo, ou nunca feito.
+        const age = (id) => { const r = Goals.results(id); return r.length ? (Store.today() - Store.parseISO(r[r.length - 1].date)) / Store.DAY : 9999; };
+        const nextT = (sug.length ? sug : Goals.TESTS.map((t) => t.id)).slice().sort((x, y) => age(y) - age(x))[0];
+        const nt = nextT && Goals.test(nextT), na = nextT ? age(nextT) : 0;
         return topbar('Testes') + `<div class="content">
+          ${nt ? `<div class="ts-next press" data-a="add" data-id="${nt.id}">Próximo teste sugerido: <b>${esc(nt.nome)}</b> · ${na >= 9999 ? 'você ainda não fez' : 'o último foi há ' + (na >= 14 ? Math.round(na / 7) + ' semanas' : Math.round(na) + ' dias')}.</div>` : ''}
           <div class="small muted" style="margin:0 2px 12px">Faça os testes no começo do plano e repita a cada 4–8 semanas, sempre do mesmo jeito e descansado. É o jeito mais honesto de saber se o treino está funcionando.</div>
           ${sug.length ? `<div class="section-title" style="margin-top:4px"><h2>Para o seu objetivo</h2><span class="small muted ellipsis">${esc(p.name)}</span></div><div class="list">${sug.map((id) => testCard(Goals.test(id), opened === id)).join('')}</div>` : ''}
           <div class="section-title"><h2>${sug.length ? 'Outros testes' : 'Testes'}</h2></div>
