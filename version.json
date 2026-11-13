@@ -1,20 +1,14 @@
 {
- "versionCode": 63,
- "versionName": "0.46.0",
+ "versionCode": 64,
+ "versionName": "0.47.0",
  "date": "2026-11-13",
- "apk": "download/Gravity-v0.46.0.apk",
+ "apk": "download/Gravity-v0.47.0.apk",
  "notes": [
   {
-   "t": "Dourado novo"
+   "t": "Série feita em destaque"
   },
   {
-   "t": "Exercícios por músculo"
-  },
-  {
-   "t": "Editar plano e treino"
-  },
-  {
-   "t": "Progresso e Corpo"
+   "t": "Todos os temas sem contorno"
   }
  ]
 }

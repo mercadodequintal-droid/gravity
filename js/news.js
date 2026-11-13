@@ -4,6 +4,10 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.47.0', date: '2026-11-13', items: [
+      { icon: 'check', t: 'Série feita em destaque', d: 'Ao marcar a série, o ✓ e o número ficam cheios na cor do tema e a carga e as reps dela ficam apagadas: as séries que faltam aparecem primeiro.', main: true },
+      { icon: 'sparkle', t: 'Todos os temas sem contorno', d: 'Galáxia, Titânio, Azul, Luana e Atelier também ficaram sem contorno nos quadros e botões, como o Dourado.', go: 'theme' },
+    ] },
     { v: '0.46.0', date: '2026-11-13', items: [
       { icon: 'sparkle', t: 'Dourado novo', d: 'O tema Dourado ganhou um amarelo mais forte e ficou sem contorno nos quadros e botões: a tela ficou mais limpa.', main: true, go: 'theme' },
       { icon: 'dumbbell', t: 'Exercícios por músculo', d: 'A aba Exercícios abre nos músculos. Em cada um, filtros por aparelho e o que já está no seu plano. A ficha ganhou foto grande, abas e o erro mais comum de cada exercício.' },
