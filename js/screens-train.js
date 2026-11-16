@@ -1151,20 +1151,28 @@
     const hl = recs.slice(0, 3).map((r) => `<div class="fm-hl"><span class="ic">${icon('trophy', 'sm')}</span><span class="g"><b>Recorde no ${esc(Store.exercise(r.exId).nome)}</b><small>antes ${kg(r.prev)}</small></span><span class="r num">${kg(r.kg)}</span></div>`).join('')
       + (recs.length > 3 ? `<div class="small muted" style="margin:-2px 2px 8px">e mais ${recs.length - 3} ${recs.length - 3 > 1 ? 'recordes' : 'recorde'}</div>` : '')
       + (medals.length ? `<div class="fm-hl"><span class="ic">${icon('star', 'sm')}</span><span class="g"><b>Conquista: ${esc(medals[0].nome)}</b><small>${medals.length > 1 ? 'e mais ' + (medals.length - 1) + (medals.length > 2 ? ' conquistas novas' : ' conquista nova') : esc(medals[0].desc)}</small></span></div>` : '');
+    // v0.49: convite discreto para Sugestões e problemas (regras em Feedback.inviteDue).
+    const fbInvite = complete && window.Feedback && Feedback.inviteDue();
+    if (fbInvite) Feedback.inviteShown();
     const el = document.createElement('div');
     el.className = 'fm-full';
     el.innerHTML = `<div class="fm-in"><div class="fm-badge">${icon(complete ? 'check' : 'flame', 'lg')}</div><div class="fm-h">${complete ? 'Treino concluído!' : 'Treino salvo'}</div>
       <div class="fm-sub">${w ? 'Treino ' + esc(w.letter) + ' · ' + esc(w.name) : ''}${complete ? (nWeek ? ' · ' + nWeek + 'º treino da semana' : '') : ' · ' + pr.complete + ' de ' + pr.total + ' exercícios'}</div>
       <div class="fm-tiles"><div><b class="num">${Store.sessionDuration(s)}</b><small>minutos</small></div><div><b class="num">${pr.setsDone}</b><small>séries</small></div><div><b class="num">${volume(vol)}</b><small>volume</small>${up != null && up !== 0 ? `<span class="up ${up < 0 ? 'down' : ''}">${up > 0 ? '↑' : '↓'} ${Math.abs(up)}%</span>` : ''}</div></div>
       ${hl ? `<div class="fm-cap">Destaques</div>${hl}` : `<div class="fm-quote">${complete ? 'Mais um na conta. Consistência é tudo.' : 'Dá para continuar depois, na tela do treino.'}</div>`}</div>
-      <div class="fm-btns"><button class="btn ghost" data-fm="ok">Fechar</button><button class="btn lime pl-create" data-fm="share">${icon('share', 'sm')}Compartilhar</button></div>`;
+      <div class="fm-btns"><button class="btn ghost" data-fm="ok">Fechar</button><button class="btn lime pl-create" data-fm="share">${icon('share', 'sm')}Compartilhar</button></div>
+      ${fbInvite ? `<div class="fm-fb" data-fb><span class="ic">${icon('note', 'sm')}</span><div class="g"><b>Algo poderia funcionar melhor?</b><small>Sua opinião ajuda a melhorar o Gravity</small>
+        <div class="row"><button class="link gold" data-fm="fbYes">Enviar sugestão</button><button class="link" data-fm="fbNo">Agora não</button></div></div></div>` : ''}`;
     document.body.appendChild(el);
     requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
     const close = () => { if (!el.parentNode) return false; el.classList.remove('show'); setTimeout(() => el.remove(), 320); UI.overlayBack = null; if (window.News) setTimeout(() => News.afterWorkout(), 350); return true; };
     UI.overlayBack = close;
     el.addEventListener('click', (e) => {
       const b = e.target.closest('[data-fm]'); if (!b) return;
-      if (b.dataset.fm === 'share') { toast('Gerando imagem…'); Screens.shareSession(s.id); } else close();
+      if (b.dataset.fm === 'share') { toast('Gerando imagem…'); Screens.shareSession(s.id); }
+      else if (b.dataset.fm === 'fbYes') { const c = el.querySelector('[data-fb]'); if (c) c.remove(); Feedback.inviteYes(); }
+      else if (b.dataset.fm === 'fbNo') { const c = el.querySelector('[data-fb]'); if (c) c.remove(); Feedback.inviteNo(); }
+      else close();
     });
   }
 

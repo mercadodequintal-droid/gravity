@@ -68,6 +68,7 @@
     ['Avisar quando sair versão nova', 'atualizacao aviso', 'app', 'updateCheck'],
     ['Novidades', 'novidades versao changelog', 'app', 'news'],
     ['Você sabia?', 'dicas funcoes', 'app', 'tips'],
+    ['Sugestões e problemas', 'sugestao problema erro bug elogio feedback opiniao', 'app', 'feedback'],
     ['Backup automático semanal', 'backup copia automatico', 'dados', 'autoBackup'],
     ['Fazer backup', 'backup exportar salvar copia drive', 'dados', 'export'],
     ['Restaurar backup', 'restaurar importar', 'dados', 'import'],
@@ -174,6 +175,7 @@
           ${cap('Atualizações')}${box(sw('Avisar quando sair versão nova', window.Android ? 'Consulta ao abrir o app, se houver internet' : 'Mostra o aviso para recarregar na hora', 'updateCheck'))}
           ${cap('Conheça o app')}${box(link('news', 'sparkle', 'Novidades', 'O que mudou em cada versão', 'news')
             + link('tips', 'info', 'Você sabia?', window.TipsFx ? TipsFx.discovered() + ' de ' + TipsFx.TIPS.length + ' funções descobertas' : 'Funções do app', 'tips'))}
+          ${cap('Ajude a melhorar')}${box(link('feedback', 'note', 'Sugestões e problemas', 'Envie uma ideia, relate um problema ou faça um elogio', 'feedback'))}
           ${cap('Informações')}${box(link('about', 'info', 'Sobre o Gravity', 'Versão de teste · Android e iPhone'))}`,
       dados: () => `<div class="card cf-app-now"><span class="ic-big">${icon('download')}</span><div class="grow"><b>${st().lastBackup ? 'Backup feito' : 'Sem backup ainda'}</b><small>${st().lastBackup ? 'Último: ' + dateBR(st().lastBackup) : 'Salve uma cópia dos seus treinos'}</small></div><button class="btn lime sm" data-a="export">Fazer backup</button></div>
           ${cap('Proteção')}${box(sw('Backup automático semanal', window.Android ? 'Salva toda semana em Downloads/Gravity (guarda os 4 últimos)' : 'Lembra toda semana de salvar o backup', 'autoBackup'))}
@@ -192,6 +194,7 @@
         rtime: (ds, el) => { if (el.value) { st().reminderTime = el.value; Store.save(); Screens.syncNative(); toast('Lembrete às ' + el.value); refresh(); } },
         band: bandSheet,
         checkUpdate: () => Updater.check(true),
+        feedback: () => Feedback.open(),
         news: () => push(News.History()),
         tips: () => push(TipsFx.Collection()),
         about: () => sheet({ render: () => `<h3>Sobre o Gravity</h3><div class="desc">Versão ${News.VERSION} · versão de teste para Android e iPhone.<br><br>Seus treinos ficam só neste aparelho, sem cadastro.<br><br>Fotos dos exercícios: Free Exercise DB (domínio público).</div><button class="btn lime block" style="margin-top:16px" data-a="ok">Fechar</button>`, actions: { ok: closeSheet } }),

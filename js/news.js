@@ -4,6 +4,9 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.49.0', date: '2026-11-16', items: [
+      { icon: 'note', t: 'Sugestões e problemas', d: 'Tem uma ideia, achou um problema ou quer elogiar? Em Configurações › App, toque em Sugestões e problemas. Leva menos de 1 minuto.', main: true },
+    ] },
     { v: '0.48.0', date: '2026-11-16', items: [
       { icon: 'gear', t: 'Configurações novas', d: 'Busca, atalhos para Descanso, Carga e Lembrete, e cada assunto na sua tela: Treino, Aparência, Voz, Lembretes, App e Seus dados.', main: true, go: 'theme' },
       { icon: 'trophy', t: 'Seu perfil', d: 'Toque na sua foto na tela inicial: nível, poder, sequência, plano atual e seus marcos. Em Editar perfil, nome, nascimento, altura, peso e objetivo.' },
@@ -348,18 +351,22 @@
   function afterWorkout() { if (Store.state.settings.newsPending) setTimeout(showPending, 450); }
 
   // Tela "Novidades" (Configurações): histórico por versão.
+  // v0.49: no fim da versão atual, convite para dar a opinião (Sugestões e problemas).
+  const fbBlock = () => (window.Feedback && (Store.state.settings.fbNewsNo || '') !== VERSION ? `<div class="card nw-fb"><span class="ic">${UI.icon('note')}</span><b>O que achou desta versão?</b><small>Conte o que funcionou bem ou o que pode melhorar na v${VERSION}.</small><button class="btn lime sm" data-a="fbYes">Enviar opinião</button><button class="link" data-a="fbNo">Agora não</button></div>` : '');
   function History() {
     return {
       hideNav: true,
       render: () => `<div class="topbar"><button class="icon-btn" data-a="back">${UI.icon('back')}</button><h1>Novidades</h1></div><div class="content">
         <div class="small muted" style="margin:0 2px 12px">Você está na versão <b class="gold">${VERSION}</b>.</div>
         ${CHANGELOG.map((c) => { const its = c.items.filter(forMe); return its.length ? `<div class="section-title"><h2>v${c.v}</h2><span class="small muted">${c.date.split('-').reverse().join('/')}</span></div>
-          <div class="card" style="padding:4px 14px">${its.map((it, k) => `<div class="news-row">${UI.icon(it.icon || 'sparkle', 'sm')}<div class="grow"><b>${UI.esc(it.t)}</b><small>${UI.esc(it.d)}</small></div>${it.go && GO[it.go] ? `<button class="link small gold" data-a="go" data-g="${it.go}">Ver</button>` : ''}</div>`).join('')}</div>` : ''; }).join('')}
+          <div class="card" style="padding:4px 14px">${its.map((it, k) => `<div class="news-row">${UI.icon(it.icon || 'sparkle', 'sm')}<div class="grow"><b>${UI.esc(it.t)}</b><small>${UI.esc(it.d)}</small></div>${it.go && GO[it.go] ? `<button class="link small gold" data-a="go" data-g="${it.go}">Ver</button>` : ''}</div>`).join('')}</div>${c.v === VERSION ? fbBlock() : ''}` : ''; }).join('')}
         <button class="btn ghost block" style="margin-top:18px" data-a="replay">${UI.icon('play', 'sm')}Ver os cartões desta versão</button></div>`,
       actions: {
         back: UI.pop,
         go: (ds) => { UI.pop(); const it = CHANGELOG.flatMap((c) => c.items).find((x) => x.go === ds.g); setTimeout(() => (it ? goItem(it) : GO[ds.g]()), 300); },
         replay: () => show(cardsSince(CHANGELOG[1] && CHANGELOG[1].v, 1)),
+        fbYes: () => Feedback.open('Novidades e atualizações', VERSION),
+        fbNo: () => { Store.state.settings.fbNewsNo = VERSION; Store.save(); UI.refresh(); },
       },
     };
   }

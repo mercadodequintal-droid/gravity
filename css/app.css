@@ -2162,3 +2162,18 @@ html, body, .content, .sheet { overscroll-behavior: none; }
 .done-banner.skip .db-ic { background: rgba(var(--fg-rgb), .12) !important; color: var(--text) !important; }
 .done-banner.skip { background: rgba(var(--fg-rgb), .06); border-color: transparent; }
 .done-banner.skip b { color: var(--text); }
+/* v0.49 · Sugestões e problemas: convite pós-treino e bloco em Novidades */
+.fm-fb { display: flex; gap: 12px; align-items: flex-start; margin-top: 18px; padding: 14px 16px; border-radius: 14px; background: rgba(var(--fg-rgb), .055); text-align: left; }
+.fm-fb .ic { color: var(--text-2); margin-top: 2px; }
+.fm-fb b { display: block; font-size: 14px; color: var(--text); }
+.fm-fb small { display: block; color: var(--text-2); font-size: 12.5px; margin-top: 2px; }
+.fm-fb .row { gap: 18px; margin-top: 10px; }
+.fm-fb .link { font-size: 12.5px; letter-spacing: 1px; text-transform: uppercase; font-family: var(--display); color: var(--text-2); }
+.fm-fb .link.gold { color: var(--gold); }
+.nw-fb { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; margin-top: 22px; padding: 20px 16px !important; }
+.nw-fb .ic { color: var(--gold); }
+.nw-fb b { font-family: var(--display); font-weight: 500; font-size: 17px; letter-spacing: 1.5px; text-transform: uppercase; }
+.nw-fb small { color: var(--text-2); font-size: 12.5px; }
+.nw-fb .btn { margin-top: 8px; min-width: 190px; }
+.nw-fb .link { color: var(--text-2); font-size: 12.5px; margin-top: 4px; }
+.nw-fb .ic, .fm-fb .ic { background: none !important; width: auto; height: auto; }
