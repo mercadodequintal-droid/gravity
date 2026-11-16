@@ -1,14 +1,20 @@
 {
- "versionCode": 64,
- "versionName": "0.47.0",
- "date": "2026-11-13",
- "apk": "download/Gravity-v0.47.0.apk",
+ "versionCode": 65,
+ "versionName": "0.48.0",
+ "date": "2026-11-16",
+ "apk": "download/Gravity-v0.48.0.apk",
  "notes": [
   {
-   "t": "Série feita em destaque"
+   "t": "Configurações novas"
   },
   {
-   "t": "Todos os temas sem contorno"
+   "t": "Seu perfil"
+  },
+  {
+   "t": "Pular ou finalizar exercício"
+  },
+  {
+   "t": "Técnicas no treino"
   }
  ]
 }

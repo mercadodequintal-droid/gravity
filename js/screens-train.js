@@ -179,7 +179,7 @@
         progress: () => UI.switchTab('progress'),
         muscles: () => push(Screens.MuscleMap()),
         medals: () => push(Screens.Medals()),
-        avatar: () => Profile.sheet(UI.refresh),
+        avatar: () => push(Screens.ProfileScreen()),
         editPlan: () => push(Screens.PlanEditor(Store.activePlan().id)),
         pwOpen: () => push(Screens.Records()),
         updNow: () => Updater.install(),
@@ -635,16 +635,20 @@
     });
   }
   function Player(sid, startIdx) {
-    let idx = startIdx || 0, elapsedT = null, scrollT = null, rirFor = null, rirT = null;
+    let idx = startIdx || 0, elapsedT = null, scrollT = null, rirFor = null, rirAt = null, rirT = null;
+    const deferAsk = {}; // v0.48: pergunta da série principal guardada até o último drop
     const avOpen = {}; // itens com "ver todos" aberto
     const ctx = () => { const s = Store.session(sid); const fw = Store.findWorkout(s.workoutId); return { s, w: fw.workout, items: fw.workout.items }; };
     const exIdOf = (s, it) => Store.exOf(s, it);
+    // v0.48: exercício pulado conta como resolvido para seguir o treino.
+    const skp = (s, it) => (s.skipped || []).includes(it.id);
+    const fin = (s, it) => Store.itemProgress(s, it).complete || skp(s, it);
 
     function segs() {
       const { s, items } = ctx();
       return items.map((it, i) => {
-        const c = Store.itemProgress(s, it).complete;
-        return `<i data-a="go" data-i="${i}" style="flex:1;height:6px;border-radius:3px;background:${c ? 'var(--lime)' : i === idx ? 'var(--text)' : 'rgba(var(--fg-rgb),.12)'};transition:background .3s"></i>`;
+        const c = Store.itemProgress(s, it).complete, k = !c && skp(s, it);
+        return `<i data-a="go" data-i="${i}" style="flex:1;height:6px;border-radius:3px;background:${c ? 'var(--lime)' : i === idx ? 'var(--text)' : k ? 'rgba(var(--fg-rgb),.35)' : 'rgba(var(--fg-rgb),.12)'};transition:background .3s"></i>`;
       }).join('');
     }
 
@@ -668,7 +672,7 @@
         <div class="stepper"><button data-a="rm" data-set="${x.id}">${icon('minus', 'sm')}</button><div class="val ${sides ? 'uni' : ''}" data-a="rEdit" data-set="${x.id}"><b class="num">${val}</b><small>${sides && !x.rir && !x.target ? 'cada lado' : repSmall}</small></div><button data-a="rp" data-set="${x.id}">${icon('plus', 'sm')}</button></div>
         ${btn}</div>`;
       // Pergunta rápida de esforço logo após concluir (some sozinha).
-      const pick = x.id === rirFor ? `<div class="rir-pick"><span>Como foi essa série?</span><div class="rir-opts">${EFFORT.map((f) => `<button data-a="rir" data-set="${x.id}" data-v="${f.v}"><b>${f.nome}</b><small>${f.desc}</small></button>`).join('')}</div></div>` : '';
+      const pick = rirFor && x.id === (rirAt || rirFor) ? `<div class="rir-pick"><span>Como foi essa série?</span><div class="rir-opts">${EFFORT.map((f) => `<button data-a="rir" data-set="${rirFor}" data-v="${f.v}"><b>${f.nome}</b><small>${f.desc}</small></button>`).join('')}</div></div>` : '';
       return row + pick;
     }
 
@@ -695,16 +699,18 @@
         + (av.length > 1 ? `<button class="av-more" data-a="avAll" data-i="${i}"><span>${avOpen[it.id] ? av.length + ' avisos neste exercício' : '+' + (av.length - 1) + (av.length > 2 ? ' avisos' : ' aviso') + ' neste exercício'}</span><b>${avOpen[it.id] ? 'recolher' : 'ver todos'}</b></button>` : '');
       const lastHTML = last ? `<div class="small faint" style="margin-top:10px">Última vez: ${last.map((x) => (x.time ? UI.secs(x.reps) : x.repsR != null && x.repsR !== x.repsL ? nf(x.kg) + '×' + x.repsR + '/' + x.repsL : Store.isBodyweight(x.exId) ? (Number(x.kg) ? (x.kg > 0 ? '+' : '−') + nf(Math.abs(x.kg)) + '×' : '') + x.reps : nf(x.kg) + '×' + x.reps)).join(' · ')}</div>` : '';
       const pin = Tools.pinOf(exId);
-      const pending = items.findIndex((y) => !Store.itemProgress(s, y).complete);
-      const doneBanner = live && pr.complete ? `<div class="done-banner" data-done-banner><span class="db-ic">${icon('check', 'sm')}</span><span class="grow"><b>Exercício finalizado</b><small>${sets.filter((x) => x.done).length} séries feitas${pending >= 0 ? ' · ainda faltam ' + items.filter((y) => !Store.itemProgress(s, y).complete).length + ' exercício(s)' : ' · treino completo'}</small></span>${pending >= 0 ? `<button data-a="go" data-i="${pending}">Ir ao próximo</button>` : `<button data-a="finish">Finalizar</button>`}</div>` : '';
-      return `${doneBanner}<div class="player-img">${imgHTML(ex, '', true)}<div class="fade"></div><span class="chip count num">${i + 1} / ${items.length}</span>
+      const pending = items.findIndex((y) => !fin(s, y));
+      const skipped = live && !pr.complete && skp(s, it);
+      const doneBanner = live && pr.complete ? `<div class="done-banner" data-done-banner><span class="db-ic">${icon('check', 'sm')}</span><span class="grow"><b>Exercício finalizado</b><small>${sets.filter((x) => x.done).length} séries feitas${pending >= 0 ? ' · ainda faltam ' + items.filter((y) => !fin(s, y)).length + ' exercício(s)' : ' · treino completo'}</small></span>${pending >= 0 ? `<button data-a="go" data-i="${pending}">Ir ao próximo</button>` : `<button data-a="finish">Finalizar</button>`}</div>` : '';
+      const skipBanner = skipped ? `<div class="done-banner skip" data-done-banner><span class="db-ic">${icon('skip', 'sm')}</span><span class="grow"><b>Exercício pulado</b><small>Não conta neste treino · dá para desfazer</small></span><button data-a="unskip" data-i="${i}">Desfazer</button></div>` : '';
+      return `${doneBanner}${skipBanner}<div class="player-img">${imgHTML(ex, '', true)}<div class="fade"></div><span class="chip count num">${i + 1} / ${items.length}</span>
           <div class="tools"><button data-a="howto" data-i="${i}">${icon('info', 'sm')}Como fazer</button><button data-a="video" data-i="${i}">${icon('video', 'sm')}Vídeo</button></div></div>
         <div class="ex-title">${esc(ex.nome)}</div>
         ${swapped ? `<div class="small" style="color:var(--gold);margin:-2px 0 6px">${icon('repeat', 'sm')} Trocado hoje (no plano: ${esc(Store.exercise(it.exId).nome)})</div>` : ''}
-        <div class="plan-line"><span class="chip">${Tools.repsText(it, ex)}${it.tech && it.tech.id === 'r21' ? ' (7+7+7)' : ''}</span>${Tools.loadText(it.kg, ex) && !(it.tech && it.tech.id === 'w531') ? `<span class="chip">${Tools.loadText(it.kg, ex)}</span>` : ''}${Store.isCardio(ex) ? '' : `<button class="chip blue" data-a="restCfg" data-i="${i}">${icon('timer', 'sm')}Descanso ${restLabel(Store.restFor(s, it))}</button>`}${pr.complete ? `<span class="chip done">${icon('check', 'sm')}Concluído</span>` : ''}</div>
+        <div class="plan-line"><span class="chip">${Tools.repsText(it, ex)}${it.tech && it.tech.id === 'r21' && !(s.techOff || {})[it.id] ? ' (7+7+7)' : ''}</span>${Tools.loadText(it.kg, ex) && !(it.tech && it.tech.id === 'w531') ? `<span class="chip">${Tools.loadText(it.kg, ex)}</span>` : ''}${Store.isCardio(ex) ? '' : `<button class="chip blue" data-a="restCfg" data-i="${i}">${icon('timer', 'sm')}Descanso ${restLabel(Store.restFor(s, it))}</button>`}${pr.complete ? `<span class="chip done">${icon('check', 'sm')}Concluído</span>` : ''}</div>
         ${pin ? `<button class="pin-note" data-a="pin" data-i="${i}">${icon('note', 'sm')}<span>${esc(pin)}</span></button>` : ''}
         <div class="quick-row">${ex.tipo === 'tempo' ? '' : `<button data-a="warm" data-i="${i}">${icon('flame', 'sm')}Aquecer</button>`}${ex.tipo === 'tempo' || Store.isCardio(ex) ? '' : `<button data-a="metro" data-i="${i}">${icon('timer', 'sm')}Metrônomo</button>`}<button data-a="swap" data-i="${i}">${icon('repeat', 'sm')}Trocar</button>${pin ? '' : `<button data-a="pin" data-i="${i}">${icon('note', 'sm')}Nota fixa</button>`}${live ? `<button data-a="pain" data-i="${i}">${icon('alert', 'sm')}Dor</button>` : ''}</div>
-        ${techBanner(items, i)}
+        ${techBanner(items, i, s)}
         ${it.note ? `<div class="small muted" style="margin-top:10px">${icon('note', 'sm')} ${esc(it.note)}</div>` : ''}
         ${avHTML}
         <div class="sets"><div class="sets-head"><span>#</span><span>Carga</span><span>${ex.tipo === 'tempo' ? 'Tempo' : 'Reps'}</span><span></span></div>${sets.map((x) => setRow(x, last, Store.isUni(it, ex))).join('')}</div>
@@ -712,13 +718,16 @@
         ${lastHTML}
         <div class="section-title"><h2>Observação</h2></div>
         <textarea class="note-field" data-in="note" data-item="${it.id}" placeholder="Ex.: pegada fechada, ombro incomodou…">${esc((s.notes || {})[it.id] || '')}</textarea>
-        <button class="btn ghost block sm" style="margin-top:12px" data-a="markAll" data-i="${i}">${pr.complete ? 'Desmarcar exercício' : 'Marcar exercício como feito'}</button>`;
+        ${!live ? `<button class="btn ghost block sm" style="margin-top:12px" data-a="markAll" data-i="${i}">${pr.complete ? 'Desmarcar exercício' : 'Marcar exercício como feito'}</button>`
+          : pr.complete ? `<button class="btn ghost block sm" style="margin-top:12px" data-a="markAll" data-i="${i}">Desmarcar exercício</button>`
+          : skipped ? `<button class="btn ghost block sm" style="margin-top:12px" data-a="unskip" data-i="${i}">Desfazer: voltar a fazer este exercício</button>`
+          : `<div class="ex-end"><button class="btn ghost sm" data-a="skipEx" data-i="${i}">${icon('skip', 'sm')}Pular exercício</button><button class="btn ghost sm" data-a="finEx" data-i="${i}">${icon('check', 'sm')}Finalizar exercício</button></div>`}`;
     }
 
     function footerHTML() {
       const { items, s } = ctx();
-      const allDone = items.every((it) => Store.itemProgress(s, it).complete);
-      const cur = items[idx] && Store.itemProgress(s, items[idx]).complete;
+      const allDone = items.every((it) => fin(s, it));
+      const cur = items[idx] && fin(s, items[idx]);
       const prev = `<button class="btn ghost" style="flex:0 0 52px;padding:0;${idx === 0 ? 'opacity:.4' : ''}" data-a="prev" ${idx === 0 ? 'disabled' : ''}>${icon('back')}</button>`;
       if (idx === items.length - 1 || allDone) return prev + `<button class="btn lime" data-a="finish">${allDone ? 'Finalizar treino' : 'Finalizar'}<span class="arrow">${icon('check', 'sm')}</span></button>`;
       const nx = items[idx + 1] && Store.exercise(exIdOf(s, items[idx + 1]));
@@ -803,17 +812,28 @@
       const exName = Store.exercise(exIdOf(s, it)).nome;
       const rec = Analytics.newRecord(x);
       if (rec) { UI.prBurst(rec.tipo, exName + ' · ' + rec.txt); Voice.say('Novo recorde no ' + exName + '!', 'recordes'); }
-      if (Store.state.settings.askRir && !x.warm && !x.time && !x.sub) {
-        // Com o descanso na tela, a pergunta aparece junto da barrinha; sem descanso, na própria série.
+      // v0.48: com técnica de série extra logo em seguida (drop, rest-pause…), a pergunta da série principal
+      // espera o último drop daquela série e aparece junto do descanso, como nos outros exercícios.
+      const mine0 = s.sets.filter((y) => y.itemId === it.id);
+      const nx0 = mine0.slice(mine0.indexOf(x) + 1).find((y) => !y.done);
+      const chain = !!(nx0 && nx0.sub && !nx0.warm && nx0.n === x.n);
+      let askX = null, askAt = null;
+      if (Store.state.settings.askRir && !x.warm && !x.time) {
+        const key = it.id + ':' + x.n;
+        if (!x.sub) { if (chain) deferAsk[key] = x; else askX = x; }
+        else if (!chain && deferAsk[key]) { askX = deferAsk[key]; askAt = x.id; delete deferAsk[key]; }
+      }
+      if (askX) {
+        // Com o descanso na tela, a pergunta aparece junto da barrinha; sem descanso, logo abaixo da última linha feita.
         setTimeout(() => {
-          if (Rest.el && Rest.el.classList.contains('show') && Rest.askEffort(EFFORT, (v) => { x.rir = v; Store.save(); Native.vibrate(10); updatePage(i); })) return;
-          rirFor = x.id; clearTimeout(rirT);
-          rirT = setTimeout(() => { if (rirFor === x.id) { rirFor = null; updatePage(i); } }, 10000);
+          if (Rest.el && Rest.el.classList.contains('show') && Rest.askEffort(EFFORT, (v) => { askX.rir = v; Store.save(); Native.vibrate(10); updatePage(i); })) return;
+          rirFor = askX.id; rirAt = askAt; clearTimeout(rirT);
+          rirT = setTimeout(() => { if (rirFor === askX.id) { rirFor = null; rirAt = null; updatePage(i); } }, 10000);
           updatePage(i);
         }, 60);
       }
       if (x.warm) { Rest.start(45, 'Aquecimento · ' + exName); return; }
-      const allDone = items.every((y) => Store.itemProgress(s, y).complete);
+      const allDone = items.every((y) => fin(s, y));
       if (allDone) { Rest.stop(); toast('Treino completo! Toque em Finalizar'); Voice.say('Treino completo! Toque em finalizar.', 'resumo', rec ? 1800 : 0); return; }
       // Técnica com série extra logo em seguida (drop, rest-pause, myo-reps, cluster…)
       const mine = s.sets.filter((y) => y.itemId === it.id);
@@ -839,7 +859,7 @@
       const groupDone = !g || [...Array(g.size).keys()].every((k) => Store.itemProgress(s, items[g.start + k]).complete);
       const swap = doneNow && groupDone ? Store.swapFor(s, it) : 0;
       if (swap) {
-        const nx = [...items.keys()].filter((k) => k > i).concat([...items.keys()].filter((k) => k < i)).find((k) => !Store.itemProgress(s, items[k]).complete);
+        const nx = [...items.keys()].filter((k) => k > i).concat([...items.keys()].filter((k) => k < i)).find((k) => !fin(s, items[k]));
         if (nx != null) {
           const nextName = Store.exercise(exIdOf(s, items[nx])).nome;
           Rest.start(swap, exName, { swap: true, next: nextName });
@@ -851,10 +871,10 @@
       const nr = s.sets.filter((y) => y.itemId === it.id && !y.done && !y.warm)[0];
       let after = null;
       if (nr) { const ld = Tools.loadText(nr.kg, exIdOf(s, it)); after = { head: 'A seguir · série ' + nr.n, detail: (ld ? ld + ' × ' : '') + (nr.reps || '') + (ld ? '' : ' reps') }; }
-      else { const nx = [...items.keys()].filter((k) => k > i).concat([...items.keys()].filter((k) => k < i)).find((k) => !Store.itemProgress(s, items[k]).complete); if (nx != null) after = { head: 'A seguir', detail: Store.exercise(exIdOf(s, items[nx])).nome }; }
+      else { const nx = [...items.keys()].filter((k) => k > i).concat([...items.keys()].filter((k) => k < i)).find((k) => !fin(s, items[k])); if (nx != null) after = { head: 'A seguir', detail: Store.exercise(exIdOf(s, items[nx])).nome }; }
       Rest.start(Store.restFor(s, it), exName, after);
       if (g && i === g.end) {
-        const back = [...Array(g.size).keys()].map((k) => g.start + k).find((k) => !Store.itemProgress(s, items[k]).complete);
+        const back = [...Array(g.size).keys()].map((k) => g.start + k).find((k) => !fin(s, items[k]));
         if (back != null) setTimeout(() => go(back), 450);
       }
       if (!wasComplete && Store.itemProgress(s, it).complete && !rec) toast('Exercício concluído');
@@ -926,7 +946,7 @@
             Store.save(); updatePage(i); afterDone(x, i, it, wasComplete);
           });
         },
-        rir: (ds) => { const { s, x, i } = findSet(ds.set); x.rir = Number(ds.v); rirFor = null; Store.save(); Native.vibrate(10); updatePage(i); },
+        rir: (ds) => { const { s, x, i } = findSet(ds.set); x.rir = Number(ds.v); rirFor = null; rirAt = null; Store.save(); Native.vibrate(10); updatePage(i); },
         kgm: (ds) => adjust(ds.set, 'kg', -(Store.state.settings.incKg || 1)),
         kgp: (ds) => adjust(ds.set, 'kg', Store.state.settings.incKg || 1),
         rm: (ds) => { const { x, it } = findSet(ds.set); if (uniSet(x, it)) { adjustSides(ds.set, -1, -1); return; } adjust(ds.set, 'reps', Store.isCardio(x.exId) ? -(x.reps > 60 ? 60 : 0) : x.time ? -(x.reps > 120 ? 60 : 15) : -1); },
@@ -971,6 +991,37 @@
         pin: (ds) => { const { s, items } = ctx(); const i = Number(ds.i); Tools.pinSheet(exIdOf(s, items[i]), () => updatePage(i)); },
         howto: (ds) => { const { s, items } = ctx(); howtoSheet(exIdOf(s, items[Number(ds.i)])); },
         techInfo: (ds) => techSheet(ds.t, ctx().items[Number(ds.i)]),
+        // v0.48: pular e finalizar o exercício.
+        skipEx: (ds) => {
+          const { s, items } = ctx(), i = Number(ds.i), it = items[i];
+          s.skipped = (s.skipped || []).filter((id) => id !== it.id).concat([it.id]); Store.save(); Native.vibrate(15);
+          toast('Exercício pulado'); updatePage(i);
+          const nx = [...items.keys()].filter((k) => k > i).concat([...items.keys()].filter((k) => k < i)).find((k) => !fin(s, items[k]));
+          if (nx != null) setTimeout(() => go(nx), 350);
+        },
+        unskip: (ds) => { const { s, items } = ctx(), i = Number(ds.i); s.skipped = (s.skipped || []).filter((id) => id !== items[i].id); Store.save(); updatePage(i); },
+        finEx: (ds) => {
+          const { s, items } = ctx(), i = Number(ds.i), it = items[i];
+          s.sets.filter((x) => x.itemId === it.id).forEach((x) => { if (!x.done) { x.done = true; x.at = Date.now(); } });
+          s.skipped = (s.skipped || []).filter((id) => id !== it.id);
+          Store.save(); Native.vibrate(20); updatePage(i); toast('Exercício finalizado');
+          const nx = [...items.keys()].filter((k) => k > i).concat([...items.keys()].filter((k) => k < i)).find((k) => !fin(s, items[k]));
+          if (nx != null) setTimeout(() => go(nx), 450);
+        },
+        // v0.48: tirar a técnica avançada no meio do treino (só hoje ou também do plano).
+        techOff: (ds) => {
+          const { s, items } = ctx(), i = Number(ds.i), it = items[i], t = it.tech && TECH.get(it.tech.id);
+          if (!t) return;
+          sheet({
+            render: () => `<h3>Tirar ${esc(t.nome)}?</h3><div class="desc">As séries que faltam viram séries normais. As que você já fez continuam salvas.</div>
+              <div class="list"><button class="btn lime block" data-a="today">Só no treino de hoje</button><button class="btn ghost block" style="margin-top:8px" data-a="plan">Hoje e também no plano</button><button class="btn ghost block" style="margin-top:8px" data-a="no">Cancelar</button></div>`,
+            actions: {
+              today: () => { closeSheet(); dropTech(s, it, false); updatePage(i); toast('Técnica tirada só de hoje'); },
+              plan: () => { closeSheet(); dropTech(s, it, true); updatePage(i); toast('Técnica tirada do plano'); },
+              no: closeSheet,
+            },
+          });
+        },
         video: (ds) => { const { s, items } = ctx(); Native.open(Store.videoUrl(Store.exercise(exIdOf(s, items[Number(ds.i)])))); },
         note: (ds, el) => { const { s } = ctx(); s.notes = s.notes || {}; s.notes[ds.item] = el.value; Store.save(); },
         restCfg: (ds) => restSheet(ctx().items[Number(ds.i)], () => updatePage(Number(ds.i))),
@@ -981,7 +1032,20 @@
   }
 
   // Aviso da técnica no topo do exercício: técnica própria e/ou grupo (bi-set etc.).
-  function techBanner(items, i) {
+  // v0.48: troca as séries que faltam por séries normais; com "plano", tira a técnica do treino salvo também.
+  function dropTech(s, it, alsoPlan) {
+    const fw = Store.findWorkout(s.workoutId), exId = Store.exOf(s, it), ex = Store.exercise(exId);
+    const plain = Object.assign({}, it, { tech: null });
+    const built = TECH.buildSets(plain, Store.lastSetsFor(exId), Store.state.settings.incKg, Store.repsTarget, Store.planWeek(fw.plan).n).filter((r) => !r.sub);
+    const mine = s.sets.filter((x) => x.itemId === it.id);
+    const doneMain = mine.filter((x) => !x.sub && x.done).length;
+    s.sets = s.sets.filter((x) => !(x.itemId === it.id && !x.done && !x.warm));
+    built.slice(doneMain).forEach((r) => s.sets.push({ id: Store.uid('x'), itemId: it.id, exId, n: r.n, kg: r.kg, reps: r.reps, target: r.target || null, sub: false, label: null, time: ex.tipo === 'tempo' || undefined, done: false, at: null, rest: null }));
+    s.techOff = Object.assign({}, s.techOff, { [it.id]: true });
+    if (alsoPlan) { const pit = fw.workout.items.find((y) => y.id === it.id); if (pit) delete pit.tech; }
+    Store.save();
+  }
+  function techBanner(items, i, s) {
     const it = items[i];
     let html = '';
     const g = TECH.groupOf(items, i);
@@ -990,10 +1054,11 @@
       html += `<button class="tech-banner" data-a="techInfo" data-i="${i}" data-t="${g.type}"><span class="tb-ic">${icon('repeat', 'sm')}</span>
         <span class="grow"><b>${esc(g.tech.nome)} · ${g.pos} de ${g.size}</b><small>${i < g.end ? 'Sem descanso: depois vá para ' + esc(Store.exercise(items[i + 1].exId).nome) : 'Último do grupo: agora sim, descanse'}${others.length ? '' : ''}</small></span>${icon('info', 'sm')}</button>`;
     }
-    const t = it.tech && TECH.get(it.tech.id);
+    const t = it.tech && !(s && (s.techOff || {})[it.id]) && TECH.get(it.tech.id);
     if (t) {
       html += `<button class="tech-banner" data-a="techInfo" data-i="${i}" data-t="${t.id}"><span class="tb-ic">${icon(t.mode === 'cue' ? 'clock' : 'flame', 'sm')}</span>
-        <span class="grow"><b>${esc(t.nome)}</b><small>${esc(t.cue(TECH.params(it.tech)))}</small></span>${icon('info', 'sm')}</button>`;
+        <span class="grow"><b>${esc(t.nome)}</b><small>${esc(t.cue(TECH.params(it.tech)))}</small></span>${icon('info', 'sm')}</button>`
+        + (s && !s.finished ? `<button class="tech-off" data-a="techOff" data-i="${i}">${icon('x', 'sm')}Tirar a técnica deste exercício</button>` : '');
     }
     return html;
   }

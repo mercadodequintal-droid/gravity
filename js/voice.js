@@ -124,11 +124,15 @@
           <div class="section-title"><h2>Velocidade</h2></div><div class="seg">${RATES.map(([v, l]) => `<button class="${c.rate === v ? 'on' : ''}" data-a="rate" data-v="${v}">${l}</button>`).join('')}</div>
           <div class="section-title"><h2>Tom</h2></div><div class="seg">${PITCHES.map(([v, l]) => `<button class="${c.pitch === v ? 'on' : ''}" data-a="pitch" data-v="${v}">${l}</button>`).join('')}</div>
           <button class="btn lime block" style="margin-top:18px" data-a="test">${icon('play', 'sm')}Ouvir exemplo</button>
-          <div class="card small muted" style="margin-top:14px">${icon('info', 'sm')} Exemplo do que é falado: <i>“${esc(SAMPLE)}”</i></div>` : ''}</div>`;
+          <div class="card small muted" style="margin-top:14px">${icon('info', 'sm')} Exemplo do que é falado: <i>“${esc(SAMPLE)}”</i></div>` : ''}
+          <div class="section-title"><h2>Som e resposta</h2></div><div class="card voice-opts">
+            <div class="switch-row" data-row="sound" data-a="snd" data-k="sound"><div class="grow"><div>Som no fim do descanso</div><div class="small muted">Bipes 3, 2, 1 e sinal de largada</div></div><div class="switch ${Store.state.settings.sound ? 'on' : ''}"></div></div>
+            <div class="switch-row" data-row="vibrate" data-a="snd" data-k="vibrate"><div class="grow"><div>Vibração</div><div class="small muted">Ao concluir séries e no fim do descanso</div></div><div class="switch ${Store.state.settings.vibrate ? 'on' : ''}"></div></div></div></div>`;
       },
       after() { if (list === null) voices((l) => { list = l; refresh(); }); },
       actions: {
         back: pop,
+        snd: (ds) => { const st = Store.state.settings; st[ds.k] = !st[ds.k]; Store.save(); UI.savedFlash(); refresh(); },
         lvl: (ds) => { const v = Number(ds.v); set(v ? { on: true, opts: fromLevel(v), level: v } : { on: false }); refresh(); if (v) setTimeout(test, 150); },
         master: () => { const c = cfg(); set({ on: !c.on, opts: c.opts }); refresh(); if (!c.on) setTimeout(test, 150); },
         opt: (ds) => { const c = cfg(); c.opts[ds.k] = !c.opts[ds.k]; set({ opts: c.opts }); refresh(); },

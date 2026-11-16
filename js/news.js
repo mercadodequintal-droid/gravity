@@ -4,6 +4,12 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.48.0', date: '2026-11-16', items: [
+      { icon: 'gear', t: 'Configurações novas', d: 'Busca, atalhos para Descanso, Carga e Lembrete, e cada assunto na sua tela: Treino, Aparência, Voz, Lembretes, App e Seus dados.', main: true, go: 'theme' },
+      { icon: 'trophy', t: 'Seu perfil', d: 'Toque na sua foto na tela inicial: nível, poder, sequência, plano atual e seus marcos. Em Editar perfil, nome, nascimento, altura, peso e objetivo.' },
+      { icon: 'skip', t: 'Pular ou finalizar exercício', d: 'No fim das séries, pule o exercício ou finalize de uma vez. Dá para desfazer.' },
+      { icon: 'flame', t: 'Técnicas no treino', d: 'Dá para tirar a técnica avançada no meio do treino, só hoje ou também do plano. E o "Como foi essa série?" agora espera o último drop.' },
+    ] },
     { v: '0.47.0', date: '2026-11-13', items: [
       { icon: 'check', t: 'Série feita em destaque', d: 'Ao marcar a série, o ✓ e o número ficam cheios na cor do tema e a carga e as reps dela ficam apagadas: as séries que faltam aparecem primeiro.', main: true },
       { icon: 'sparkle', t: 'Todos os temas sem contorno', d: 'Galáxia, Titânio, Azul, Luana e Atelier também ficaram sem contorno nos quadros e botões, como o Dourado.', go: 'theme' },
@@ -182,7 +188,7 @@
   const GO = {
     libNew: () => { UI.switchTab('library', true); setTimeout(() => UI.push(Screens.Library({ group: 'Todos', kind: 'novo', title: 'Novos' })), 300); },
     gym: () => { UI.switchTab('library', true); },
-    voice: () => { UI.push(Screens.Settings()); setTimeout(() => UI.push(Screens.VoiceSettings()), 300); },
+    voice: () => Screens.settingsGo('voz', 'voice'),
     balance: () => { UI.switchTab('home', true); setTimeout(() => { UI.push(Screens.MuscleMap()); setTimeout(() => spotlight('.bal-card', 'Equilíbrio entre os músculos'), 450); }, 250); },
     myBody: () => { UI.switchTab('home', true); setTimeout(() => UI.push(Screens.MuscleMap()), 250); },
     sports: () => { UI.switchTab('plans', true); setTimeout(() => UI.push(Screens.SportList()), 250); },
@@ -190,10 +196,10 @@
     month: () => { UI.switchTab('progress', true); setTimeout(() => UI.push(Screens.MonthSummary()), 250); },
     compare: () => { UI.switchTab('progress', true); setTimeout(() => { const b = document.querySelector('.screen [data-a="body"]'); if (b) b.click(); setTimeout(() => spotlight('[data-a="compare"]', 'Comparar fotos'), 500); }, 250); },
     power: () => { UI.switchTab('home', true); setTimeout(() => spotlight('.pw-card', 'Seu nível de poder'), 250); },
-    settingsUpdate: () => { UI.push(Screens.Settings()); setTimeout(() => spotlight('[data-a="checkUpdate"]', 'Verificar atualizações'), 350); },
-    swap: () => { UI.push(Screens.Settings()); setTimeout(() => spotlight('.swap-row', 'Troca de exercício'), 350); },
-    theme: () => { UI.push(Screens.Settings()); setTimeout(() => spotlight('.theme-grid', 'Escolha o tema'), 350); },
-    news: () => { UI.push(Screens.Settings()); setTimeout(() => spotlight('[data-a="news"]', 'Todas as novidades'), 350); },
+    settingsUpdate: () => Screens.settingsGo('app', 'checkUpdate', 'Verificar atualizações'),
+    swap: () => Screens.settingsGo('treino', 'restSwap', 'Troca de exercício'),
+    theme: () => Screens.settingsGo('aparencia', 'theme', 'Escolha o tema'),
+    news: () => Screens.settingsGo('app', 'news', 'Todas as novidades'),
   };
 
   // ---------- tour guiado (balões em sequência, toque para avançar) ----------

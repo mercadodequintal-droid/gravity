@@ -1,5 +1,5 @@
 // Abertura do Gravity (v0.30, identidade Obsidian Chrome): a foto da entrada já traz o logo.
-// Abertura C · Scouter cromado (a única desde a v0.43): a mira de titânio procura o atleta, trava em cobre e a leitura sobe até 9.001.
+// Abertura C · Scouter cromado (a única desde a v0.43): a mira de titânio procura o atleta, trava em cobre e a leitura sobe até 8.001.
 // Som: scouter (arpejo, tom 60%, velocidade 180%, zumbido 160 Hz). A abertura A (Eclipse) saiu na v0.43.
 (function () {
   'use strict';
@@ -54,8 +54,8 @@
     buzz(2.0 * TS, 2100 * P, 0.06, 0.12); buzz(2.09 * TS, 2100 * P, 0.3, 0.1);             // leitura concluída
   }
 
-  // Nível de poder: sempre 9.001 ("é mais de 8 mil!").
-  const POWER = 9001;
+  // Nível de poder: sempre 8.001 ("É mais de 8.000!") — v0.48.
+  const POWER = 8001;
   const anim = (el, frames, opts) => el.animate(frames, Object.assign({ fill: 'both', easing: 'cubic-bezier(.2,.8,.2,1)' }, opts));
   const fmt = (n) => n.toLocaleString('pt-BR');
 
@@ -78,7 +78,7 @@
     const nImg = Number((String(img).match(/entrada-(\d+)/) || [])[1]), logoOnly = nImg && !Splash.ATHLETE.includes(nImg);
     root.innerHTML = `<div class="sp-photo${logoOnly ? ' logo-only' : ''}" style="background-image:url('${img}')"></div><div class="sp-vig"></div>
       ${'<div class="sp-scope"><i></i><i></i><i></i><i></i><span class="sp-cross"></span></div><div class="sp-read"><small>Analisando…</small><b>– – – –</b></div>'}
-      <div class="sp-panel"><div class="sp-cap">Nível de poder</div><div class="sp-num">0</div><div class="sp-sub">É mais de 9.000!</div>
+      <div class="sp-panel"><div class="sp-cap">Nível de poder</div><div class="sp-num">0</div><div class="sp-sub">É mais de 8.000!</div>
         <div class="sp-line"><i></i></div><button class="sp-go" type="button">Iniciar treino</button></div>`;
     const q = (sel) => root.querySelector(sel);
     const photo = q('.sp-photo'), num = q('.sp-num'), line = q('.sp-line i'), go = q('.sp-go'), sub = q('.sp-sub'), panel = q('.sp-panel');
@@ -104,14 +104,14 @@
       num.textContent = fmt(POWER);
       finish = fr;
     }
-    // 9.001 em cobre, com um pulso; depois o botão.
+    // 8.001 em cobre, com um pulso; depois o botão.
     const END = 2350;
     setTimeout(() => { if (root.isConnected) root.classList.add('hit'); }, END);
     anim(sub, [{ opacity: 0 }, { opacity: 1 }], { delay: END + 100, duration: 400 });
     anim(go, [{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { delay: END + 350, duration: 450 });
 
     if (Store.state.settings.sound) playSound();
-    // Toque fora do botão: adianta até o final (9.001 e o botão), sem entrar no app.
+    // Toque fora do botão: adianta até o final (8.001 e o botão), sem entrar no app.
     root.addEventListener('click', (e) => {
       if (e.target.closest('.sp-go')) return;
       finish();
