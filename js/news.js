@@ -4,6 +4,9 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.49.1', date: '2026-11-16', items: [
+      { icon: 'dumbbell', t: 'Agachamento pêndulo com foto', d: 'O agachamento pêndulo ganhou imagem com o movimento. Mais exercícios sem foto vão ganhar a sua nas próximas versões.' },
+    ] },
     { v: '0.49.0', date: '2026-11-16', items: [
       { icon: 'note', t: 'Sugestões e problemas', d: 'Tem uma ideia, achou um problema ou quer elogiar? Em Configurações › App, toque em Sugestões e problemas. Leva menos de 1 minuto.', main: true },
     ] },

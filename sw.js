@@ -1,5 +1,5 @@
 // Gerado por tools/web.sh. Guarda o app no celular para abrir sem internet; versão nova troca o cache.
-const CACHE = 'gravity-0.49.0-20261116172641';
+const CACHE = 'gravity-0.49.1-20261116185706';
 const FILES = [
   './',
   "css/app.css",
@@ -294,6 +294,8 @@ const FILES = [
   "img/NX_nx061_1.jpg",
   "img/NX_nx062_0.jpg",
   "img/NX_nx062_1.jpg",
+  "img/NX_nx063_0.jpg",
+  "img/NX_nx063_1.jpg",
   "img/NX_nx071_0.jpg",
   "img/NX_nx071_1.jpg",
   "img/NX_nx073_0.jpg",
