@@ -4,6 +4,9 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.49.2', date: '2026-11-17', items: [
+      { icon: 'dumbbell', t: '11 exercícios com foto nova', d: 'Elevação do tibial, Supino Larsen, Desenvolvimento Z, Encolhimento Kelso, V-squat, Agachamento com barra de segurança, Wall ball, Stir the pot, Escada vertical, Multi-hip e Puxar trenó com corda ganharam imagem com o movimento.' },
+    ] },
     { v: '0.49.1', date: '2026-11-16', items: [
       { icon: 'dumbbell', t: 'Agachamento pêndulo com foto', d: 'O agachamento pêndulo ganhou imagem com o movimento. Mais exercícios sem foto vão ganhar a sua nas próximas versões.' },
     ] },

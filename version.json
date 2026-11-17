@@ -1,11 +1,11 @@
 {
- "versionCode": 67,
- "versionName": "0.49.1",
- "date": "2026-11-16",
- "apk": "download/Gravity-v0.49.1.apk",
+ "versionCode": 68,
+ "versionName": "0.49.2",
+ "date": "2026-11-17",
+ "apk": "download/Gravity-v0.49.2.apk",
  "notes": [
   {
-   "t": "Agachamento pêndulo com foto"
+   "t": "11 exercícios com foto nova"
   }
  ]
 }
