@@ -1,5 +1,5 @@
 // Gerado por tools/web.sh. Guarda o app no celular para abrir sem internet; versão nova troca o cache.
-const CACHE = 'gravity-0.50.0-20261117173233';
+const CACHE = 'gravity-0.51.0-20261117204356';
 const FILES = [
   './',
   "css/app.css",
@@ -591,6 +591,7 @@ const FILES = [
   "js/vendor/firebase/firebase-firestore-compat.js",
   "js/voice.js",
   "manifest.webmanifest",
+  "painel.html",
 ];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));

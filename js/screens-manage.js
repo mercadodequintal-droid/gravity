@@ -354,6 +354,55 @@
   }
 
   // ====================== PLANOS ======================
+  // ---------- Longevidade 60+ (aprovado em 17/11) ----------
+  // Folha "Quantos dias por semana?" (2 ou 3) + "Em quais dias?" e, na primeira vez, o aviso "Antes de começar".
+  // 2 dias: A e B uma vez cada. 3 dias: A, B, A (A no 1º e no 3º dia).
+  function longevitySheet(after) {
+    const t = Store.TEMPLATES.find((x) => x.key === 'longevidade');
+    let n = 3; const dias = { 2: [1, 4], 3: [1, 3, 5] };
+    const order = (a) => a.slice().sort((x, y) => ((x + 6) % 7) - ((y + 6) % 7));
+    const warn = () => sheet({
+      render: () => `<div style="text-align:center"><div class="lg-ic">${icon('info')}</div></div>
+        <h3 style="text-align:center">Antes de começar</h3><div class="desc" style="text-align:center">Se você tem alguma condição de saúde (coração, pressão, articulações, cirurgia recente), converse com seu médico antes de começar.</div>
+        <div class="list" style="margin-top:12px">
+          <div class="menu-item"><span class="ic">${icon('flame', 'sm')}</span><span class="grow">Sempre comece pelo aquecimento</span></div>
+          <div class="menu-item"><span class="ic">${icon('check', 'sm')}</span><span class="grow">Termine cada série sobrando 2 ou 3 repetições</span></div>
+          <div class="menu-item"><span class="ic">${icon('alert', 'sm')}</span><span class="grow">Sentiu tontura ou dor no peito? Pare e descanse</span></div>
+          <div class="menu-item"><span class="ic">${icon('target', 'sm')}</span><span class="grow">No equilíbrio, fique perto de um apoio</span></div></div>
+        <button class="btn lime block" style="margin-top:16px" data-a="ok">Entendi, vamos começar</button>`,
+      actions: { ok: () => { closeSheet(); toast('Plano criado e ativado'); } },
+    });
+    sheet({
+      render: () => `<h3>Longevidade 60+</h3><div class="desc">Força, equilíbrio e potência para o dia a dia. Treinos de ~40 min, com aquecimento e descanso maior.</div>
+        <div class="caps" style="margin:14px 2px 8px">Quantos dias por semana?</div>
+        <div class="lg-opt">${[[2, '2 dias', 'O mínimo recomendado para força. Treino A e B, uma vez cada.'], [3, '3 dias', 'Recomendado. A e B alternados, com equilíbrio em todos.']].map(([v, tt, d]) => `<button class="${n === v ? 'on' : ''}" data-a="n" data-v="${v}"><b>${tt}</b><small>${d}</small>${v === 3 ? '<em>Recomendado</em>' : ''}</button>`).join('')}</div>
+        <div class="caps" style="margin:16px 2px 8px">Em quais dias?</div>
+        <div class="cf-days lg-days">${[1, 2, 3, 4, 5, 6, 0].map((d) => `<span class="press ${dias[n].includes(d) ? 'on' : ''}" data-a="d" data-v="${d}">${Store.WEEKDAYS[d]}</span>`).join('')}</div>
+        <div class="small muted" style="margin:8px 2px 0">Deixe pelo menos 1 dia de descanso entre os treinos. Dá para mudar depois.</div>
+        <button class="btn lime block" style="margin-top:16px" data-a="use">Usar este plano</button>`,
+      actions: {
+        n: (ds) => { n = Number(ds.v); sheetRefresh(); },
+        d: (ds) => {
+          const d = Number(ds.v), a = dias[n];
+          if (a.includes(d)) { if (a.length > 1) a.splice(a.indexOf(d), 1); }
+          else { if (a.length >= n) a.shift(); a.push(d); }
+          sheetRefresh();
+        },
+        use: () => {
+          const a = order(dias[n]);
+          if (a.length < n) { toast('Escolha ' + n + ' dias'); return; }
+          const p = Store.planFromTemplate(t, S().settings.weekStart);
+          p.workouts[0].days = n === 2 ? [a[0]] : [a[0], a[2]];
+          p.workouts[1].days = [a[1]];
+          p.goal = 'Saúde e longevidade · ' + n + ' dias · força e equilíbrio';
+          S().plans.push(p); S().activePlanId = p.id; Store.save();
+          closeSheet(); refresh(); if (after) after();
+          if (!S().settings.lgWarnSeen) { S().settings.lgWarnSeen = true; Store.save(); setTimeout(warn, 380); } else toast('Plano criado e ativado');
+        },
+      },
+    });
+  }
+
   function Plans() {
     // v0.44 (decidido em 12/11): "Plano em foco" (1) + folha "Criar novo plano" (2) + "Sem plano" (7).
     const DS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -378,11 +427,12 @@
     });
     const modelsSheet = () => sheet({
       render: () => `<h3>Modelo pronto</h3><div class="desc">Uma cópia editável é criada e vira o seu plano ativo. Seu histórico continua salvo.</div>
-        <div class="list" style="max-height:58vh;overflow:auto">${Store.TEMPLATES.map((t) => `<button class="pl-row press" data-a="tpl" data-k="${t.key}"><span class="lt">${t.workouts.length}</span><span class="grow"><b>${esc(t.name)}</b><small>${esc(t.goal)} · ${t.weeks} semanas</small></span>${icon('plus', 'sm')}</button>`).join('')}</div>`,
+        <div class="list" style="max-height:58vh;overflow:auto">${Store.TEMPLATES.map((t) => `<button class="pl-row press" data-a="tpl" data-k="${t.key}"><span class="lt">${t.key === 'longevidade' ? '2' : t.workouts.length}</span><span class="grow"><b>${esc(t.name)}${t.novo ? '<span class="lg-new">Novo</span>' : ''}</b><small>${esc(t.key === 'longevidade' ? 'Saúde e longevidade · 2 ou 3 dias · força e equilíbrio' : t.goal)} · ${t.weeks} semanas</small></span>${icon('plus', 'sm')}</button>`).join('')}</div>`,
       actions: {
         tpl: (ds) => {
           const t = Store.TEMPLATES.find((x) => x.key === ds.k);
           closeSheet();
+          if (t.key === 'longevidade') { setTimeout(() => longevitySheet(), 380); return; }
           setTimeout(() => confirmSheet('Usar “' + t.name + '”?', 'Uma cópia editável é criada e vira o seu plano ativo. Seu histórico continua salvo.', 'Usar modelo', () => {
             const p = Store.planFromTemplate(t, S().settings.weekStart); S().plans.push(p); S().activePlanId = p.id; Store.save(); refresh(); toast('Plano criado e ativado');
           }), 380);
@@ -602,7 +652,7 @@
     // Linha de um exercício: selo na foto (chama = técnica, setas = grupo) e texto dourado embaixo.
     function rowHTML(w, it, i) {
       const ex = Store.exercise(it.exId), g = TECH.groupOf(w.items, i), t = it.tech && TECH.get(it.tech.id);
-      const det = (ex.tipo === 'tempo' || Store.isCardio(ex) ? Tools.repsText(it, ex) : it.sets + ' × ' + esc(it.reps)) + (Tools.loadText(it.kg, ex) ? ' · ' + Tools.loadText(it.kg, ex) : '') + (Store.isCardio(ex) ? ' · sem descanso' : ' · ' + restLabel(it.rest)) + swapTxt(w.items, i);
+      const det = (ex.tipo === 'tempo' || ex.un || Store.isCardio(ex) ? Tools.repsText(it, ex) : it.sets + ' × ' + esc(it.reps)) + (Tools.loadText(it.kg, ex) ? ' · ' + Tools.loadText(it.kg, ex) : '') + (Store.isCardio(ex) ? ' · sem descanso' : ' · ' + restLabel(it.rest)) + swapTxt(w.items, i);
       const under = [];
       if (t) under.push(esc(TECH.chip(it)));
       if (g) under.push(g.size === 2 ? esc(g.tech.nome) + (g.pos === 1 ? ' com o próximo' : ' com o anterior') : esc(g.tech.nome) + ' · ' + g.pos + ' de ' + g.size);
@@ -1005,5 +1055,5 @@
     };
   }
 
-  Object.assign(window.Screens, { PlansCreate: () => Plans().actions.create(), PlansList: () => Plans().actions.plans(), GymSetup, lineChart, TechGuide, Library, ExerciseDetail, ExerciseForm, Plans, PlanEditor, WorkoutEditor, Progress, SessionDetail, Settings });
+  Object.assign(window.Screens, { longevitySheet, PlansCreate: () => Plans().actions.create(), PlansList: () => Plans().actions.plans(), GymSetup, lineChart, TechGuide, Library, ExerciseDetail, ExerciseForm, Plans, PlanEditor, WorkoutEditor, Progress, SessionDetail, Settings });
 })();

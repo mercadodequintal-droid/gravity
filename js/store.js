@@ -25,6 +25,16 @@
   // ---------- planos-modelo ----------
   // Cada item: [id do exercício na biblioteca, séries, repetições, carga sugerida, descanso em s]
   const TEMPLATES = [
+    // Longevidade 60+ (aprovado em 17/11): força, potência e equilíbrio. Dias escolhidos na folha (2 ou 3).
+    // gentle: semanas 1–2 com 2 séries e carga subindo em passos menores. Bicicleta em segundos (360 = 6 min).
+    {
+      key: 'longevidade', name: 'Longevidade 60+', goal: 'Saúde e longevidade · força e equilíbrio', weeks: 8, novo: true, gentle: true,
+      notes: { ex31: 'Suba rápido, desça em 3 segundos', lx01: 'Suba rápido, desça em 3 segundos', ex78: 'Ombros para baixo, passos curtos e firmes', sx04: 'Perto de um apoio · 20 s de cada lado', nx107: 'Cada lado', nx105: 'Cada lado' },
+      workouts: [
+        ['A', 'Força e equilíbrio', [1, 5], [['tx04', 1, '360', 0, 0], ['ex31', 3, '12', 40, 90], ['ex94', 3, '12', 15, 90], ['ex18', 3, '12', 20, 90], ['ex40', 3, '12', 0, 90], ['ex155', 2, '15', 20, 60], ['sx04', 3, '20', 0, 45], ['nx107', 2, '8', 0, 45]]],
+        ['B', 'Potência e marcha', [3], [['tx04', 1, '360', 0, 0], ['lx01', 3, '10', 0, 90], ['ex17', 3, '12', 25, 90], ['ex157', 2, '12', 10, 90], ['ex36', 2, '12', 15, 90], ['ex78', 3, '30', 8, 90], ['lx02', 3, '10', 0, 45], ['nx105', 2, '10', 5, 45]]],
+      ],
+    },
     {
       key: 'abcde', name: 'ABCDE Hipertrofia', goal: 'Hipertrofia · 5 dias', weeks: 4,
       workouts: [
@@ -113,14 +123,14 @@
 
   function planFromTemplate(t, ws) {
     return {
-      id: uid('p'), name: t.name, goal: t.goal, weeks: t.weeks,
+      id: uid('p'), name: t.name, goal: t.goal, weeks: t.weeks, gentle: t.gentle || undefined,
       startDate: iso(weekStartOf(today(), ws)),
       workouts: t.workouts.map(([letter, name, days, items]) => ({
         id: uid('w'), letter, name, days: days.slice(),
         items: (function () {
           const gids = {};
           return items.map(([exId, sets, reps, kg, rest, tech, grp]) => ({
-            id: uid('i'), exId, sets, reps, kg, rest, note: '', tech: tech ? Object.assign({}, tech) : null,
+            id: uid('i'), exId, sets, reps, kg, rest, note: (t.notes && t.notes[exId]) || '', tech: tech ? Object.assign({}, tech) : null,
             group: grp ? { id: gids[grp.g] || (gids[grp.g] = uid('g')), type: grp.t } : null,
           }));
         })(),
@@ -274,6 +284,8 @@
         s.sets.push({ id: uid('x'), itemId: it.id, exId: it.exId, n: r.n, kg: r.kg, reps: r.reps, target: r.target || null, sub: !!r.sub, label: r.label || null, time: isTime || undefined, done: false, at: null, rest: null });
       });
     });
+    // Plano suave (Longevidade 60+): semanas 1 e 2 com no máximo 2 séries por exercício.
+    if (fw.plan.gentle && planWeek(fw.plan).n <= 2) s.sets = s.sets.filter((x) => x.sub || x.n <= 2);
     if (deloadActive()) applyDeload(s, fw.workout);
     else if (rangeMode() === 'auto') {
       // Faixa de repetições no automático: quem bateu o topo da faixa já começa com a carga nova.
@@ -286,6 +298,12 @@
     S.activeSessionId = s.id;
     save();
     return s;
+  }
+
+  // Passo de carga: no plano suave (Longevidade 60+) sobe metade do normal (mínimo 1 kg).
+  function incFor(item) {
+    const inc = Number(S.settings.incKg || 2);
+    return S.plans.some((p) => p.gentle && p.workouts.some((w) => w.items.includes(item))) ? Math.max(1, inc / 2) : inc;
   }
 
   // ---------- faixa de repetições (ex.: "8-12") ----------
@@ -611,7 +629,7 @@
     const rg = repRange(item.reps);
     if (rg && rangeMode() !== 'off') {
       const m = lastH ? lastH.sets.filter((x) => !x.sub) : [];
-      if (lastH && lastH.maxKg > 0 && m.length >= item.sets && m.every((x) => Number(x.reps) >= rg.hi)) return { from: lastH.maxKg, to: lastH.maxKg + Number(S.settings.incKg || 2), why: 'range', lo: rg.lo, hi: rg.hi };
+      if (lastH && lastH.maxKg > 0 && m.length >= item.sets && m.every((x) => Number(x.reps) >= rg.hi)) return { from: lastH.maxKg, to: lastH.maxKg + incFor(item), why: 'range', lo: rg.lo, hi: rg.hi };
       return null;
     }
     if (!S.settings.suggest) return null;
@@ -621,7 +639,7 @@
       if (rirs.length >= Math.ceil(m.length / 2) && m.length >= item.sets) {
         const avg = rirs.reduce((a, v) => a + v, 0) / rirs.length;
         const hit = m.every((x) => x.reps >= repsTarget(item.reps));
-        if (hit && avg >= 2) return { from: lastH.maxKg, to: lastH.maxKg + Number(S.settings.incKg || 2), why: 'rir', rir: Math.round(avg * 10) / 10 };
+        if (hit && avg >= 2) return { from: lastH.maxKg, to: lastH.maxKg + incFor(item), why: 'rir', rir: Math.round(avg * 10) / 10 };
         return null;
       }
     }

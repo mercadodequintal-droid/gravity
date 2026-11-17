@@ -49,6 +49,11 @@
       dicas: ['Ponta do pé no degrau, calcanhar para fora', 'Desça devagar e suba o máximo', 'Apoie a mão na parede para equilíbrio'] },
     { id: 'sx09', nome: 'Deslocamento lateral (agilidade)', grupo: 'Cardio', equip: 'Peso corporal', tipo: 'tempo', musculos: ['quadríceps'], secundarios: ['glúteos', 'adutores'], img: ['img/SX_Deslocamento_Lateral_0.jpg'],
       dicas: ['Base baixa, sem cruzar os pés', 'Toque o chão nas trocas de direção', 'Máxima velocidade, com controle'] },
+    // Plano Longevidade 60+ (v0.51). Ainda sem foto.
+    { id: 'lx01', nome: 'Sentar e levantar da cadeira', grupo: 'Pernas', equip: 'Peso corporal', musculos: ['quadríceps', 'glúteos'], secundarios: ['posteriores de coxa'], img: [],
+      dicas: ['Cadeira firme, encostada na parede', 'Braços cruzados no peito (ou mãos nas coxas, se precisar)', 'Suba rápido e desça devagar, em uns 3 segundos'] },
+    { id: 'lx02', nome: 'Caminhada calcanhar-ponta', grupo: 'Pernas', equip: 'Peso corporal', un: 'passos', musculos: ['panturrilhas'], secundarios: ['glúteos'], img: [],
+      dicas: ['Ande em linha reta, encostando o calcanhar na ponta do outro pé', 'Olhar à frente, braços abertos para equilibrar', 'Fique perto de uma parede ou apoio'] },
   );
 })();
 

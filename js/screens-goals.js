@@ -7,6 +7,14 @@
   const EVID = { Forte: 'done', Moderada: 'blue', Promissora: 'partial' };
 
   // ====================== MONTAR POR OBJETIVO ======================
+  // Idade pela data de nascimento do Perfil (Configurações › Perfil). Sem data, não sugere.
+  function age60() {
+    const b = ((Store.state.settings.profile || {}).birth || '');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(b)) return false;
+    const d = new Date(b + 'T00:00:00'), t = new Date();
+    let a = t.getFullYear() - d.getFullYear(); if (t < new Date(t.getFullYear(), d.getMonth(), d.getDate())) a--;
+    return a >= 60;
+  }
   function GoalWizard() {
     const o = { primary: 'hipertrofia', secondary: null, days: 3, level: 'intermediario', equip: 'academia' };
     let showWhy = false;
@@ -24,6 +32,7 @@
             <div class="small" style="margin-top:8px;color:var(--gold-2)">${esc(g.regra)}</div>
             ${showWhy ? `<div class="small muted" style="margin-top:8px">${esc(g.ciencia)}</div>` : ''}
             <button class="link" style="margin-top:8px" data-a="why">${showWhy ? 'Esconder' : 'Por que funciona?'}</button></div>
+          ${o.primary === 'saude' && age60() ? `<button class="card lg-sug press" data-a="lg"><span class="lg-new">Para você</span><b>Longevidade 60+</b><span class="small muted">Plano pronto para 60+: força, equilíbrio e potência, 2 ou 3 dias, ~40 min. Recomendado para a sua idade.</span><span class="lg-go">Ver plano ${icon('next', 'sm')}</span></button>` : ''}
           <div class="section-title"><h2>2. Objetivo extra</h2><span class="small muted">opcional</span></div>
           <div class="filters wrap">${opt('sec', '', !o.secondary, 'Nenhum')}${Goals.GOALS.filter((x) => x.id !== o.primary).map((x) => opt('sec', x.id, o.secondary === x.id, x.nome)).join('')}</div>
           ${g2 ? `<div class="tiny muted" style="margin:6px 2px 0">Acrescenta ao treino: ${esc(g2.regra.split(' · ')[0])}.</div>` : ''}
@@ -48,6 +57,7 @@
         lvl: (ds) => { o.level = ds.v; refresh(); },
         eq: (ds) => { o.equip = ds.v; refresh(); },
         why: () => { showWhy = !showWhy; refresh(); },
+        lg: () => Screens.longevitySheet(pop),
         create: () => {
           const p = Goals.buildPlan(o);
           S().plans.push(p); S().activePlanId = p.id; Store.save();

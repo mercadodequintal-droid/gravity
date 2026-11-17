@@ -661,7 +661,7 @@
       const kgVal = (k) => (bw ? (!Number(k) ? 'Corpo' : (k > 0 ? '+' : '−') + nf(Math.abs(k))) : nf(k));
       const kgSmall = x.sub ? esc(x.label) : prev ? 'ant. ' + kgVal(prev.kg) : bw ? (Number(x.kg) < 0 ? 'kg ajuda' : Number(x.kg) > 0 ? 'kg extra' : 'peso') : 'kg';
       const cardio = x.time && Store.isCardio(x.exId);
-      const repSmall = x.rir != null ? feelOf(x.rir).short : x.target ? 'alvo ' + x.target : cardio ? 'min' : x.time ? 'seg' : x.sub ? 'reps' : prev ? 'ant. ' + prev.reps : 'reps';
+      const repSmall = x.rir != null ? feelOf(x.rir).short : x.target ? 'alvo ' + x.target : cardio ? 'min' : x.time ? 'seg' : x.sub ? 'reps' : prev ? 'ant. ' + prev.reps : ((Store.exercise(x.exId) || {}).un || 'reps');
       let val = cardio ? (x.reps % 60 === 0 ? x.reps / 60 : UI.secs(x.reps)) : x.time ? UI.secs(x.reps) : x.reps;
       // Unilateral: "D 10 / E 9". O +/− muda os dois lados; tocar no número ajusta cada lado.
       const sides = uni && !x.time;

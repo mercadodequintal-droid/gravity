@@ -4,6 +4,10 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.51.0', date: '2026-11-17', items: [
+      { icon: 'target', t: 'Plano Longevidade 60+', d: 'Força, equilíbrio e potência para o dia a dia, em 2 ou 3 dias por semana, com aquecimento e descanso maior. Está em Planos › Criar novo plano › Modelo pronto.', main: true },
+      { icon: 'dumbbell', t: '2 exercícios novos', d: 'Sentar e levantar da cadeira e Caminhada calcanhar-ponta (contada em passos).' },
+    ] },
     { v: '0.50.0', date: '2026-11-17', items: [
       { icon: 'check', t: 'Conta Gravity', d: 'Entre com Google ou e-mail e seus treinos ficam guardados na nuvem: se trocar de celular, é só entrar e tudo volta. Fotos de progresso nunca sobem.', main: true },
       { icon: 'repeat', t: 'Sincronização', d: 'Em Perfil › Conta Gravity você sincroniza, traz da nuvem, sai ou exclui a conta quando quiser.' },

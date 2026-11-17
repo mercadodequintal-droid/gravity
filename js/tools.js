@@ -23,7 +23,7 @@
   function repsText(it, ex) {
     if (Store.isCardio(ex)) return (it.sets > 1 ? it.sets + ' × ' : '') + minText(Number(it.reps) || 1200);
     if (ex && ex.tipo === 'tempo') return `${it.sets} × ${UI.restLabel(Number(it.reps) || 30)}`;
-    return `${it.sets} × ${esc(it.reps)}`;
+    return `${it.sets} × ${esc(it.reps)}${ex && ex.un ? ' ' + ex.un : ''}`;
   }
 
   // ---------- anilhas ----------

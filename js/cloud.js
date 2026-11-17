@@ -99,6 +99,33 @@
     const d = await uref().get();
     return d.exists ? d.data() : null;
   }
+  // Resumo de uso (aprovado em 17/11) para o painel do dono: calculado do que já é sincronizado,
+  // sem perguntar nada novo. Fica em stats/{uid}; só a própria pessoa e a conta do dono podem ler.
+  function summary() {
+    const S = Store.state, st = S.settings, pf = st.profile || {}, now = Date.now(), D = 864e5;
+    const done = S.sessions.filter((x) => !x.demo && x.sets.some((y) => y.done)).sort((a, b) => a.start - b.start);
+    const last = done.length ? done[done.length - 1].start : null, first = done.length ? done[0].start : null;
+    const since = (d) => done.filter((x) => x.start >= now - d * D).length;
+    const weeks = first ? Math.max(1, (now - first) / (7 * D)) : 0;
+    const h = { manha: 0, tarde: 0, noite: 0 };
+    done.slice(-60).forEach((x) => { const hr = new Date(x.start).getHours(); h[hr < 12 ? 'manha' : hr < 18 ? 'tarde' : 'noite']++; });
+    const p = Store.activePlan(), wk = p ? Store.planWeek(p) : null;
+    const age = pf.birth ? Math.floor((now - new Date(pf.birth).getTime()) / (365.25 * D)) : null;
+    const recs = (() => { try { return Analytics.recordCount(); } catch (e) { return 0; } })();
+    const u = user;
+    return {
+      name: st.name || (u && u.displayName) || '', email: (u && u.email) || '',
+      provider: u && u.providerData && u.providerData[0] ? (u.providerData[0].providerId === 'google.com' ? 'google' : 'email') : '',
+      createdAt: u && u.metadata ? Date.parse(u.metadata.creationTime) || null : null,
+      updatedAt: now, app: News.VERSION, device: (window.Feedback && Feedback.device()) || '',
+      workouts: done.length, w7: since(7), w30: since(30), perWeek: weeks ? Math.round((done.length / weeks) * 10) / 10 : 0,
+      lastWorkout: last, hours: h,
+      plan: p ? p.name : '', planWeek: wk ? Math.max(0, Math.min(wk.n, wk.total)) : 0, planWeeks: wk ? wk.total : 0,
+      features: { recordes: recs > 0, checkin: st.checkin !== false, voz: !!(window.Voice && Voice.cfg().on), fotos: (Store.photos ? Store.photos().length : 0) > 0, lembrete: !!st.reminder, tecnicas: done.some((x) => x.sets.some((y) => y.sub && y.done)) },
+      profile: { age: age != null && age > 5 && age < 110 ? age : null, sex: st.bodyType || '', goal: pf.goal || (p && p.goal) || '', exp: pf.exp || '' },
+      theme: st.theme || 'dourado',
+    };
+  }
   async function push(force) {
     await load(); if (!user) throw new Error('nologin');
     const text = Store.exportBackup(), h = hash(text);
@@ -110,6 +137,8 @@
     for (let i = parts.length; old && i < (old.parts || 0); i++) batch.delete(ref.collection('parts').doc(String(i)));
     batch.set(ref, { v: 1, parts: parts.length, size: text.length, updatedAt: Date.now(), app: News.VERSION, device: (window.Feedback && Feedback.device()) || '' });
     await batch.commit();
+    // Resumo separado: se a regra do painel ainda não existir, não atrapalha a sincronização.
+    db.collection('stats').doc(user.uid).set(summary()).catch(() => {});
     put({ lastSync: Date.now(), lastHash: h });
     emit();
     return true;
@@ -130,6 +159,7 @@
     for (let i = 0; i < Math.max(1, (info && info.parts) || 0) + 2; i++) batch.delete(ref.collection('parts').doc(String(i)));
     batch.delete(ref);
     await batch.commit();
+    await db.collection('stats').doc(user.uid).delete().catch(() => {});
   }
   // Excluir conta: apaga os dados da nuvem e a conta. Os dados no celular continuam.
   async function deleteAccount() {
@@ -164,7 +194,7 @@
   setTimeout(() => { const s = st(); if (s.uid && !offline()) load().then(() => { if (s.on && user) push().catch(() => {}); }).catch(() => {}); }, 4000);
 
   window.Cloud = {
-    load, signUp, signIn, reset, signOut, google, onGoogleToken, push, pull, cloudInfo, deleteAccount, msg,
+    load, summary, signUp, signIn, reset, signOut, google, onGoogleToken, push, pull, cloudInfo, deleteAccount, msg,
     state: st, set: put, user: () => user, ready: () => ready, email: () => (user ? user.email : st().email),
     on: (f) => { subs.push(f); return () => { const i = subs.indexOf(f); if (i >= 0) subs.splice(i, 1); }; },
     afterLogin: null,

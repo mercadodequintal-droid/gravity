@@ -194,6 +194,8 @@
 "sx06": "Lombar caindo na prancha. Corpo reto na flexão e pule com os joelhos dobrados na aterrissagem.",
 "sx07": "Descer a cabeça à frente das mãos. Quadril alto e a cabeça desce entre as mãos, formando um triângulo.",
 "sx08": "Amplitude curta. Desça o calcanhar abaixo do degrau e suba até a ponta do pé.",
+"lx01": "Usar as mãos para levantar e cair sentado. Suba com a força das pernas e desça devagar até encostar.",
+"lx02": "Olhar para os pés e deixar espaço entre eles. Olhe à frente e encoste o calcanhar na ponta do outro pé.",
 "sx09": "Cruzar os pés e ficar em pé. Fique baixo, passos rápidos sem cruzar e o peso na ponta dos pés.",
 "nx001": "Assento baixo, com as pegadas acima do peito. Ajuste para as pegadas ficarem na linha do peito.",
 "nx002": "Tirar as costas do encosto para empurrar. Costas apoiadas e empurre um braço de cada vez com controle.",

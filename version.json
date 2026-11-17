@@ -1,17 +1,14 @@
 {
- "versionCode": 69,
- "versionName": "0.50.0",
+ "versionCode": 70,
+ "versionName": "0.51.0",
  "date": "2026-11-17",
- "apk": "download/Gravity-v0.50.0.apk",
+ "apk": "download/Gravity-v0.51.0.apk",
  "notes": [
   {
-   "t": "Conta Gravity"
+   "t": "Plano Longevidade 60+"
   },
   {
-   "t": "Sincronização"
-  },
-  {
-   "t": "Movimento na página do exercício"
+   "t": "2 exercícios novos"
   }
  ]
 }

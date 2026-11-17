@@ -2225,3 +2225,18 @@ html, body, .content, .sheet { overscroll-behavior: none; }
 .gt-doc th { color: var(--text-2); font-weight: 600; }
 .gt-doc blockquote { margin: 8px 0; padding: 8px 12px; background: rgba(var(--acc-rgb), .08); border-radius: 8px; color: var(--text-2); font-size: 12px; }
 .gt-doc.in-app { padding-top: 6px; }
+
+/* v0.51 · Longevidade 60+ */
+.lg-opt { display: grid; gap: 8px; }
+.lg-opt button { position: relative; text-align: left; padding: 14px 16px; border-radius: 12px; background: rgba(var(--fg-rgb), .055); color: var(--text); }
+.lg-opt button.on { box-shadow: inset 0 0 0 2px var(--gold); }
+.lg-opt b { display: block; font-family: var(--display); font-weight: 500; font-size: 18px; letter-spacing: 1px; }
+.lg-opt small { display: block; color: var(--text-2); font-size: 12.5px; margin-top: 2px; padding-right: 90px; }
+.lg-opt em { position: absolute; right: 12px; top: 14px; font-style: normal; font-size: 10.5px; font-weight: 700; padding: 3px 8px; border-radius: 6px; background: var(--gold); color: var(--lime-ink); }
+.lg-days span { cursor: pointer; }
+.lg-new { display: inline-block; margin-left: 8px; vertical-align: 2px; font-family: var(--body, inherit); font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 2px 7px; border-radius: 6px; background: var(--gold); color: var(--lime-ink); }
+.lg-ic { width: 58px; height: 58px; border-radius: 50%; margin: 4px auto 10px; display: grid; place-items: center; background: rgba(var(--acc-rgb), .14); color: var(--gold); }
+.lg-sug { display: flex; flex-direction: column; gap: 4px; text-align: left; width: 100%; margin: 12px 0 0; box-shadow: inset 0 0 0 1.5px var(--gold); }
+.lg-sug .lg-new { margin: 0 0 4px; align-self: flex-start; }
+.lg-sug b { font-family: var(--display); font-weight: 500; font-size: 18px; letter-spacing: 1px; }
+.lg-go { color: var(--gold); font-size: 13px; display: flex; align-items: center; gap: 4px; margin-top: 4px; }
