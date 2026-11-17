@@ -57,8 +57,11 @@
 <script src="js/news.js"></script>
 <script src="js/tips.js"></script>
 <script src="js/updater.js"></script>
+<script src="js/cloud.js"></script>
 <script src="js/settings-new.js"></script>
 <script src="js/feedback.js"></script>
+<script src="js/legal.js"></script>
+<script src="js/gate.js"></script>
 <script>
   Store.load();
   Theme.apply();
@@ -69,6 +72,7 @@
   Live.init();
   UI.switchTab('home', true);
   Splash.show();
+  Gate.start();
   setTimeout(Screens.syncNative, 1500);
   setTimeout(Store.autoBackup, 4000);
   News.maybeShow();

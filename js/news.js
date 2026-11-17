@@ -4,6 +4,11 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.50.0', date: '2026-11-17', items: [
+      { icon: 'check', t: 'Conta Gravity', d: 'Entre com Google ou e-mail e seus treinos ficam guardados na nuvem: se trocar de celular, é só entrar e tudo volta. Fotos de progresso nunca sobem.', main: true },
+      { icon: 'repeat', t: 'Sincronização', d: 'Em Perfil › Conta Gravity você sincroniza, traz da nuvem, sai ou exclui a conta quando quiser.' },
+      { icon: 'play', t: 'Movimento na página do exercício', d: 'A foto do topo agora mostra o movimento, como no treino.' },
+    ] },
     { v: '0.49.2', date: '2026-11-17', items: [
       { icon: 'dumbbell', t: '11 exercícios com foto nova', d: 'Elevação do tibial, Supino Larsen, Desenvolvimento Z, Encolhimento Kelso, V-squat, Agachamento com barra de segurança, Wall ball, Stir the pot, Escada vertical, Multi-hip e Puxar trenó com corda ganharam imagem com o movimento.' },
     ] },

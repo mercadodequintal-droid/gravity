@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Entrar com Google — Gravity</title>
+<style>
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:#121214;color:#f0ece2;font-family:system-ui,-apple-system,Roboto,sans-serif}
+  .box{max-width:340px;padding:28px 22px;text-align:center}
+  h1{font-weight:500;letter-spacing:4px;font-size:20px;color:#ffd95a;margin:0 0 8px}
+  p{color:#aaa395;font-size:14px;line-height:1.5}
+  button,a.btn{display:block;width:100%;box-sizing:border-box;margin-top:16px;padding:15px;border:0;border-radius:12px;background:#f5c518;color:#161108;font-size:15px;font-weight:600;text-decoration:none;cursor:pointer}
+  .sec{background:#202024;color:#f0ece2}
+  #msg{min-height:20px;margin-top:14px;font-size:13px;color:#e5a54b}
+</style></head>
+<body><div class="box">
+  <h1>GRAVITY</h1>
+  <p id="txt">Toque no botão para entrar com a sua conta Google. Depois, você volta para o app.</p>
+  <button id="go">Entrar com Google</button>
+  <a id="back" class="btn" style="display:none">Voltar ao Gravity</a>
+  <div id="msg"></div>
+</div>
+<script src="js/vendor/firebase/firebase-app-compat.js"></script>
+<script src="js/vendor/firebase/firebase-auth-compat.js"></script>
+<script>
+  // Página usada só pelo app Android: o Google não deixa entrar dentro do app, então o login acontece aqui
+  // e o app recebe a conta pelo link gravity://auth (só o token do Google, que vale por pouco tempo).
+  firebase.initializeApp({ apiKey: 'AIzaSyCQ9vXmqoswdzpHjUy32XlH1rhjzhdo5Ww', authDomain: 'gravity-app-241d8.firebaseapp.com', projectId: 'gravity-app-241d8', appId: '1:966186252453:web:ba6b476625f56a13f8f54c' });
+  const $ = (id) => document.getElementById(id);
+  $('go').onclick = async () => {
+    $('msg').textContent = '';
+    try {
+      const r = await firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider());
+      const tok = r.credential && r.credential.idToken;
+      if (!tok) throw new Error('sem token');
+      const url = 'intent://auth?t=' + encodeURIComponent(tok) + '#Intent;scheme=gravity;package=com.meutreino.app;end';
+      $('back').href = url; $('back').style.display = 'block'; $('go').style.display = 'none';
+      $('txt').textContent = 'Pronto! Toque em "Voltar ao Gravity" para terminar.';
+      try { location.href = url; } catch (e) { /* o botão resolve */ }
+      firebase.auth().signOut();
+    } catch (e) {
+      $('msg').textContent = e && e.code === 'auth/popup-closed-by-user' ? 'Login cancelado.' : 'Não deu certo. Tente de novo.';
+    }
+  };
+</script>
+</body></html>

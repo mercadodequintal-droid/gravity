@@ -280,7 +280,7 @@
         }
         const tabs = [['como', 'Como fazer'], ['evo', 'Evolução'], ['rec', 'Recordes'], ['vid', 'Vídeo']];
         return `<div class="content fa-c" style="padding:0">
-          <div class="fa-hero">${(ex.img && ex.img[0]) ? `<span class="ph" style="background-image:url('${ex.img[0]}')"></span>` : '<span class="ph noimg"></span>'}
+          <div class="fa-hero">${(ex.img && ex.img[0]) ? `<span class="ph" style="background-image:url('${ex.img[0]}')"></span>${ex.img[1] ? `<span class="ph b" style="background-image:url('${ex.img[1]}')"></span>` : ''}` : '<span class="ph noimg"></span>'}
             <div class="fa-top"><button class="fa-ib" data-a="back" aria-label="Voltar">${icon('back')}</button><span class="grow"></span>${ex.custom ? `<button class="fa-ib" data-a="edit">${icon('edit', 'sm')}</button>` : ''}<button class="fa-ib ${fav ? 'on' : ''}" data-a="fav" aria-label="Favorito">${STAR(fav)}</button><button class="fa-ib" data-a="share" aria-label="Compartilhar">${icon('share', 'sm')}</button></div>
             <div class="fa-name"><small>${esc(ex.grupo)}${ex.equip ? ' · ' + esc(ex.equip) : ''}</small><h2>${esc(ex.nome)}</h2></div>${stats}</div>
           <div class="fa-sheet"><div class="fa-tabs">${tabs.map(([k, l]) => `<button class="${k === tab ? 'on' : ''}" data-a="tab" data-t="${k}">${l}</button>`).join('')}</div>${pane}

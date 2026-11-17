@@ -2177,3 +2177,51 @@ html, body, .content, .sheet { overscroll-behavior: none; }
 .nw-fb .btn { margin-top: 8px; min-width: 190px; }
 .nw-fb .link { color: var(--text-2); font-size: 12.5px; margin-top: 4px; }
 .nw-fb .ic, .fm-fb .ic { background: none !important; width: auto; height: auto; }
+
+/* v0.50 · Página do exercício: a foto do topo alterna as 2 imagens (como no treino). */
+.fa-hero .ph.b { animation: flip 1.8s steps(1, end) infinite; }
+/* Login 1ª parte (17/11): Conta Gravity */
+.ac-form { padding: 14px 16px !important; }
+.ac-f { display: block; margin-bottom: 12px; }
+.ac-f span { display: block; font-size: 12.5px; color: var(--text-2); margin: 0 2px 6px; }
+.ac-f .input { width: 100%; height: 48px; }
+.ac-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+.ac-forgot { display: block; margin: 12px auto 2px; font-size: 13px; color: var(--text-2); }
+.ac-or { display: flex; align-items: center; gap: 12px; margin: 18px 4px; color: var(--text-3); font-size: 12px; }
+.ac-or i { flex: 1; height: 1px; background: rgba(var(--fg-rgb), .1); }
+.ac-google { background: #fff !important; color: #1f1f1f !important; font-family: "Montserrat", sans-serif; letter-spacing: 0; text-transform: none; font-weight: 600; gap: 10px; }
+.ac-google .g { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; color: #4285f4; border: 2px solid #e8eaed; font-size: 13px; }
+.pf-go { flex: none; padding: 6px 10px; border-radius: 8px; background: var(--gold); color: var(--lime-ink); font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+/* Login obrigatório (17/11): tela de entrada depois da abertura */
+.gt { position: fixed; inset: 0; z-index: 55; background: #121214; color: var(--text); display: flex; flex-direction: column; padding: 0 24px calc(28px + env(safe-area-inset-bottom, 0px)); overflow: auto; transition: opacity .35s; }
+.gt.out { opacity: 0; pointer-events: none; }
+.gt-ph { position: absolute; inset: 0 0 45% 0; background-size: cover; background-position: center 78%; opacity: .55; }
+.gt-ph::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, #121214 0%, #121214 6%, rgba(18,18,20,.15) 22%, #121214 92%); }
+.gt-top { position: relative; margin-top: auto; text-align: center; }
+.gt-top h1 { font-family: var(--display); font-weight: 400; letter-spacing: 9px; padding-left: 9px; font-size: 30px; color: var(--gold-2); margin: 10px 0 6px; }
+.gt-sub { color: var(--text-2); font-size: 14px; margin-bottom: 22px; }
+.gt .btn { width: 100%; margin-top: 10px; }
+.gt-gg { background: #fff !important; color: #1f1f1f !important; font-family: "Montserrat", sans-serif; letter-spacing: 0; text-transform: none; font-weight: 600; gap: 10px; height: 54px; }
+.gt-gg .g { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; color: #4285f4; border: 2px solid #e8eaed; font-size: 13px; }
+.gt-ck { display: flex; gap: 10px; align-items: flex-start; text-align: left; font-size: 12.5px; color: var(--text-2); margin: 4px 2px 8px; line-height: 1.45; width: 100%; }
+.gt-ck i { flex: none; width: 22px; height: 22px; border-radius: 6px; background: var(--gold); color: var(--lime-ink); display: grid; place-items: center; margin-top: 1px; }
+.gt-ck i.off { background: rgba(var(--fg-rgb), .1); }
+.gt-ck b { color: var(--gold-2); font-weight: 500; text-decoration: underline; text-underline-offset: 2px; }
+.gt-bar { position: relative; display: flex; align-items: center; gap: 12px; margin: calc(14px + env(safe-area-inset-top, 0px)) 0 14px; }
+.gt-bar h2 { font-family: var(--display); font-weight: 400; letter-spacing: 3px; font-size: 18px; margin: 0; text-transform: uppercase; }
+.gt-tabs { display: grid; grid-template-columns: 1fr 1fr; background: rgba(var(--fg-rgb), .055); border-radius: 12px; padding: 4px; margin: 0 0 16px; }
+.gt-tabs span { text-align: center; padding: 10px; border-radius: 9px; font-family: var(--display); letter-spacing: 1.5px; text-transform: uppercase; font-size: 13px; color: var(--text-2); cursor: pointer; }
+.gt-tabs span.on { background: var(--gold); color: var(--lime-ink); }
+.gt-f { display: block; margin-bottom: 12px; }
+.gt-f span { display: block; font-size: 12.5px; color: var(--text-2); margin: 0 2px 6px; }
+.gt-f .input { width: 100%; height: 50px; }
+.gt-lk { display: block; margin: 14px auto 0; color: var(--text-2); font-size: 13px; text-align: center; }
+.gt-doc { font-size: 13.5px; line-height: 1.55; color: var(--text); padding-bottom: 30px; }
+.gt-doc h1 { font-family: var(--display); font-weight: 500; font-size: 20px; letter-spacing: 1px; margin: 4px 0 10px; }
+.gt-doc h2 { font-family: var(--display); font-weight: 500; font-size: 15px; letter-spacing: 1px; text-transform: uppercase; color: var(--gold-2); margin: 20px 0 6px; }
+.gt-doc p { margin: 6px 0; } .gt-doc ul { margin: 6px 0; padding-left: 18px; } .gt-doc li { margin: 4px 0; }
+.gt-doc table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 8px 0; }
+.gt-doc td, .gt-doc th { border-bottom: 1px solid rgba(var(--fg-rgb), .1); padding: 6px 4px; text-align: left; vertical-align: top; }
+.gt-doc th { color: var(--text-2); font-weight: 600; }
+.gt-doc blockquote { margin: 8px 0; padding: 8px 12px; background: rgba(var(--acc-rgb), .08); border-radius: 8px; color: var(--text-2); font-size: 12px; }
+.gt-doc.in-app { padding-top: 6px; }

@@ -74,14 +74,16 @@
     ['Restaurar backup', 'restaurar importar', 'dados', 'import'],
     ['Dados de exemplo', 'exemplo demo teste graficos', 'dados', 'demo'],
     ['Apagar tudo', 'apagar resetar limpar', 'menu', 'reset'],
-    ['Perfil', 'perfil nome foto conta', 'perfil', ''],
+    ['Perfil', 'perfil nome foto', 'perfil', ''],
+    ['Conta Gravity', 'conta login entrar senha google sincronizar nuvem excluir conta', 'conta', ''],
   ];
   const norm = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-  const CAT = { treino: 'Treino', aparencia: 'Aparência', voz: 'Voz no treino', lembretes: 'Lembretes', app: 'App', dados: 'Seus dados', menu: 'Configurações', perfil: 'Perfil' };
+  const CAT = { conta: 'Perfil', treino: 'Treino', aparencia: 'Aparência', voz: 'Voz no treino', lembretes: 'Lembretes', app: 'App', dados: 'Seus dados', menu: 'Configurações', perfil: 'Perfil' };
 
   // Abre uma subtela e destaca a linha pedida.
   function go(cat, row, label) {
     if (cat === 'perfil') { push(Profile2()); return; }
+    if (cat === 'conta') { push(Account()); return; }
     if (cat === 'voz' && row === 'voice') { push(Screens.VoiceSettings()); return; }
     if (cat !== 'menu') push(Page(cat));
     if (row) setTimeout(() => News.spotlight('[data-row="' + row + '"]', label || ''), 380);
@@ -176,7 +178,7 @@
           ${cap('Conheça o app')}${box(link('news', 'sparkle', 'Novidades', 'O que mudou em cada versão', 'news')
             + link('tips', 'info', 'Você sabia?', window.TipsFx ? TipsFx.discovered() + ' de ' + TipsFx.TIPS.length + ' funções descobertas' : 'Funções do app', 'tips'))}
           ${cap('Ajude a melhorar')}${box(link('feedback', 'note', 'Sugestões e problemas', 'Envie uma ideia, relate um problema ou faça um elogio', 'feedback'))}
-          ${cap('Informações')}${box(link('about', 'info', 'Sobre o Gravity', 'Versão de teste · Android e iPhone'))}`,
+          ${cap('Informações')}${box(link('about', 'info', 'Sobre o Gravity', 'Versão de teste · Android e iPhone') + link('terms', 'note', 'Termos de uso', 'Versão ' + ((window.LEGAL && LEGAL.version) || '1.0')) + link('priv', 'note', 'Política de privacidade', 'Como seus dados são usados'))}`,
       dados: () => `<div class="card cf-app-now"><span class="ic-big">${icon('download')}</span><div class="grow"><b>${st().lastBackup ? 'Backup feito' : 'Sem backup ainda'}</b><small>${st().lastBackup ? 'Último: ' + dateBR(st().lastBackup) : 'Salve uma cópia dos seus treinos'}</small></div><button class="btn lime sm" data-a="export">Fazer backup</button></div>
           ${cap('Proteção')}${box(sw('Backup automático semanal', window.Android ? 'Salva toda semana em Downloads/Gravity (guarda os 4 últimos)' : 'Lembra toda semana de salvar o backup', 'autoBackup'))}
           ${cap('Backup')}${box(link('export', 'download', 'Fazer backup', 'Envie para o Drive, WhatsApp ou e-mail', 'export') + link('import', 'upload', 'Restaurar backup', 'Substitui os dados atuais', 'import'))}
@@ -195,6 +197,8 @@
         band: bandSheet,
         checkUpdate: () => Updater.check(true),
         feedback: () => Feedback.open(),
+        terms: () => push(LegalDoc('termos')),
+        priv: () => push(LegalDoc('privacidade')),
         news: () => push(News.History()),
         tips: () => push(TipsFx.Collection()),
         about: () => sheet({ render: () => `<h3>Sobre o Gravity</h3><div class="desc">Versão ${News.VERSION} · versão de teste para Android e iPhone.<br><br>Seus treinos ficam só neste aparelho, sem cadastro.<br><br>Fotos dos exercícios: Free Exercise DB (domínio público).</div><button class="btn lime block" style="margin-top:16px" data-a="ok">Fechar</button>`, actions: { ok: closeSheet } }),
@@ -272,7 +276,7 @@
             <div class="card">${icon('flame', 'sm')}<small>Melhor sequência</small><b>${sk.best} ${sk.best === 1 ? 'semana' : 'semanas'}</b></div>
           </div>
           ${cap('Conta Gravity')}
-          <button class="card pf-acc press" data-a="account"><span class="ic">${icon('info', 'sm')}</span><span class="grow"><b>Conta local</b><small>Seus dados estão somente neste aparelho</small></span><span class="pf-soon">Criar conta · Em breve</span></button>
+          ${(() => { const em = window.Cloud && Cloud.email(); return em ? `<button class="card pf-acc press" data-a="account"><span class="ic">${icon('check', 'sm')}</span><span class="grow"><b class="ellipsis">${esc(em)}</b><small>${syncLine()}</small></span>${icon('next', 'sm')}</button>` : `<button class="card pf-acc press" data-a="account"><span class="ic">${icon('info', 'sm')}</span><span class="grow"><b>Conta local</b><small>Seus dados estão somente neste aparelho</small></span><span class="pf-go">Entrar ou criar conta</span></button>`; })()}
           ${cap('Privacidade')}
           ${box(link('privacy', 'info', 'Dados e privacidade', 'Armazenamento local · nenhum dado enviado'))}
           ${cap('Assinatura')}
@@ -333,29 +337,131 @@
 
   const soon = (ic, t, sub) => `<div class="menu-item is-off" aria-disabled="true"><span class="ic">${icon(ic, 'sm')}</span><span class="grow">${t}<div class="pf-soon sm">${sub || 'Em breve'}</div></span></div>`;
 
+  // ====================== CONTA GRAVITY (login 1ª parte, 17/11) ======================
+  const when = (ts) => { if (!ts) return 'ainda não'; const d = new Date(ts), t = new Date(); const hm = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); return d.toDateString() === t.toDateString() ? 'hoje, ' + hm : d.toLocaleDateString('pt-BR') + ', ' + hm; };
+  const syncLine = () => { const c = Cloud.state(); return c.on ? 'Sincronização ligada · última: ' + when(c.lastSync) : 'Sincronização desligada'; };
+
+  // Pergunta de consentimento antes de ligar a sincronização (LGPD: dados de treino e corpo).
+  function consentSheet(done) {
+    sheet({
+      render: () => `<h3>Ligar a sincronização?</h3><div class="desc">Seus <b>treinos, planos, medidas do corpo e configurações</b> ficam guardados na nuvem do Google (Firebase), ligados à sua conta, para você recuperar em outro celular ou se reinstalar o app.</div>
+        <div class="list" style="margin-top:8px">
+          <div class="menu-item"><span class="ic">${icon('camera', 'sm')}</span><span class="grow">Fotos de progresso <b>não</b> sobem</span></div>
+          <div class="menu-item"><span class="ic">${icon('info', 'sm')}</span><span class="grow">Tudo continua salvo neste celular também</span></div>
+          <div class="menu-item"><span class="ic">${icon('trash', 'sm')}</span><span class="grow">Dá para desligar ou excluir a conta e os dados da nuvem quando quiser</span></div></div>
+        <button class="btn lime block" style="margin-top:16px" data-a="yes">Concordo, ligar</button><button class="btn ghost block" style="margin-top:8px" data-a="no">Agora não</button>`,
+      actions: {
+        yes: async () => { closeSheet(); Cloud.set({ on: true, consentAt: Date.now() }); try { toast('Sincronizando…'); await Cloud.push(true); toast('✓ Sincronizado'); } catch (e) { toast(Cloud.msg(e)); } refresh(); done && done(); },
+        no: () => { closeSheet(); done && done(); },
+      },
+    });
+  }
+  // Depois de entrar: se já existe cópia na nuvem, pergunta o que fazer; se não, oferece ligar a sincronização.
+  const hasLocal = () => Store.state.plans.length > 0 || Store.state.sessions.some((x) => !x.demo);
+  let afterBusy = false;
+  async function afterLogin() {
+    if (afterBusy) return; afterBusy = true; setTimeout(() => { afterBusy = false; }, 8000);
+    let info = null;
+    try { info = await Cloud.cloudInfo(); } catch (e) { toast(Cloud.msg(e)); return; }
+    const consented = !!Cloud.state().on;
+    if (!info || !info.parts) {
+      if (!consented) { setTimeout(() => consentSheet(), 300); return; }
+      try { await Cloud.push(true); if (hasLocal()) toast('✓ Seus dados deste celular foram salvos na sua conta'); } catch (e) { toast(Cloud.msg(e)); }
+      return;
+    }
+    if (!hasLocal()) { try { toast('Trazendo seus dados…'); await Cloud.pull(); Cloud.set({ on: true, consentAt: Cloud.state().consentAt || Date.now() }); toast('✓ Seus dados foram restaurados'); UI.switchTab('home', true); } catch (e) { toast(Cloud.msg(e)); } return; }
+    sheet({
+      render: () => `<h3>Encontramos seus dados</h3><div class="desc">Esta conta já tem uma cópia na nuvem (de ${when(info.updatedAt)}, app v${esc(info.app || '?')}), e este celular também tem dados. Qual você quer manter?</div>
+        <button class="btn lime block" style="margin-top:14px" data-a="pull">Trazer da nuvem para este celular</button>
+        <div class="small muted" style="margin:6px 2px 0">Substitui os dados deste celular pelos da nuvem.</div>
+        <button class="btn ghost block" style="margin-top:14px" data-a="keep">Manter os deste celular</button>
+        <div class="small muted" style="margin:6px 2px 0">A cópia da nuvem é substituída pela deste celular.</div>`,
+      actions: {
+        pull: async () => { closeSheet(); try { toast('Trazendo da nuvem…'); await Cloud.pull(); Cloud.set({ on: true, consentAt: Cloud.state().consentAt || Date.now() }); toast('✓ Dados restaurados'); UI.switchTab('home', true); } catch (e) { toast(Cloud.msg(e)); } },
+        keep: async () => { closeSheet(); if (!Cloud.state().on) { setTimeout(() => consentSheet(), 300); return; } try { await Cloud.push(true); toast('✓ Seus dados deste celular foram salvos na sua conta'); } catch (e) { toast(Cloud.msg(e)); } },
+      },
+    });
+  }
+  Cloud.afterLogin = afterLogin;
+
   function Account() {
-    return {
+    let email = '', pass = '', busy = false, off = null;
+    const run = async (fn) => { if (busy) return; if (navigator.onLine === false) { toast('Sem conexão com a internet'); return; } busy = true; refresh(); try { await fn(); } catch (e) { toast(Cloud.msg(e)); } busy = false; refresh(); };
+    const def = {
       hideNav: true,
-      render: () => topbar('Conta Gravity') + `<div class="content cf-c">
-        <div class="card cf-app-now"><span class="av">${Screens.emblem(28)}</span><div class="grow"><b>Conta local</b><small>Ainda não há cadastro</small></div></div>
-        ${cap('Por que criar uma conta')}${box([['repeat', 'Sincronizar aparelhos', 'Seus treinos, ajustes e progresso em todos os seus aparelhos'], ['download', 'Recuperar seus dados', 'Se trocar de celular ou reinstalar o app'], ['dumbbell', 'Receber treinos de um profissional', 'Conecte-se a um personal e receba treinos no app']].map(([ic, t, s]) => `<div class="menu-item"><span class="ic">${icon(ic, 'sm')}</span><span class="grow">${t}<div class="small muted">${s}</div></span></div>`).join(''))}
-        <button class="btn block cf-off" disabled aria-disabled="true">Criar conta · Em breve</button>
-        <div class="small muted cf-note">${icon('info', 'sm')} Quando a conta existir, você poderá entrar de várias formas. Por enquanto, tudo continua só neste aparelho, sem cadastro.</div></div>`,
-      actions: { back: pop },
+      render: () => {
+        const u = Cloud.user(), c = Cloud.state(), logged = !!u;
+        if (!logged) return topbar('Conta Gravity') + `<div class="content cf-c">
+          <div class="card cf-app-now"><span class="av">${Screens.emblem(28)}</span><div class="grow"><b>Conta local</b><small>${c.email ? 'Conectando…' : 'Seus dados estão só neste aparelho'}</small></div></div>
+          ${cap('Por que criar uma conta')}${box([['repeat', 'Sincronizar aparelhos', 'Seus treinos, planos e medidas em outro celular'], ['download', 'Recuperar seus dados', 'Se trocar de celular ou reinstalar o app']].map(([ic, t, s2]) => `<div class="menu-item"><span class="ic">${icon(ic, 'sm')}</span><span class="grow">${t}<div class="small muted">${s2}</div></span></div>`).join(''))}
+          ${cap('Entrar ou criar conta')}
+          <div class="card cf-box ac-form">
+            <label class="ac-f"><span>E-mail</span><input class="input" type="email" autocomplete="email" inputmode="email" data-in="em" value="${esc(email)}" placeholder="seu@email.com"></label>
+            <label class="ac-f"><span>Senha</span><input class="input" type="password" autocomplete="current-password" data-in="pw" value="${esc(pass)}" placeholder="Mínimo 6 caracteres"></label>
+            <div class="ac-row"><button class="btn lime" data-a="in" ${busy ? 'disabled' : ''}>Entrar</button><button class="btn ghost" data-a="up" ${busy ? 'disabled' : ''}>Criar conta</button></div>
+            <button class="link ac-forgot" data-a="forgot">Esqueci minha senha</button>
+          </div>
+          <div class="ac-or"><i></i><span>ou</span><i></i></div>
+          <button class="btn block ac-google" data-a="google" ${busy ? 'disabled' : ''}><span class="g">G</span>Entrar com Google</button>
+          <div class="small muted cf-note">${icon('info', 'sm')} Entrar não envia nada sozinho: depois você escolhe se quer ligar a sincronização.</div></div>`;
+        return topbar('Conta Gravity') + `<div class="content cf-c">
+          <div class="card cf-app-now"><span class="av">${Profile.avatarHTML(28)}</span><div class="grow"><b class="ellipsis" style="text-transform:none;font-size:16px">${esc(u.email || 'Conta Google')}</b><small class="${c.on ? 'ok' : ''}">${c.on ? icon('check', 'sm') : ''} ${syncLine()}</small></div></div>
+          ${cap('Sincronização')}${box(`<div class="switch-row" data-a="sync"><div class="grow"><div>Sincronizar com a nuvem</div><div class="small muted">Treinos, planos, medidas e configurações · fotos de progresso nunca sobem</div></div><div class="switch ${c.on ? 'on' : ''}"></div></div>`
+            + `<button class="menu-item" data-a="now" ${c.on && !busy ? '' : 'disabled'}><span class="ic">${icon('repeat', 'sm')}</span><span class="grow">Sincronizar agora<div class="small muted">Última: ${when(c.lastSync)}</div></span></button>`
+            + `<button class="menu-item" data-a="restore"><span class="ic">${icon('download', 'sm')}</span><span class="grow">Trazer da nuvem<div class="small muted">Substitui os dados deste celular pela cópia da nuvem</div></span></button>`)}
+          ${cap('Conta')}${box(`<button class="menu-item" data-a="out"><span class="ic">${icon('back', 'sm')}</span><span class="grow">Sair da conta<div class="small muted">Os dados continuam neste celular</div></span></button>`
+            + `<button class="menu-item danger" data-a="del"><span class="ic">${icon('trash', 'sm')}</span><span class="grow">Excluir conta<div class="small muted">Apaga a conta e os dados da nuvem</div></span></button>`)}
+          <div class="small muted cf-note">${icon('info', 'sm')} Tudo continua salvo neste celular. A nuvem é uma cópia para você não perder nada.</div></div>`;
+      },
+      after: () => { if (!off) off = Cloud.on(() => def.el && refresh()); if (!Cloud.ready() && Cloud.state().uid) Cloud.load().catch(() => {}); },
+      leave: () => { if (off) { off(); off = null; } },
+      actions: {
+        back: pop,
+        em: (ds, el) => { email = el.value; },
+        pw: (ds, el) => { pass = el.value; },
+        in: () => run(async () => { await Cloud.signIn(email, pass); pass = ''; toast('Conta conectada'); afterLogin(); }),
+        up: () => run(async () => { await Cloud.signUp(email, pass); pass = ''; toast('Conta criada'); afterLogin(); }),
+        forgot: () => { if (!email.trim()) { toast('Digite seu e-mail acima'); return; } run(async () => { await Cloud.reset(email); toast('Enviamos um e-mail para redefinir a senha'); }); },
+        google: () => run(async () => { const u = await Cloud.google(); if (u) { toast('Conta conectada'); afterLogin(); } else if (window.Android) toast('Termine o login no navegador e volte ao app'); }),
+        sync: () => { const c = Cloud.state(); if (c.on) { Cloud.set({ on: false }); toast('Sincronização desligada'); refresh(); } else consentSheet(); },
+        now: () => run(async () => { await Cloud.push(true); toast('✓ Sincronizado'); }),
+        restore: () => confirmSheet('Trazer da nuvem?', 'Os dados deste celular serão substituídos pela cópia da nuvem.', 'Trazer da nuvem', () => run(async () => { await Cloud.pull(); toast('✓ Dados restaurados'); })),
+        out: () => confirmSheet('Sair da conta?', 'Seus dados continuam neste celular. A sincronização para até você entrar de novo.', 'Sair', () => run(async () => { await Cloud.signOut(); toast('Você saiu da conta'); })),
+        del: () => confirmSheet('Excluir conta?', 'A conta e a cópia dos seus dados na nuvem serão apagadas para sempre. Os dados deste celular continuam.', 'Excluir conta', () => run(async () => {
+          try { await Cloud.deleteAccount(); toast('Conta excluída'); }
+          catch (e) { if (e && e.code === 'auth/requires-recent-login') { toast('Por segurança, saia, entre de novo e repita'); } else throw e; }
+        }), true),
+      },
     };
+    return def;
   }
 
   function Privacy() {
     return {
       hideNav: true,
-      render: () => topbar('Dados e privacidade') + `<div class="content cf-c">
-        <div class="card cf-app-now"><span class="ic-big">${icon('download')}</span><div class="grow"><b>Armazenamento local</b><small>Nenhum dado enviado</small></div></div>
-        <div class="card cf-box cf-priv">${icon('info', 'sm')}<div><b>Seus treinos e dados do corpo são privados.</b><small>Eles ficam apenas neste aparelho. Qualquer envio para a nuvem no futuro será sempre explicado antes de acontecer.</small></div></div>
-        ${cap('Sincronização')}${box(soon('dumbbell', 'Sincronizar treinos') + soon('weight', 'Sincronizar medidas') + soon('camera', 'Sincronizar fotos de progresso', 'Em breve · nunca automático'))}
-        ${cap('Controle dos dados')}${box(soon('download', 'Baixar meus dados', 'Disponível com a Conta Gravity') + soon('repeat', 'Gerenciar aparelhos', 'Disponível com a Conta Gravity') + soon('trash', 'Excluir conta', 'Disponível com a Conta Gravity'))}
-        <div class="small muted cf-note">${icon('info', 'sm')} Hoje, para guardar ou levar seus dados, use Configurações › Seus dados › Fazer backup.</div></div>`,
-      actions: { back: pop },
+      render: () => { const u = Cloud.user() || (Cloud.state().uid ? {} : null), c = Cloud.state();
+        return topbar('Dados e privacidade') + `<div class="content cf-c">
+        <div class="card cf-app-now"><span class="ic-big">${icon('download')}</span><div class="grow"><b>${u && c.on ? 'Celular + nuvem' : 'Armazenamento local'}</b><small>${u && c.on ? 'Cópia na nuvem · última: ' + when(c.lastSync) : 'Nenhum dado enviado'}</small></div></div>
+        <div class="card cf-box cf-priv">${icon('info', 'sm')}<div><b>Seus treinos e dados do corpo são privados.</b><small>Ficam neste aparelho. Só vão para a nuvem se você entrar na Conta Gravity e ligar a sincronização, e só a sua conta tem acesso a eles.</small></div></div>
+        ${cap('Sincronização')}${box(`<button class="menu-item" data-a="acc"><span class="ic">${icon('repeat', 'sm')}</span><span class="grow">Treinos, planos e medidas<div class="small muted">${u ? (c.on ? 'Sincronizando com a nuvem' : 'Desligada') : 'Entre na Conta Gravity para ligar'}</div></span>${icon('next', 'sm')}</button>`
+          + soon('camera', 'Fotos de progresso', 'Nunca sobem para a nuvem'))}
+        ${cap('Controle dos dados')}${box(`<button class="menu-item" data-a="exp"><span class="ic">${icon('download', 'sm')}</span><span class="grow">Baixar meus dados<div class="small muted">Arquivo com todos os seus dados (backup)</div></span>${icon('next', 'sm')}</button>`
+          + soon('repeat', 'Gerenciar aparelhos', 'Em breve')
+          + `<button class="menu-item ${u ? 'danger' : 'is-off'}" data-a="acc" ${u ? '' : 'aria-disabled="true"'}><span class="ic">${icon('trash', 'sm')}</span><span class="grow">Excluir conta<div class="small muted">${u ? 'Em Conta Gravity' : 'Disponível com a Conta Gravity'}</div></span>${icon('next', 'sm')}</button>`)}
+        ${cap('Consentimento')}${box(link('terms', 'note', 'Termos de uso', 'Versão ' + ((window.LEGAL && LEGAL.version) || '1.0')) + link('priv', 'note', 'Política de privacidade', c.consentAt ? 'Aceita em ' + new Date(c.consentAt).toLocaleDateString('pt-BR') : 'Como seus dados são usados'))}
+        </div>`; },
+      actions: {
+        back: pop,
+        acc: () => push(Account()),
+        terms: () => push(LegalDoc('termos')),
+        priv: () => push(LegalDoc('privacidade')),
+        exp: () => { Native.share('Backup Gravity', Store.exportBackup(), 'gravity-backup-' + Store.iso(Store.today()) + '.json'); Store.backupDone(); },
+      },
     };
+  }
+
+  function LegalDoc(k) {
+    return { hideNav: true, render: () => topbar(k === 'termos' ? 'Termos de uso' : 'Privacidade') + `<div class="content cf-c gt-doc in-app">${(window.LEGAL || {})[k] || ''}</div>`, actions: { back: pop } };
   }
 
   // Atalho usado por Novidades e Você sabia?: abre Configurações, a subtela e destaca a linha.

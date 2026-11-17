@@ -1,8 +1,9 @@
 // Gerado por tools/web.sh. Guarda o app no celular para abrir sem internet; versão nova troca o cache.
-const CACHE = 'gravity-0.49.2-20261117014055';
+const CACHE = 'gravity-0.50.0-20261117173233';
 const FILES = [
   './',
   "css/app.css",
+  "entrar-google.html",
   "fonts/inter-latin-500-normal.woff2",
   "fonts/inter-latin-600-normal.woff2",
   "fonts/inter-latin-800-normal.woff2",
@@ -553,9 +554,12 @@ const FILES = [
   "js/analytics.js",
   "js/anatomy-real.js",
   "js/anatomy.js",
+  "js/cloud.js",
   "js/erros.js",
   "js/feedback.js",
+  "js/gate.js",
   "js/goals.js",
+  "js/legal.js",
   "js/library-extra.js",
   "js/library-new.js",
   "js/library.js",
@@ -582,6 +586,9 @@ const FILES = [
   "js/tools.js",
   "js/ui.js",
   "js/updater.js",
+  "js/vendor/firebase/firebase-app-compat.js",
+  "js/vendor/firebase/firebase-auth-compat.js",
+  "js/vendor/firebase/firebase-firestore-compat.js",
   "js/voice.js",
   "manifest.webmanifest",
 ];
