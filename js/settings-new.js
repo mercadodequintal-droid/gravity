@@ -174,7 +174,7 @@
           <div class="small muted cf-note">${icon('info', 'sm')} Os lembretes funcionam nos dias do seu plano de treino.</div>`;
       },
       app: () => `<div class="card cf-app-now"><span class="av">${Screens.emblem(28)}</span><div class="grow"><b>Gravity</b><small>Versão ${News.VERSION}</small><small class="${Updater.available ? 'gold' : 'ok'}">${Updater.available ? 'Nova versão ' + esc(Updater.available.versionName) + ' disponível' : icon('check', 'sm') + ' Em dia'}</small></div><button class="btn lime sm" data-a="checkUpdate" data-row="checkUpdate">Verificar</button></div>
-          ${cap('Atualizações')}${box(sw('Avisar quando sair versão nova', window.Android ? 'Consulta ao abrir o app, se houver internet' : 'Mostra o aviso para recarregar na hora', 'updateCheck'))}
+          ${Updater.store ? '' : cap('Atualizações') + box(sw('Avisar quando sair versão nova', window.Android ? 'Consulta ao abrir o app, se houver internet' : 'Mostra o aviso para recarregar na hora', 'updateCheck'))}
           ${cap('Conheça o app')}${box(link('news', 'sparkle', 'Novidades', 'O que mudou em cada versão', 'news')
             + link('tips', 'info', 'Você sabia?', window.TipsFx ? TipsFx.discovered() + ' de ' + TipsFx.TIPS.length + ' funções descobertas' : 'Funções do app', 'tips'))}
           ${cap('Ajude a melhorar')}${box(link('feedback', 'note', 'Sugestões e problemas', 'Envie uma ideia, relate um problema ou faça um elogio', 'feedback'))}

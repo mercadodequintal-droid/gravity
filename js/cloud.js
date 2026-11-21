@@ -73,7 +73,7 @@
   // Google: no Android, abre a página no navegador e volta pelo link gravity://auth (onGoogleToken).
   // No iPhone e no navegador, abre a janela do Google direto.
   async function google() {
-    if (window.Android) { put({ waitingGoogle: Date.now() }); UI.Native.open(GOOGLE_PAGE); return null; }
+    if (window.Android) { put({ waitingGoogle: Date.now() }); UI.Native.open(GOOGLE_PAGE + (window.Android.pkg ? '?pkg=' + encodeURIComponent(window.Android.pkg()) : '')); return null; }
     await load();
     const p = new window.firebase.auth.GoogleAuthProvider();
     try { const r = await auth.signInWithPopup(p); return r.user; }

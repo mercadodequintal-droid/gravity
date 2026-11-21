@@ -4,6 +4,9 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.51.1', date: '2026-11-21', items: [
+      { icon: 'note', t: 'Termos e Privacidade atualizados', d: 'O Gravity agora é oferecido pela Mercado de Quintal. Os textos estão em Configurações › App › Informações e no site gravityapp.com.br.' },
+    ] },
     { v: '0.51.0', date: '2026-11-17', items: [
       { icon: 'target', t: 'Plano Longevidade 60+', d: 'Força, equilíbrio e potência para o dia a dia, em 2 ou 3 dias por semana, com aquecimento e descanso maior. Está em Planos › Criar novo plano › Modelo pronto.', main: true },
       { icon: 'dumbbell', t: '2 exercícios novos', d: 'Sentar e levantar da cadeira e Caminhada calcanhar-ponta (contada em passos).' },

@@ -5,6 +5,8 @@
   'use strict';
   const BASE = 'https://mercadodequintal-droid.github.io/gravity/';
   const A = window.Android;
+  // Versão da Google Play: quem atualiza é a loja (a política da Play não permite o app baixar APK).
+  const STORE = !!(A && A.isStore && A.isStore());
   let avail = null;       // { versionCode, versionName, apk, notes } da versão publicada mais nova
   let progress = null;    // Android: 0–100 durante o download
   let webReady = false;   // iPhone: versão nova já baixada, falta recarregar
@@ -14,6 +16,7 @@
 
   // force = verificação pedida em Configurações (mostra o resultado).
   function check(force) {
+    if (STORE) { if (force) UI.toast('As atualizações chegam pela Google Play'); return; }
     if (!force && !on()) return;
     if (A && A.appVersion) {
       if (!navigator.onLine) { if (force) UI.toast('Sem internet para verificar'); return; }
@@ -69,5 +72,5 @@
     if (p >= 100) setTimeout(() => { progress = null; homeRefresh(); }, 4000);
   };
 
-  window.Updater = { check, card, install, later, get available() { return avail; }, get webReady() { return webReady; } };
+  window.Updater = { store: STORE, check, card, install, later, get available() { return avail; }, get webReady() { return webReady; } };
 })();

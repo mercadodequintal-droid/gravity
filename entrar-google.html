@@ -30,7 +30,9 @@
       const r = await firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider());
       const tok = r.credential && r.credential.idToken;
       if (!tok) throw new Error('sem token');
-      const url = 'intent://auth?t=' + encodeURIComponent(tok) + '#Intent;scheme=gravity;package=com.meutreino.app;end';
+      // Pacote do app que abriu esta página (versão da loja ou a do site); sem ele, a do site.
+      const pk = (new URLSearchParams(location.search).get('pkg') || '').replace(/[^a-z0-9._]/gi, '') || 'com.meutreino.app';
+      const url = 'intent://auth?t=' + encodeURIComponent(tok) + '#Intent;scheme=gravity;package=' + pk + ';end';
       $('back').href = url; $('back').style.display = 'block'; $('go').style.display = 'none';
       $('txt').textContent = 'Pronto! Toque em "Voltar ao Gravity" para terminar.';
       try { location.href = url; } catch (e) { /* o botão resolve */ }
