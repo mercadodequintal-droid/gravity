@@ -163,7 +163,12 @@
   X.forEach((x, i) => {
     const [nome, grupo, equip, pri, sec, tag, lote, dicas, extra] = x;
     const id = 'nx' + String(i + 1).padStart(3, '0');
-    const e = { id, nome, grupo, equip, musculos: m(pri), secundarios: m(sec), img: IMG[id] || [], dicas, tag, lote, novo: true, foto: IMG[id] ? 'fedb' : '' };
+    // Imagens de bancos abertos (22/11), adaptadas ao app em img/OA_<id>_n.jpg: [fonte, quadros].
+    // oei = Open Exercise Illustrations (CC0) · flow = Flow exercise dataset (CC0) · wg = Workout Guide/Everkinetic (CC BY-SA 4.0).
+    // Têm prioridade sobre o IMG (o nx063 tinha imagem provisória).
+    const OPEN = Object.assign({ nx102: ['wg', 2], nx107: ['wg', 2], nx045: ['wg', 2] }, {'nx006': ['oei', 2], 'nx012': ['oei', 2], 'nx013': ['oei', 2], 'nx018': ['oei', 2], 'nx020': ['oei', 2], 'nx022': ['oei', 2], 'nx023': ['oei', 2], 'nx032': ['oei', 2], 'nx033': ['oei', 2], 'nx034': ['oei', 2], 'nx035': ['oei', 2], 'nx044': ['oei', 2], 'nx057': ['oei', 2], 'nx064': ['oei', 2], 'nx066': ['oei', 2], 'nx067': ['oei', 2], 'nx069': ['oei', 2], 'nx070': ['oei', 2], 'nx074': ['oei', 2], 'nx078': ['oei', 2], 'nx081': ['oei', 2], 'nx084': ['oei', 2], 'nx088': ['oei', 2], 'nx090': ['oei', 2], 'nx091': ['oei', 2], 'nx093': ['oei', 2], 'nx098': ['oei', 2], 'nx108': ['oei', 1], 'nx109': ['oei', 1], 'nx110': ['oei', 2], 'nx112': ['oei', 2], 'nx114': ['oei', 2], 'nx115': ['oei', 2], 'nx116': ['oei', 2], 'nx118': ['oei', 2], 'nx121': ['oei', 2], 'nx122': ['oei', 1], 'nx123': ['oei', 1], 'nx129': ['oei', 2], 'nx131': ['oei', 2], 'nx132': ['oei', 1], 'nx133': ['oei', 2], 'nx063': ['oei', 2], 'nx019': ['flow', 2], 'nx085': ['flow', 2], 'nx111': ['flow', 2], 'nx014': ['wg', 2], 'nx076': ['wg', 2], 'nx080': ['wg', 2], 'nx097': ['wg', 2]});
+    const op = OPEN[id] ? Array.from({ length: OPEN[id][1] }, (_, n) => 'img/OA_' + id + '_' + n + '.jpg') : null;
+    const e = { id, nome, grupo, equip, musculos: m(pri), secundarios: m(sec), img: op || IMG[id] || [], dicas, tag, lote, novo: true, foto: op ? OPEN[id][0] : IMG[id] ? 'fedb' : '' };
     if (extra && extra.t) e.tipo = 'tempo';
     if (extra && extra.alias) e.alias = extra.alias;
     L.push(e);

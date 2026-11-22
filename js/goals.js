@@ -337,6 +337,10 @@
     { id: 'pullups', nome: 'Barras máximas', un: 'reps', up: true, how: 'Máximo de barras seguidas, queixo acima da barra, descendo até estender.' },
     { id: 'situps', nome: 'Abdominais em 1 minuto', un: 'reps', up: true, how: 'Máximo de abdominais em 60 segundos.' },
     { id: 'plank', nome: 'Prancha máxima', un: 'tempo', up: true, how: 'Tempo máximo em prancha com o corpo reto.' },
+    { id: 'stepdown', nome: 'Descida do degrau em 30 s', un: 'reps', up: true, how: 'Degrau de ~15 cm, apoiado numa perna. Desça o outro calcanhar até encostar no chão e volte, joelho alinhado com o pé. Conte as repetições boas em 30 s, de cada lado; anote o lado pior.' },
+    { id: 'oneleg', nome: 'Equilíbrio numa perna, olhos fechados', un: 's', up: true, how: 'Descalço, perto de uma parede, mãos na cintura. Levante um pé, feche os olhos e conte até tocar o chão ou abrir os olhos. Melhor de 3, no lado pior.' },
+    { id: 'sideplank', nome: 'Prancha lateral máxima', un: 'tempo', up: true, how: 'Apoiado no antebraço e na lateral do pé, corpo reto. Tempo até o quadril cair. Anote o lado pior.' },
+    { id: 'extrot', nome: 'Rotação externa com elástico', un: 'reps', up: true, how: 'Cotovelo colado ao corpo a 90°, mesmo elástico sempre. Repetições completas até cansar ou doer mais de 3 de 10. Anote o lado pior.' },
     { id: 'sitstand', nome: 'Sentar e levantar em 30 s', un: 'reps', up: true, how: 'Cadeira de ~43 cm, braços cruzados no peito. Conte quantas vezes senta e levanta em 30 s. Teste usado para avaliar força funcional.' },
   ];
   const test = (id) => TESTS.find((t) => t.id === id);

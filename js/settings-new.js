@@ -56,7 +56,7 @@
     ['Perguntar como você está hoje', 'check-in sono energia dor', 'treino', 'checkin'],
     ['Perguntar como foi a série', 'esforco rir limite pesado tranquilo', 'treino', 'askRir'],
     ['Minha academia', 'academia aparelhos maquinas', 'treino', 'gym'],
-    ['Tema', 'tema cor aparencia dourado galaxia titanio azul luana atelier', 'aparencia', 'theme'],
+    ['Tema', 'tema cor aparencia dourado sangue do inimigo vermelho pai de planta verde azul luana atelier', 'aparencia', 'theme'],
     ['Abertura animada', 'abertura scouter splash entrada', 'aparencia', 'splash'],
     ['Voz no treino', 'voz fala avisos', 'voz', 'voice'],
     ['Som no fim do descanso', 'som bipe beep', 'voz', 'sound'],
@@ -178,7 +178,7 @@
           ${cap('Conheça o app')}${box(link('news', 'sparkle', 'Novidades', 'O que mudou em cada versão', 'news')
             + link('tips', 'info', 'Você sabia?', window.TipsFx ? TipsFx.discovered() + ' de ' + TipsFx.TIPS.length + ' funções descobertas' : 'Funções do app', 'tips'))}
           ${cap('Ajude a melhorar')}${box(link('feedback', 'note', 'Sugestões e problemas', 'Envie uma ideia, relate um problema ou faça um elogio', 'feedback'))}
-          ${cap('Informações')}${box(link('about', 'info', 'Sobre o Gravity', 'Versão de teste · Android e iPhone') + link('terms', 'note', 'Termos de uso', 'Versão ' + ((window.LEGAL && LEGAL.version) || '1.0')) + link('priv', 'note', 'Política de privacidade', 'Como seus dados são usados'))}`,
+          ${cap('Informações')}${box(link('about', 'info', 'Sobre o Gravity', 'Versão de teste · Android e iPhone') + link('terms', 'note', 'Termos de uso', 'Versão ' + ((window.LEGAL && LEGAL.version) || '1.0')) + link('priv', 'note', 'Política de privacidade', 'Como seus dados são usados') + link('credits', 'camera', 'Créditos das imagens', 'Bancos de imagens abertos'))}`,
       dados: () => `<div class="card cf-app-now"><span class="ic-big">${icon('download')}</span><div class="grow"><b>${st().lastBackup ? 'Backup feito' : 'Sem backup ainda'}</b><small>${st().lastBackup ? 'Último: ' + dateBR(st().lastBackup) : 'Salve uma cópia dos seus treinos'}</small></div><button class="btn lime sm" data-a="export">Fazer backup</button></div>
           ${cap('Proteção')}${box(sw('Backup automático semanal', window.Android ? 'Salva toda semana em Downloads/Gravity (guarda os 4 últimos)' : 'Lembra toda semana de salvar o backup', 'autoBackup'))}
           ${cap('Backup')}${box(link('export', 'download', 'Fazer backup', 'Envie para o Drive, WhatsApp ou e-mail', 'export') + link('import', 'upload', 'Restaurar backup', 'Substitui os dados atuais', 'import'))}
@@ -199,6 +199,7 @@
         feedback: () => Feedback.open(),
         terms: () => push(LegalDoc('termos')),
         priv: () => push(LegalDoc('privacidade')),
+        credits: () => push(Credits()),
         news: () => push(News.History()),
         tips: () => push(TipsFx.Collection()),
         about: () => sheet({ render: () => `<h3>Sobre o Gravity</h3><div class="desc">Versão ${News.VERSION} · versão de teste para Android e iPhone.<br><br>Seus treinos ficam só neste aparelho, sem cadastro.<br><br>Fotos dos exercícios: Free Exercise DB (domínio público).</div><button class="btn lime block" style="margin-top:16px" data-a="ok">Fechar</button>`, actions: { ok: closeSheet } }),
@@ -458,6 +459,18 @@
         exp: () => { Native.share('Backup Gravity', Store.exportBackup(), 'gravity-backup-' + Store.iso(Store.today()) + '.json'); Store.backupDone(); },
       },
     };
+  }
+
+  // Créditos das imagens (22/11): exigido pela licença CC BY-SA 4.0 dos desenhos do Workout Guide.
+  function Credits() {
+    const wg = Store.allExercises().filter((e) => e.foto === 'wg').map((e) => e.nome).sort();
+    return { hideNav: true, render: () => topbar('Créditos das imagens') + `<div class="content cf-c gt-doc in-app">
+      <h2>Free Exercise DB</h2><p>A maioria das fotos dos exercícios vem do <b>Free Exercise DB</b> (github.com/yuhonas/free-exercise-db), um banco de exercícios de <b>domínio público</b> (licença Unlicense), a partir do projeto exercises.json.</p>
+      <h2>Workout Guide e Everkinetic</h2><p>Os desenhos em traço claro de alguns exercícios vêm do <b>Workout Guide</b>, de <b>Bryl Lim</b> (bryllim.com, github.com/bryllim/workout-guide), feito a partir das ilustrações do projeto <b>Everkinetic</b> (everkinetic.com, de Greg Priday). Licença <b>Creative Commons Atribuição-CompartilhaIgual 4.0 Internacional (CC BY-SA 4.0)</b>: creativecommons.org/licenses/by-sa/4.0/deed.pt-br.</p>
+      <p><b>Alterações feitas pelo Gravity:</b> recorte, mudança de tamanho e fundo escuro. As versões adaptadas continuam sob a mesma licença CC BY-SA 4.0.</p>
+      <p>Exercícios com desenhos do Workout Guide: ${wg.map(esc).join(', ')}.</p>
+      <h2>Open Exercise Illustrations e Flow</h2><p>Várias ilustrações de exercícios (manequim em fundo escuro e silhuetas claras) vêm do <b>Open Exercise Illustrations</b> (github.com/hitmanrepo/open-exercise-illustrations) e do <b>Flow exercise dataset</b> (github.com/ozansozuozgit/flow-exercise-dataset), dedicados ao <b>domínio público (CC0 1.0)</b>. Foram redimensionadas e ajustadas ao fundo do app.</p>
+      <h2>Outras imagens</h2><p>As demais imagens do app (fotos de abertura, telas e algumas fotos de exercícios) foram criadas ou licenciadas para o Gravity.</p></div>`, actions: { back: pop } };
   }
 
   function LegalDoc(k) {

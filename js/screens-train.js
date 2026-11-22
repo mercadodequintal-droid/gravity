@@ -73,7 +73,7 @@
         const done_ = completedSessions();
         const level = 1 + Math.floor(done_.length / 10);
         // v0.42: com plano, a foto do atleta fica fixa no topo (à esquerda do GRAVITY); sem a linha "Bom dia".
-        const head = `<div class="topbar">${p ? `<button class="h2-av tb press" data-a="avatar" aria-label="Foto do perfil">${Profile.avatarHTML(26)}</button>` : '<span class="icon-btn plain" style="visibility:hidden"></span>'}<h1 style="text-align:center;letter-spacing:7px;padding-left:7px;color:var(--gold-2);font-family:var(--display);font-size:17px;font-weight:400">Gravity</h1><button class="icon-btn plain" data-a="settings" aria-label="Configurações">${icon('gear')}</button></div>`;
+        const head = `<div class="topbar">${p ? `<button class="h2-av tb press" data-a="avatar" aria-label="Foto do perfil">${Profile.avatarHTML(26)}</button>` : '<span class="icon-btn plain" style="visibility:hidden"></span>'}<h1 style="text-align:center;letter-spacing:7px;padding-left:7px;color:var(--brand-title, var(--gold-2));font-family:var(--display);font-size:17px;font-weight:400">Gravity</h1><button class="icon-btn plain" data-a="settings" aria-label="Configurações">${icon('gear')}</button></div>`;
         const who = `<div class="row appear" style="margin:12px 2px 16px"><button class="emblem-ring avatar press" style="width:50px;height:50px;margin:0" data-a="avatar" aria-label="Foto do perfil">${Profile.avatarHTML(30)}</button>
           <div class="grow"><div class="caps" style="font-size:10px">${greeting()}</div><div class="display" style="font-size:20px;letter-spacing:3px;text-transform:uppercase">${esc(S.settings.name || 'Atleta')}</div></div><button class="level" style="margin:0" data-a="medals">Nível ${level}</button></div>`;
         if (!p) {
@@ -157,7 +157,9 @@
             <div class="btn-row" style="margin-top:12px"><button class="btn ghost sm" data-a="deloadNo">Agora não</button><button class="btn lime sm" data-a="deloadYes">Fazer semana leve</button></div></div>` : '';
         // Tela inicial (v0.37): o "Painel" em blocos (B), que nasceu no tema Azul, vale para todos os temas.
         const hs = 'B';
-        if (hs) return head + homeStyled(hs, { S, p, list, range, t, dow, cta, done, partial, late, pct, setsW, vol, mins, level, upd: Updater.card(), extra: backupCard + deloadCard });
+        if (window.Rehab) Rehab.sync();
+        const rhCard = (window.Rehab ? Rehab.homeCard() : '') + (window.Weak ? Weak.homeCard() : '');
+        if (hs) return head + homeStyled(hs, { S, p, list, range, t, dow, cta, done, partial, late, pct, setsW, vol, mins, level, upd: Updater.card(), extra: rhCard + backupCard + deloadCard });
         return head + `<div class="content">${who}${Updater.card()}${overall}${backupCard}${deloadCard}${quoteCard}${sched}${Screens.muscleCard()}${Screens.strengthCard()}${streakCard}${mission}
           <div class="section-title"><h2>Esta semana</h2><button class="link" data-a="progress">Ver evolução</button></div>${tiles}</div>`;
       },
@@ -190,6 +192,10 @@
         deloadYes: () => { Store.startDeload(); toast('Semana leve ativada por 7 dias'); UI.refresh(); },
         deloadNo: () => { Store.snoozeDeload(); toast('Tudo bem. Pergunto de novo em uma semana.'); UI.refresh(); },
         deloadEnd: () => { Store.endDeload(); toast('Semana leve encerrada'); UI.refresh(); },
+        rhYes: (ds) => Rehab.includeFromPain(ds.r),
+        rhNo: (ds) => { Rehab.snooze(ds.r); UI.refresh(); },
+        wkSeen: () => { Weak.seen(); UI.refresh(); },
+        wkOpen: () => { Weak.seen(); push(Weak.WeakScreen()); },
         open: (ds) => push(WorkoutScreen(ds.id)),
         agenda: () => agendaSheet(),
         day: (ds) => { if (ds.id) push(WorkoutScreen(ds.id)); else agendaSheet(); },
@@ -345,7 +351,7 @@
           const ex = Store.exercise(it.exId);
           const pr = s ? Store.itemProgress(s, it) : null, ok = pr && pr.complete;
           const base = Tools.repsText(it, ex) + (Tools.loadText(it.kg, ex) ? ' · ' + Tools.loadText(it.kg, ex) : '');
-          const meta = s ? base + ' · ' + (ok ? 'feito' : 'falta') : base + (Store.isCardio(ex) ? '' : ' · ' + restLabel(it.rest)) + swapTxt(w.items, i);
+          const meta = (it.opt ? '<span class="opt-tag">Opcional</span>' : '') + (s ? base + ' · ' + (ok ? 'feito' : it.opt ? 'pode pular' : 'falta') : base + (Store.isCardio(ex) ? '' : ' · ' + restLabel(it.rest)) + swapTxt(w.items, i));
           return `<div class="wk-ex press appear" data-a="item" data-i="${i}"><span class="n ${ok ? 'ok' : ''}">${ok ? icon('check', 'sm') : i + 1}</span>${thumb(ex)}<div class="grow"><b class="ellipsis">${esc(ex.nome)}</b><small>${meta}</small>${techChips(w.items, i)}</div>${recIds.includes(Store.exOf(s, it)) ? '<span class="wk-tag">Recorde</span>' : ''}</div>`;
         }).join('');
         const mus = [...new Set(w.items.map((x) => Store.exercise(x.exId).grupo).filter(Boolean))];
@@ -537,6 +543,7 @@
         <div class="list">
           <button class="menu-item" data-a="swap"><span class="ic">${icon('repeat', 'sm')}</span><span class="grow">Trocar o exercício<div class="small muted">Outro para o mesmo músculo, com outro ângulo</div></span></button>
           <button class="menu-item" data-a="light"><span class="ic">${icon('minus', 'sm')}</span><span class="grow">Fazer hoje com 20% menos carga<div class="small muted">Nas séries que faltam</div></span></button>
+          ${window.Rehab && pa && Rehab.SPOT[pa.where] && !pa.strong && !Rehab.info(Rehab.SPOT[pa.where]) ? `<button class="menu-item" data-a="rehab"><span class="ic">${icon('plus', 'sm')}</span><span class="grow">Fortalecer ${esc(pa.where.toLowerCase())} nos próximos treinos<div class="small muted">3 exercícios opcionais, ~8 min</div></span></button>` : ''}
           <button class="menu-item" data-a="ignore"><span class="ic">${icon('x', 'sm')}</span><span class="grow">Ignorar por agora<div class="small muted">Avisa de novo se houver outro registro</div></span></button>
         </div>
         <div class="caps" style="margin:16px 2px 6px">Registros</div>${list.map((p) => `<div class="kv"><span>${shortDateBR(p.date)} · ${esc(p.where)}</span><span class="small ${p.lvl === 2 ? 'late-txt' : 'muted'}">${Store.PAIN_LEVELS[p.lvl]}${p.note ? ' · ' + esc(p.note) : ''}</span></div>`).join('')}
@@ -545,6 +552,7 @@
         swap: () => { closeSheet(); setTimeout(() => Tools.swapSheet(s, it, done), 380); },
         light: () => { s.sets.filter((x) => x.itemId === it.id && !x.done && Number(x.kg) > 0).forEach((x) => { x.kg = Math.round(x.kg * 0.8 * 2) / 2; }); Store.save(); closeSheet(); toast('Carga reduzida em 20% nas séries que faltam'); done(); },
         ignore: () => { Store.snoozePain(exId); closeSheet(); done(); },
+        rehab: () => { closeSheet(); setTimeout(() => Rehab.includeFromPain(Rehab.SPOT[pa.where]), 380); },
       },
     });
   }
@@ -692,6 +700,8 @@
       const pa = live && Store.painAlert(exId, s.id);
       const av = [];
       if (pa) av.push({ warn: true, ic: 'alert', t: `${esc(pa.where)} incomodou ${pa.n} vezes aqui`, d: 'Veja alternativas que poupam a região', a: 'painAlert', b: 'Ver' });
+      const ws = live && window.Weak && Store.isUni(it, ex) && !pr.complete ? Weak.weakSide(exId) : null;
+      if (ws) av.push({ warn: true, ic: 'info', t: `Lado ${ws.side} ${ws.pct}% mais fraco`, d: 'Faça 1 série extra só com esse lado, no fim do exercício', a: 'weakSide', b: 'Ok' });
       if (stall) av.push({ warn: true, ic: 'info', t: '3 treinos sem evoluir', d: 'Veja o que mudar para voltar a progredir', a: 'stall', b: 'Ver' });
       if (showSug) av.push({ ic: 'sparkle', t: `Hora de subir: ${kg(sug.to)}`, d: sug.why === 'range' ? `Você fez ${sug.hi} reps em todas as séries · depois volta para ${sug.lo}` : sug.why === 'rir' ? 'As séries foram tranquilas na última vez' : 'Você fez tudo nas 2 últimas vezes', a: 'applySug', b: 'Aplicar', kg: sug.to });
       const avCard = (v, k) => `<div class="av-one ${v.warn ? 'warn' : ''}" ${k ? 'style="margin-top:6px"' : ''}><span class="ic">${icon(v.ic, 'sm')}</span><span class="t"><b>${v.t}</b>${v.d}</span><button class="go" data-a="${v.a}" data-i="${i}"${v.kg ? ` data-kg="${v.kg}"` : ''}>${v.b}</button></div>`;
@@ -707,7 +717,7 @@
           <div class="tools"><button data-a="howto" data-i="${i}">${icon('info', 'sm')}Como fazer</button><button data-a="video" data-i="${i}">${icon('video', 'sm')}Vídeo</button></div></div>
         <div class="ex-title">${esc(ex.nome)}</div>
         ${swapped ? `<div class="small" style="color:var(--gold);margin:-2px 0 6px">${icon('repeat', 'sm')} Trocado hoje (no plano: ${esc(Store.exercise(it.exId).nome)})</div>` : ''}
-        <div class="plan-line"><span class="chip">${Tools.repsText(it, ex)}${it.tech && it.tech.id === 'r21' && !(s.techOff || {})[it.id] ? ' (7+7+7)' : ''}</span>${Tools.loadText(it.kg, ex) && !(it.tech && it.tech.id === 'w531') ? `<span class="chip">${Tools.loadText(it.kg, ex)}</span>` : ''}${Store.isCardio(ex) ? '' : `<button class="chip blue" data-a="restCfg" data-i="${i}">${icon('timer', 'sm')}Descanso ${restLabel(Store.restFor(s, it))}</button>`}${pr.complete ? `<span class="chip done">${icon('check', 'sm')}Concluído</span>` : ''}</div>
+        <div class="plan-line">${it.opt ? `<span class="chip opt">${icon('plus', 'sm')}Opcional · ${esc(window.Rehab && Rehab.REGIONS[it.blk] ? 'fortalecer ' + Rehab.REGIONS[it.blk].nome.toLowerCase() : 'pode pular')}</span>` : ''}<span class="chip">${Tools.repsText(it, ex)}${it.tech && it.tech.id === 'r21' && !(s.techOff || {})[it.id] ? ' (7+7+7)' : ''}</span>${Tools.loadText(it.kg, ex) && !(it.tech && it.tech.id === 'w531') ? `<span class="chip">${Tools.loadText(it.kg, ex)}</span>` : ''}${Store.isCardio(ex) ? '' : `<button class="chip blue" data-a="restCfg" data-i="${i}">${icon('timer', 'sm')}Descanso ${restLabel(Store.restFor(s, it))}</button>`}${pr.complete ? `<span class="chip done">${icon('check', 'sm')}Concluído</span>` : ''}</div>
         ${pin ? `<button class="pin-note" data-a="pin" data-i="${i}">${icon('note', 'sm')}<span>${esc(pin)}</span></button>` : ''}
         <div class="quick-row">${ex.tipo === 'tempo' ? '' : `<button data-a="warm" data-i="${i}">${icon('flame', 'sm')}Aquecer</button>`}${ex.tipo === 'tempo' || Store.isCardio(ex) ? '' : `<button data-a="metro" data-i="${i}">${icon('timer', 'sm')}Metrônomo</button>`}<button data-a="swap" data-i="${i}">${icon('repeat', 'sm')}Trocar</button>${pin ? '' : `<button data-a="pin" data-i="${i}">${icon('note', 'sm')}Nota fixa</button>`}${live ? `<button data-a="pain" data-i="${i}">${icon('alert', 'sm')}Dor</button>` : ''}</div>
         ${techBanner(items, i, s)}
@@ -983,6 +993,7 @@
         },
         pain: (ds) => { const { s, items } = ctx(); const i = Number(ds.i); painSheet(s, items[i], () => updatePage(i)); },
         painAlert: (ds) => { const { s, items } = ctx(); const i = Number(ds.i); painAlertSheet(s, items[i], () => updatePage(i)); },
+        weakSide: () => toast('Combinado: 1 série extra com o lado mais fraco'),
         modeInfo: () => { const { s } = ctx(); const t = []; if (s.quick) t.push(`<b>Treino rápido (~${s.quick.min} min):</b> descanso mais curto e menos séries.`); if (s.checkin && s.checkin.adj && !s.deload) t.push(`<b>Treino aliviado:</b> 10% menos carga${s.checkin.adj >= 2 ? ' e uma série a menos' : ''}, porque o dia está puxado.`); if (s.deload) t.push('<b>Semana leve:</b> menos séries e 10% menos carga para o corpo recuperar.'); sheet({ render: () => `<h3>Treino de hoje</h3>${t.map((x) => `<div class="suggest" style="margin-top:10px">${icon('sparkle', 'sm')}<span>${x}</span></div>`).join('')}<button class="btn lime block pl-create" style="margin-top:16px" data-a="ok">Entendi</button>`, actions: { ok: closeSheet } }); },
         avAll: (ds) => { const { items } = ctx(); const i = Number(ds.i), id = items[i].id; avOpen[id] = !avOpen[id]; updatePage(i); },
         stall: (ds) => { const { s, items } = ctx(); const i = Number(ds.i); stallSheet(s, items[i], () => updatePage(i)); },
@@ -1099,6 +1110,8 @@
   function finishSheet(sid) {
     const s = Store.session(sid);
     let feel = s.feel || 0, note = s.note || '';
+    // Fortalecer região: nota da dor das regiões cujo bloco foi feito hoje (0 a 6+).
+    const rhRegs = window.Rehab ? Rehab.regionsDone(s) : [], rhVal = {};
     sheet({
       render: () => {
         const pr = Store.sessionProgress(s);
@@ -1106,6 +1119,7 @@
         return `<h3>Finalizar treino</h3><div class="desc">${missing ? `Faltam <b>${missing}</b> exercício${missing > 1 ? 's' : ''}. O treino fica como <b style="color:var(--amber)">incompleto</b> e você pode continuar depois.` : 'Todos os exercícios concluídos. Mandou bem!'}</div>
           <div class="tiles"><div class="card tile"><div class="v num">${clock(Store.activeMs(s))}</div><div class="l">Duração</div></div><div class="card tile"><div class="v num">${pr.setsDone}<small>/${pr.setsTotal}</small></div><div class="l">Séries</div></div><div class="card tile"><div class="v num">${volume(Store.sessionVolume(s))}</div><div class="l">Volume</div></div></div>
           <div class="field"><label>Como foi o treino?</label><div class="feel">${FEEL.map(([v, l]) => `<button class="${String(feel) === v ? 'on' : ''}" data-a="feel" data-v="${v}"><b>${v}</b>${l}</button>`).join('')}</div></div>
+          ${rhRegs.map((r) => `<div class="field"><label>Como ficou o ${esc(Rehab.REGIONS[r].nome.toLowerCase())} hoje? <span class="muted">0 = nada · 10 = muita dor</span></label><div class="rh-score">${[0, 1, 2, 3, 4, 5, 6].map((n) => `<button class="${rhVal[r] === n ? 'on' : ''}" data-a="rhv" data-r="${r}" data-v="${n}">${n === 6 ? '6+' : n}</button>`).join('')}</div>${rhVal[r] > 5 ? '<div class="tiny" style="color:var(--amber);margin-top:6px">Vou diminuir o bloco e segurar a fase até a dor baixar.</div>' : ''}</div>`).join('')}
           <div class="field"><label>Observação geral (opcional)</label><textarea class="note-field" data-in="note" placeholder="Ex.: dormi mal, treino rendeu menos">${esc(note)}</textarea></div>
           <div class="btn-row" style="margin-top:16px"><button class="btn ghost" data-a="no">Voltar</button><button class="btn lime" data-a="ok">Salvar treino</button></div>
           <button class="discard-link" data-a="discard">${icon('trash', 'sm')}Cancelar treino sem salvar</button>`;
@@ -1114,10 +1128,12 @@
         // Cancelar: apaga este treino inteiro (séries, notas, tempo), como se não tivesse começado.
         discard: () => confirmDiscard(sid),
         feel: (ds) => { feel = Number(ds.v); sheetRefresh(); },
+        rhv: (ds) => { rhVal[ds.r] = Number(ds.v); sheetRefresh(); },
         note: (ds, el) => { note = el.value; },
         no: closeSheet,
         ok: () => {
           Store.finishSession(s, feel, note); Rest.stop(); closeSheet();
+          Object.keys(rhVal).forEach((r) => Rehab.score(r, rhVal[r]));
           popTo(1);
           setTimeout(() => celebrate(s), 380);
         },

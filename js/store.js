@@ -242,7 +242,8 @@
   }
   function sessionProgress(session) {
     const fw = findWorkout(session.workoutId);
-    const items = fw ? fw.workout.items : [];
+    // Exercícios opcionais (bloco "Fortalecer região") não contam: o treino fica feito sem eles.
+    const items = fw ? fw.workout.items.filter((it) => !it.opt) : [];
     const total = items.length;
     const complete = items.filter((it) => itemProgress(session, it).complete).length;
     const setsDone = session.sets.filter((x) => x.done).length;
@@ -275,6 +276,7 @@
   }
 
   function startSession(workoutId) {
+    if (window.Rehab) Rehab.sync();
     const fw = findWorkout(workoutId);
     const s = { id: uid('s'), planId: fw.plan.id, workoutId, date: iso(today()), start: Date.now(), end: null, sets: [], completed: [], skipped: [], notes: {}, note: '', feel: 0, finished: false };
     fw.workout.items.forEach((it) => {

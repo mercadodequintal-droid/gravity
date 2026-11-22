@@ -861,25 +861,7 @@ body.live-out .rest-pill { visibility: hidden !important; pointer-events: none !
   --acc-rgb: 217, 178, 95; --acc2-rgb: 243, 212, 140; --fg-rgb: 255, 255, 255; --bg-rgb: 8, 8, 10; --shadow-rgb: 0, 0, 0;
   --photo-filter: grayscale(1) sepia(0.42) contrast(1.12) brightness(0.86);
 }
-[data-theme="galaxia"] {
-  --map-ideal: #a45cff; --map-low: rgba(164,92,255,.4);
-  --bg: #07060b; --bg-2: #0f0d16; --card-a: #16131f; --card-b: #0d0b13;
-  --glass: rgba(255,255,255,.035); --glass-2: rgba(150,64,252,.12); --line: rgba(160,110,255,.16); --line-2: rgba(160,110,255,.36);
-  --text: #ece8f6; --text-2: #9d95b0; --text-3: #5f5872;
-  --gold: #a875ff; --gold-2: #d6bfff; --gold-3: #5c2fa3; --gold-grad: linear-gradient(135deg, #d6bfff 0%, #a46bff 45%, #6a2fd0 100%);
-  --lime: #a875ff; --lime-ink: #10071f; --blue: #9a7be0; --blue-2: #5c2fa3; --violet: #b9a8d8;
-  --acc-rgb: 168, 117, 255; --acc2-rgb: 214, 191, 255; --fg-rgb: 255, 255, 255; --bg-rgb: 7, 6, 11; --shadow-rgb: 0, 0, 0;
-  --photo-filter: grayscale(1) sepia(0.25) hue-rotate(215deg) saturate(1.6) contrast(1.12) brightness(0.84);
-}
-[data-theme="titanio"] {
-  --bg: #0b0c0e; --bg-2: #111315; --card-a: #191b1e; --card-b: #101214;
-  --glass: rgba(255,255,255,.04); --glass-2: rgba(210,216,224,.09); --line: rgba(210,216,224,.12); --line-2: rgba(210,216,224,.3);
-  --text: #eaedf0; --text-2: #979ca4; --text-3: #5c6168;
-  --gold: #cdd3db; --gold-2: #f1f4f7; --gold-3: #6c737d; --gold-grad: linear-gradient(135deg, #f4f6f9 0%, #c3c9d1 45%, #7c848e 100%);
-  --lime: #cdd3db; --lime-ink: #0d0f12; --blue: #b7bfca; --blue-2: #6c737d; --violet: #a9b0ba;
-  --acc-rgb: 205, 211, 219; --acc2-rgb: 241, 244, 247; --fg-rgb: 255, 255, 255; --bg-rgb: 11, 12, 14; --shadow-rgb: 0, 0, 0;
-  --photo-filter: grayscale(1) contrast(1.15) brightness(0.86);
-}
+/* Galáxia e Titânio saíram em 22/11 (v0.52): substituídos por "Sangue do inimigo" e "Pai de planta" (fim do arquivo). */
 /* Azul (v0.31): azul-marinho #0B1733 e azul elétrico, botões de cantos retos, logo G na pedra. Substituiu o tema Branco. */
 [data-theme="azul"] {
   --bg: #0B1733; --bg-2: #0E1C3D; --card-a: #172548; --card-b: #111D3C;
@@ -1276,7 +1258,7 @@ h1, h2, h3, h4, .card b { overflow-wrap: break-word; hyphens: auto; -webkit-hyph
 
 /* ===== v0.42.0 ===== */
 /* Dourado com fundo grafite (opção B, 12/11): menos "tudo escuro", blocos separados do fundo. */
-:root:not([data-theme]), :root[data-theme="dourado"] {
+:root:not([data-theme]), :root:is([data-theme="dourado"], [data-theme="sangue"], [data-theme="planta"]) {
   --bg: #121214; --bg-2: #18181b; --card-a: #202024; --card-b: #18181b; --bg-rgb: 18, 18, 20;
   --line: rgba(217, 178, 95, 0.18); --text-2: #aaa395; --text-3: #77726a;
 }
@@ -1554,7 +1536,7 @@ body.live-out .rest-ask { visibility: hidden !important; }
 .fm-btns .btn { margin: 0 !important; height: 54px; white-space: nowrap; }
 
 /* ===== v0.46.0 · Dourado "amarelo cinema" (Y3) e tela sem balanço ===== */
-:root:not([data-theme]), :root[data-theme="dourado"] {
+:root:not([data-theme]), :root:is([data-theme="dourado"], [data-theme="sangue"], [data-theme="planta"]) {
   --gold: #f5c518; --gold-2: #ffd95a; --gold-3: #9a7a0e; --lime: #f5c518; --lime-ink: #161108;
   --gold-grad: linear-gradient(135deg, #ffd95a 0%, #f5c518 55%, #9a7a0e 100%);
   --acc-rgb: 245, 197, 24; --acc2-rgb: 255, 217, 90;
@@ -2055,16 +2037,16 @@ html, body, .content, .sheet { overscroll-behavior: none; }
 :root .wk-links > button:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
 :root .wk-tag.fill:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri),
 :root .wk-tag.late:not(.on):not(.sel):not(.best):not(.rec):not(.act):not(.dirty):not(.pri) { background-color: rgba(var(--fg-rgb), 0.055) !important; }
-:is(:root:not([data-theme]), :root[data-theme="dourado"]) .btn.lime:not(.save-btn) { background: var(--gold) !important; background-image: none !important; color: var(--lime-ink) !important; }
-:is(:root:not([data-theme]), :root[data-theme="dourado"]) .btn.lime:not(.save-btn) .arrow { background: rgba(0,0,0,.15) !important; color: var(--lime-ink) !important; border: 0 !important; }
-:is(:root:not([data-theme]), :root[data-theme="dourado"]) .save-btn:not(.dirty) { background: rgba(var(--fg-rgb), 0.055) !important; color: var(--text-2) !important; }
-:is(:root:not([data-theme]), :root[data-theme="dourado"]) .theme-opt.on { border-color: var(--gold) !important; }
+:is(:root:not([data-theme]), :root:is([data-theme="dourado"], [data-theme="sangue"], [data-theme="planta"])) .btn.lime:not(.save-btn) { background: var(--gold) !important; background-image: none !important; color: var(--lime-ink) !important; }
+:is(:root:not([data-theme]), :root:is([data-theme="dourado"], [data-theme="sangue"], [data-theme="planta"])) .btn.lime:not(.save-btn) .arrow { background: rgba(0,0,0,.15) !important; color: var(--lime-ink) !important; border: 0 !important; }
+:is(:root:not([data-theme]), :root:is([data-theme="dourado"], [data-theme="sangue"], [data-theme="planta"])) .save-btn:not(.dirty) { background: rgba(var(--fg-rgb), 0.055) !important; color: var(--text-2) !important; }
+:is(:root:not([data-theme]), :root:is([data-theme="dourado"], [data-theme="sangue"], [data-theme="planta"])) .theme-opt.on { border-color: var(--gold) !important; }
 
 /* ===== v0.47.0 · Série feita (K3): ✓ e número cheios na cor do tema; carga e reps da série feita apagadas. ===== */
 :root .set.done > .check, :root .set.done > .n { border-color: transparent !important; box-shadow: none !important; }
 .set.done .stepper { opacity: .55; }
-:is(:root:not([data-theme]), :root[data-theme="dourado"]) .set.done { background: none; }
-:is(:root:not([data-theme]), :root[data-theme="dourado"]) .set.done > .check, :is(:root:not([data-theme]), :root[data-theme="dourado"]) .set.done > .n { background: var(--gold) !important; background-image: none !important; color: #161108 !important; }
+:is(:root:not([data-theme]), :root:is([data-theme="dourado"], [data-theme="sangue"], [data-theme="planta"])) .set.done { background: none; }
+:is(:root:not([data-theme]), :root:is([data-theme="dourado"], [data-theme="sangue"], [data-theme="planta"])) .set.done > .check, :is(:root:not([data-theme]), :root:is([data-theme="dourado"], [data-theme="sangue"], [data-theme="planta"])) .set.done > .n { background: var(--gold) !important; background-image: none !important; color: #161108 !important; }
 
 /* ===== v0.48.0 · Configurações (menu + 6 subtelas) e Perfil — aprovados em 14/11. Texto em Montserrat, títulos e números em Oswald. ===== */
 .cf-c { padding-bottom: 40px; }
@@ -2240,3 +2222,80 @@ html, body, .content, .sheet { overscroll-behavior: none; }
 .lg-sug .lg-new { margin: 0 0 4px; align-self: flex-start; }
 .lg-sug b { font-family: var(--display); font-weight: 500; font-size: 18px; letter-spacing: 1px; }
 .lg-go { color: var(--gold); font-size: 13px; display: flex; align-items: center; gap: 4px; margin-top: 4px; }
+
+/* v0.52 · Pontos fracos e Fortalecer região (aprovado em 22/11) */
+.rh-intro { color: var(--text-2); font-size: 13.5px; line-height: 1.5; margin: 2px 2px 14px; }
+.rh-intro b { color: var(--text); }
+.rh-card { padding: 14px; border-radius: 14px; background: rgba(255, 150, 60, .10); box-shadow: inset 0 0 0 1px rgba(255, 150, 60, .35); margin-bottom: 10px; }
+.rh-card.ok { background: rgba(var(--acc-rgb), .08); box-shadow: inset 0 0 0 1px rgba(var(--acc-rgb), .35); }
+.rh-card b { display: flex; gap: 6px; align-items: flex-start; font-size: 15px; line-height: 1.35; }
+.rh-card small { display: block; color: var(--text-2); font-size: 12.5px; margin-top: 4px; line-height: 1.45; }
+.rh-flag { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid rgba(var(--fg-rgb), .06); font-size: 13.5px; line-height: 1.4; }
+.rh-flag span:first-child { color: #ffad66; flex: none; }
+.rh-sem { display: grid; gap: 6px; }
+.rh-sem div { display: flex; gap: 10px; align-items: center; font-size: 13px; line-height: 1.35; }
+.rh-sem i { width: 46px; flex: none; text-align: center; font-style: normal; font-weight: 700; font-size: 12px; padding: 5px 0; border-radius: 8px; }
+.rh-sem i.g, .rh-chart i.g { background: rgba(90, 200, 120, .18); color: #6fdc8c; }
+.rh-sem i.y, .rh-chart i.y { background: rgba(245, 197, 24, .18); color: var(--gold); }
+.rh-sem i.r, .rh-chart i.r { background: rgba(255, 90, 80, .18); color: #ff7a70; }
+.rh-reg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.rh-reg button { position: relative; text-align: left; padding: 12px 13px; border-radius: 12px; background: rgba(var(--fg-rgb), .055); color: var(--text); font-weight: 600; font-size: 14.5px; }
+.rh-reg button.on { box-shadow: inset 0 0 0 2px var(--gold); }
+.rh-reg small { display: block; font-weight: 400; color: var(--text-2); font-size: 11.5px; margin-top: 2px; }
+.rh-reg .dot { position: absolute; right: 10px; top: 12px; font-size: 10px; font-weight: 700; color: #ffad66; }
+.rh-ph { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.rh-ph button { text-align: left; padding: 10px; border-radius: 10px; background: rgba(var(--fg-rgb), .055); color: var(--text); }
+.rh-ph button.on { box-shadow: inset 0 0 0 2px var(--gold); }
+.rh-ph b { display: block; font-family: var(--display); font-weight: 500; font-size: 14px; letter-spacing: .6px; }
+.rh-ph small { display: block; color: var(--text-2); font-size: 11px; margin-top: 2px; line-height: 1.35; }
+.rh-row { display: flex; gap: 12px; align-items: center; padding: 9px 0; border-bottom: 1px solid rgba(var(--fg-rgb), .06); }
+.rh-row > .thumb, .rh-row > img, .rh-row > div:first-child { width: 46px; height: 46px; flex: none; border-radius: 10px; overflow: hidden; }
+.rh-row b { display: block; font-size: 14px; font-weight: 500; }
+.rh-row small { display: block; color: var(--text-2); font-size: 12px; margin-top: 2px; }
+.rh-opt { display: grid; gap: 8px; }
+.rh-opt button { position: relative; text-align: left; padding: 13px 15px; border-radius: 12px; background: rgba(var(--fg-rgb), .055); color: var(--text); }
+.rh-opt button.on { box-shadow: inset 0 0 0 2px var(--gold); }
+.rh-opt b { display: block; font-family: var(--display); font-weight: 500; font-size: 16.5px; letter-spacing: .8px; }
+.rh-opt small { display: block; color: var(--text-2); font-size: 12.5px; margin-top: 3px; padding-right: 86px; line-height: 1.4; }
+.rh-opt em { position: absolute; right: 12px; top: 13px; font-style: normal; font-size: 10px; font-weight: 700; padding: 3px 7px; border-radius: 6px; background: var(--gold); color: var(--lime-ink); }
+.rh-chart { display: flex; gap: 6px; align-items: flex-end; height: 90px; padding: 8px 4px 0; }
+.rh-chart div { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 3px; }
+.rh-chart i { width: 100%; border-radius: 4px 4px 0 0; }
+.rh-chart span { font-size: 10.5px; color: var(--text-3); }
+.rh-src { color: var(--text-3); font-size: 11.5px; line-height: 1.45; margin-top: 12px; }
+.rh-score { display: flex; gap: 6px; }
+.rh-score button { flex: 1; padding: 9px 0; border-radius: 9px; background: rgba(var(--fg-rgb), .06); color: var(--text); font-size: 13px; }
+.rh-score button.on { background: var(--gold); color: var(--lime-ink); font-weight: 700; }
+.wk-list { display: grid; gap: 8px; }
+.wk-it { display: flex; gap: 12px; align-items: flex-start; padding: 13px 14px; border-radius: 12px; background: rgba(var(--fg-rgb), .055); text-align: left; color: var(--text); width: 100%; }
+.wk-it.on { box-shadow: inset 0 0 0 2px var(--gold); }
+.wk-it .ck { width: 22px; height: 22px; border-radius: 7px; flex: none; display: grid; place-items: center; background: rgba(var(--fg-rgb), .08); margin-top: 1px; }
+.wk-it.on .ck { background: var(--gold); color: var(--lime-ink); }
+.wk-it b { display: block; font-weight: 600; font-size: 14.5px; }
+.wk-it small { display: block; color: var(--text-2); font-size: 12.5px; margin-top: 3px; line-height: 1.4; }
+.wk-it em, .wk-tbl .up { font-style: normal; color: var(--gold-2); }
+.wk-tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.wk-tbl td { padding: 9px 4px; border-bottom: 1px solid rgba(var(--fg-rgb), .06); }
+.wk-tbl td.n { text-align: right; font-family: var(--display); font-size: 15px; }
+.wk-add { color: var(--gold); font-size: 11.5px; font-weight: 700; }
+.opt-tag { display: inline-block; font-size: 9.5px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; padding: 1px 6px; border-radius: 5px; background: rgba(255, 150, 60, .18); color: #ffad66; margin-right: 6px; vertical-align: 1px; }
+.chip.opt { background: rgba(255, 150, 60, .14); color: #ffad66; }
+
+/* v0.52 · Temas "Sangue do inimigo" e "Pai de planta" (aprovados em 22/11): o mesmo fundo carbono, cartões, textos e
+   filtro de foto do Dourado; mudam só os destaques. O nome GRAVITY no topo fica branco. */
+:root[data-theme="sangue"] {
+  --gold: #d0021b; --gold-2: #ff6b7a; --gold-3: #7a0010; --lime: #d0021b; --lime-ink: #ffffff;
+  --gold-grad: linear-gradient(135deg, #ff6b7a 0%, #d0021b 55%, #7a0010 100%);
+  --acc-rgb: 208, 2, 27; --acc2-rgb: 255, 107, 122; --line: rgba(208, 2, 27, 0.16); --line-2: rgba(208, 2, 27, 0.3);
+  --map-ideal: #d0021b; --map-low: rgba(208, 2, 27, 0.38); --blue: #d0021b; --blue-2: #7a0010;
+  --brand-title: #f2f2f2;
+  /* avisos (atrasado, dor, apagar) em âmbar, para não se confundirem com o vermelho do tema */
+  --red: #ffb547;
+}
+:root[data-theme="planta"] {
+  --gold: #16a34a; --gold-2: #6ee39a; --gold-3: #0b5f2a; --lime: #16a34a; --lime-ink: #ffffff;
+  --gold-grad: linear-gradient(135deg, #6ee39a 0%, #16a34a 55%, #0b5f2a 100%);
+  --acc-rgb: 22, 163, 74; --acc2-rgb: 110, 227, 154; --line: rgba(22, 163, 74, 0.16); --line-2: rgba(22, 163, 74, 0.3);
+  --map-ideal: #16a34a; --map-low: rgba(22, 163, 74, 0.38); --blue: #16a34a; --blue-2: #0b5f2a;
+  --brand-title: #f2f2f2;
+}

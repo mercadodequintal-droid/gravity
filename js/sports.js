@@ -207,7 +207,7 @@
     const topbar = (title) => `<div class="topbar"><button class="icon-btn" data-a="back">${icon('back')}</button><h1>${title}</h1></div>`;
     const preview = (plan) => `<div class="list">${plan.workouts.map((w) => `<div class="card goal-wo"><div class="row"><div class="letter">${esc(w.letter)}</div><div class="grow"><h4>${esc(w.name)}</h4><div class="meta">${Screens.daysText(w.days)} · ${w.items.length} exercícios · ~${Screens.estMinutes(w)} min</div></div></div>
       <ol>${w.items.map((it) => { const ex = Store.exercise(it.exId); return `<li><span class="grow ellipsis">${it.group ? '<i class="gdot"></i>' : ''}${esc(ex.nome)}</span><span class="num muted">${Tools.repsText(it, ex)}</span></li>`; }).join('')}</ol></div>`).join('')}</div>`;
-    const use = (p) => { St().plans.push(p); St().activePlanId = p.id; Store.save(); toast('Plano criado e ativado'); };
+    const use = (p, sid) => { St().plans.push(p); St().activePlanId = p.id; Store.save(); toast('Plano criado e ativado'); if (sid && window.Rehab) Rehab.offerSport(sid); };
 
     // Lista dos esportes + treinos prontos.
     function SportList() {
@@ -262,10 +262,10 @@
             sheet({
               render: () => `<h3>${esc(p.name)}</h3><div class="desc">${esc(p.goal)}</div><div style="max-height:52vh;overflow:auto">${preview(p)}</div>
                 <div class="btn-row" style="margin-top:16px"><button class="btn ghost" data-a="no">Voltar</button><button class="btn lime" data-a="ok">Usar este plano</button></div>`,
-              actions: { no: closeSheet, ok: () => { use(p); closeSheet(); pop(); pop(); } },
+              actions: { no: closeSheet, ok: () => { use(p, id); closeSheet(); pop(); pop(); } },
             });
           },
-          create: () => { use(buildPlan(o)); pop(); pop(); },
+          create: () => { use(buildPlan(o), id); pop(); pop(); },
         },
       };
     }

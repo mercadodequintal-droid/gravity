@@ -4,6 +4,12 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.52.0', date: '2026-11-22', items: [
+      { icon: 'trophy', t: 'Pontos fracos', d: 'O app olha suas últimas 6 semanas, mostra o que está para trás e reforça no seu plano. Em Planos › Criar novo plano.', main: true },
+      { icon: 'plus', t: 'Fortalecer região', d: 'Joelho, ombro, lombar, pescoço e mais: exercícios baseados em diretrizes de fisioterapia, como bloco opcional no treino. Se uma região doer 2 vezes, o app sugere.' },
+      { icon: 'sparkle', t: 'Temas novos', d: '"Sangue do inimigo" (vermelho) e "Pai de planta" (verde) no lugar de Galáxia e Titânio.', go: 'theme' },
+      { icon: 'dumbbell', t: '61 exercícios com imagem nova', d: 'Ilustrações de bancos abertos, com os créditos em Configurações › App.' },
+    ] },
     { v: '0.51.1', date: '2026-11-21', items: [
       { icon: 'note', t: 'Termos e Privacidade atualizados', d: 'O Gravity agora é oferecido pela Mercado de Quintal. Os textos estão em Configurações › App › Informações e no site gravityapp.com.br.' },
     ] },

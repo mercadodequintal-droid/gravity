@@ -7,9 +7,9 @@
   const farmer = L.find((e) => e.id === 'ex78');
   if (farmer) farmer.tipo = 'tempo';
   L.push(
-    { id: 'tx01', nome: 'Prancha lateral', grupo: 'Abdômen', equip: 'Peso corporal', tipo: 'tempo', musculos: ['abdômen'], secundarios: ['ombros'], img: [],
+    { id: 'tx01', nome: 'Prancha lateral', grupo: 'Abdômen', equip: 'Peso corporal', tipo: 'tempo', musculos: ['abdômen'], secundarios: ['ombros'], img: ['img/OA_tx01_0.jpg', 'img/OA_tx01_1.jpg'], foto: 'fedb',
       dicas: ['Apoie o antebraço sob o ombro', 'Quadril alto, corpo reto', 'Troque de lado na metade do tempo'] },
-    { id: 'tx02', nome: 'Cadeira isométrica (parede)', grupo: 'Pernas', equip: 'Peso corporal', tipo: 'tempo', musculos: ['quadríceps'], secundarios: ['glúteos'], img: [],
+    { id: 'tx02', nome: 'Cadeira isométrica (parede)', grupo: 'Pernas', equip: 'Peso corporal', tipo: 'tempo', musculos: ['quadríceps'], secundarios: ['glúteos'], img: ['img/OA_tx02_0.jpg', 'img/OA_tx02_1.jpg'], foto: 'wg',
       dicas: ['Costas apoiadas na parede', 'Joelhos a 90°', 'Peso nos calcanhares'] },
     { id: 'tx03', nome: 'Esteira', grupo: 'Cardio', equip: 'Máquina', tipo: 'tempo', musculos: [], secundarios: [], img: ['img/Cardio_Esteira_0.jpg'],
       dicas: ['Aqueça 3 min em ritmo leve', 'Mantenha um ritmo em que consiga falar frases curtas', 'Use a inclinação para aumentar a intensidade'] },
@@ -28,7 +28,7 @@
 (function () {
   'use strict';
   window.LIBRARY.push(
-    { id: 'tx08', nome: 'Prancha de Copenhagen (adutor)', grupo: 'Pernas', equip: 'Banco', tipo: 'tempo', musculos: ['adutores'], secundarios: ['abdômen'], img: [],
+    { id: 'tx08', nome: 'Prancha de Copenhagen (adutor)', grupo: 'Pernas', equip: 'Banco', tipo: 'tempo', musculos: ['adutores'], secundarios: ['abdômen'], img: ['img/OA_tx08_0.jpg', 'img/OA_tx08_1.jpg'], foto: 'wg',
       dicas: ['Deitado de lado, perna de cima apoiada no banco', 'Suba o quadril e segure', 'Comece com o joelho apoiado (versão fácil)'] },
     // Para os treinos por esporte (v0.27), principalmente os sem equipamento. Ainda sem foto.
     { id: 'sx01', nome: 'Salto lateral (patinador)', grupo: 'Pernas', equip: 'Peso corporal', musculos: ['glúteos', 'quadríceps'], secundarios: ['panturrilhas', 'adutores'], img: ['img/SX_Salto_Patinador_0.jpg'],
@@ -50,10 +50,23 @@
     { id: 'sx09', nome: 'Deslocamento lateral (agilidade)', grupo: 'Cardio', equip: 'Peso corporal', tipo: 'tempo', musculos: ['quadríceps'], secundarios: ['glúteos', 'adutores'], img: ['img/SX_Deslocamento_Lateral_0.jpg'],
       dicas: ['Base baixa, sem cruzar os pés', 'Toque o chão nas trocas de direção', 'Máxima velocidade, com controle'] },
     // Plano Longevidade 60+ (v0.51). Ainda sem foto.
-    { id: 'lx01', nome: 'Sentar e levantar da cadeira', grupo: 'Pernas', equip: 'Peso corporal', musculos: ['quadríceps', 'glúteos'], secundarios: ['posteriores de coxa'], img: [],
+    { id: 'lx01', nome: 'Sentar e levantar da cadeira', grupo: 'Pernas', equip: 'Peso corporal', musculos: ['quadríceps', 'glúteos'], secundarios: ['posteriores de coxa'], img: ['img/OA_lx01_0.jpg', 'img/OA_lx01_1.jpg'], foto: 'oei',
       dicas: ['Cadeira firme, encostada na parede', 'Braços cruzados no peito (ou mãos nas coxas, se precisar)', 'Suba rápido e desça devagar, em uns 3 segundos'] },
     { id: 'lx02', nome: 'Caminhada calcanhar-ponta', grupo: 'Pernas', equip: 'Peso corporal', un: 'passos', musculos: ['panturrilhas'], secundarios: ['glúteos'], img: [],
       dicas: ['Ande em linha reta, encostando o calcanhar na ponta do outro pé', 'Olhar à frente, braços abertos para equilibrar', 'Fique perto de uma parede ou apoio'] },
+    // Fortalecer região (v0.52). Sem foto por enquanto.
+    { id: 'rx01', nome: 'Abdução de quadril deitado de lado', grupo: 'Glúteos', equip: 'Peso corporal', musculos: ['glúteos'], secundarios: ['abdutores'], img: ['img/OA_rx01_0.jpg', 'img/OA_rx01_1.jpg'], foto: 'wg',
+      dicas: ['Deitado de lado, pernas retas e quadril empilhado', 'Suba a perna de cima levemente para trás, sem girar o pé para cima', 'Desça devagar; com elástico nos joelhos fica mais difícil'] },
+    { id: 'rx02', nome: 'Descida do degrau', grupo: 'Pernas', equip: 'Peso corporal', musculos: ['quadríceps'], secundarios: ['glúteos'], img: ['img/OA_rx02_0.jpg', 'img/OA_rx02_1.jpg'], foto: 'wg',
+      dicas: ['Em pé num degrau baixo, apoiado numa perna', 'Desça o outro calcanhar devagar até encostar no chão', 'Joelho alinhado com o pé, sem cair para dentro'] },
+    { id: 'rx03', nome: 'Retração do pescoço (chin tuck)', grupo: 'Trapézio', equip: 'Peso corporal', musculos: ['pescoço'], secundarios: ['trapézio'], img: [],
+      dicas: ['Sentado ou em pé, olhar para a frente', 'Leve o queixo para trás, fazendo "papada", sem baixar a cabeça', 'Segure 5 a 10 s e solte devagar'] },
+    { id: 'rx04', nome: 'Rotação externa com elástico', grupo: 'Ombros', equip: 'Elástico', musculos: ['ombros'], secundarios: ['meio das costas'], img: ['img/OA_rx04_0.jpg', 'img/OA_rx04_1.jpg'], foto: 'fedb',
+      dicas: ['Cotovelo colado ao corpo, dobrado a 90°', 'Gire o antebraço para fora contra o elástico, sem afastar o cotovelo', 'Se doer, segure parado no meio do caminho por 30 s (isometria)'] },
+    { id: 'rx05', nome: 'Tornozelo com elástico (para dentro e para fora)', grupo: 'Panturrilha', equip: 'Elástico', musculos: ['panturrilhas'], secundarios: [], img: [],
+      dicas: ['Sentado, perna esticada, elástico preso na ponta do pé', 'Leve o pé para dentro contra o elástico; depois troque o lado do elástico e leve para fora', 'Movimento só do tornozelo, devagar'] },
+    { id: 'rx06', nome: 'Supinação e pronação com halter', grupo: 'Antebraços', equip: 'Halteres', musculos: ['antebraços'], secundarios: [], img: ['img/OA_rx06_0.jpg', 'img/OA_rx06_1.jpg'], foto: 'fedb',
+      dicas: ['Antebraço apoiado na coxa ou no banco, punho para fora', 'Segure o halter (ou um martelo) pela ponta e gire a palma para cima e para baixo', 'Quanto mais longe da mão o peso, mais difícil'] },
   );
 })();
 

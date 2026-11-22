@@ -284,7 +284,7 @@
             <div class="fa-top"><button class="fa-ib" data-a="back" aria-label="Voltar">${icon('back')}</button><span class="grow"></span>${ex.custom ? `<button class="fa-ib" data-a="edit">${icon('edit', 'sm')}</button>` : ''}<button class="fa-ib ${fav ? 'on' : ''}" data-a="fav" aria-label="Favorito">${STAR(fav)}</button><button class="fa-ib" data-a="share" aria-label="Compartilhar">${icon('share', 'sm')}</button></div>
             <div class="fa-name"><small>${esc(ex.grupo)}${ex.equip ? ' · ' + esc(ex.equip) : ''}</small><h2>${esc(ex.nome)}</h2></div>${stats}</div>
           <div class="fa-sheet"><div class="fa-tabs">${tabs.map(([k, l]) => `<button class="${k === tab ? 'on' : ''}" data-a="tab" data-t="${k}">${l}</button>`).join('')}</div>${pane}
-          ${ex.img && ex.img.length && (/^ex/.test(ex.id) || ex.foto === 'fedb') ? '<div class="tiny faint" style="margin-top:18px">Imagens: Free Exercise DB (domínio público).</div>' : ''}</div></div>`;
+          ${ex.img && ex.img.length && (/^ex/.test(ex.id) || ex.foto === 'fedb') ? '<div class="tiny faint" style="margin-top:18px">Imagens: Free Exercise DB (domínio público).</div>' : ex.foto === 'wg' ? '<div class="tiny faint" style="margin-top:18px">Imagens: Workout Guide (Bryl Lim), a partir de Everkinetic · CC BY-SA 4.0 · adaptadas para fundo escuro. Ver Configurações › App › Créditos das imagens.</div>' : ex.foto === 'oei' ? '<div class="tiny faint" style="margin-top:18px">Imagens: Open Exercise Illustrations (domínio público, CC0).</div>' : ex.foto === 'flow' ? '<div class="tiny faint" style="margin-top:18px">Imagens: Flow exercise dataset (domínio público, CC0).</div>' : ''}</div></div>`;
       },
       actions: {
         back: pop,
@@ -410,16 +410,20 @@
     const OPTS = [
       ['goal', 'target', 'Pelo meu objetivo', 'Responda 5 perguntas e o app monta', true],
       ['sports', 'bolt', 'Para meu esporte', '20 esportes, academia ou sem equipamento'],
+      ['weak', 'trophy', 'Pontos fracos', 'O app acha o que está para trás e reforça', false, 'Novo'],
+      ['rehab', 'plus', 'Fortalecer região', 'Joelho, ombro, lombar e mais, com segurança', false, 'Novo'],
       ['models', 'layers', 'Modelo pronto', Store.TEMPLATES.length + ' planos: ABC, PPL, Upper/Lower, 5/3/1…'],
       ['new', 'edit', 'Do zero', 'Você escolhe cada exercício'],
     ];
     const createSheet = () => sheet({
       render: () => `<h3>Criar novo plano</h3><div class="desc">Como você quer começar? Você pode editar tudo depois.</div>
-        <div class="pl-g2">${OPTS.map(([a, ic, t, d, rec]) => `<button class="pl-tile press" data-a="${a}">${rec ? '<span class="pl-tag fill pl-rec">Recomendado</span>' : ''}<span class="ic">${icon(ic, 'sm')}</span><b>${t}</b><small>${d}</small></button>`).join('')}</div>
+        <div class="pl-g2">${OPTS.map(([a, ic, t, d, rec, tag]) => `<button class="pl-tile press" data-a="${a}">${rec || tag ? `<span class="pl-tag fill pl-rec">${rec ? 'Recomendado' : tag}</span>` : ''}<span class="ic">${icon(ic, 'sm')}</span><b>${t}</b><small>${d}</small></button>`).join('')}</div>
         <button class="pl-mini press" style="margin-top:10px" data-a="import">${icon('upload', 'sm')}<span class="grow"><b>Importar planilha</b> · Excel ou Google Planilhas (CSV)</span>${icon('next', 'sm')}</button>`,
       actions: {
         goal: () => { closeSheet(); push(Screens.GoalWizard()); },
         sports: () => { closeSheet(); push(Screens.SportList()); },
+        weak: () => { closeSheet(); push(Weak.WeakScreen()); },
+        rehab: () => { closeSheet(); push(Rehab.RegionPicker()); },
         models: () => { closeSheet(); setTimeout(modelsSheet, 380); },
         new: () => { closeSheet(); newPlan(); },
         import: () => { closeSheet(); setTimeout(importSheet, 380); },

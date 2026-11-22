@@ -121,7 +121,7 @@
       workouts: done.length, w7: since(7), w30: since(30), perWeek: weeks ? Math.round((done.length / weeks) * 10) / 10 : 0,
       lastWorkout: last, hours: h,
       plan: p ? p.name : '', planWeek: wk ? Math.max(0, Math.min(wk.n, wk.total)) : 0, planWeeks: wk ? wk.total : 0,
-      features: { recordes: recs > 0, checkin: st.checkin !== false, voz: !!(window.Voice && Voice.cfg().on), fotos: (Store.photos ? Store.photos().length : 0) > 0, lembrete: !!st.reminder, tecnicas: done.some((x) => x.sets.some((y) => y.sub && y.done)) },
+      features: { fracos: !!S.weak, fortalecer: Object.keys((S.rehab || {}).regions || {}).length, recordes: recs > 0, checkin: st.checkin !== false, voz: !!(window.Voice && Voice.cfg().on), fotos: (Store.photos ? Store.photos().length : 0) > 0, lembrete: !!st.reminder, tecnicas: done.some((x) => x.sets.some((y) => y.sub && y.done)) },
       profile: { age: age != null && age > 5 && age < 110 ? age : null, sex: st.bodyType || '', goal: pf.goal || (p && p.goal) || '', exp: pf.exp || '' },
       theme: st.theme || 'dourado',
     };

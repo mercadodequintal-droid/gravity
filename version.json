@@ -1,11 +1,20 @@
 {
- "versionCode": 71,
- "versionName": "0.51.1",
- "date": "2026-11-21",
- "apk": "download/Gravity-v0.51.1.apk",
+ "versionCode": 72,
+ "versionName": "0.52.0",
+ "date": "2026-11-22",
+ "apk": "download/Gravity-v0.52.0.apk",
  "notes": [
   {
-   "t": "Termos e Privacidade atualizados"
+   "t": "Pontos fracos"
+  },
+  {
+   "t": "Fortalecer região"
+  },
+  {
+   "t": "Temas novos"
+  },
+  {
+   "t": "61 exercícios com imagem nova"
   }
  ]
 }
