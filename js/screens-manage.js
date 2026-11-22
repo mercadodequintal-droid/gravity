@@ -100,7 +100,7 @@
     const list = () => Store.allExercises().filter((e) => match(e));
     const card = (e) => {
       const k = picked.indexOf(e.id) + 1;
-      return `<button class="lb-card press ${k ? 'on' : ''}" data-a="ex" data-id="${e.id}">${(e.img && e.img[0]) ? `<span class="im" style="background-image:url('${e.img[0]}')"></span>` : `<span class="im noimg">${icon('dumbbell')}</span>`}
+      return `<button class="lb-card press ${k ? 'on' : ''}" data-a="ex" data-id="${e.id}">${(e.img && e.img[0]) ? `<span class="im" style="background-image:url('${UI.thumbSrc(e.img[0])}')"></span>` : `<span class="im noimg">${icon('dumbbell')}</span>`}
         ${pick ? (k ? `<span class="num">${k}</span>` : '<span class="plus">+</span>') : inPlan.has(e.id) ? '<span class="tag">No plano</span>' : e.novo && window.LIB_TAGS && LIB_TAGS[e.tag] ? `<span class="tag">${LIB_TAGS[e.tag]}</span>` : ''}
         <b>${esc(e.nome)}</b><small>${esc(e.equip || e.grupo)}</small></button>`;
     };

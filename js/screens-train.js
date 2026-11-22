@@ -252,7 +252,7 @@
         const isT = Store.iso(d) === Store.iso(t), pick = ws.find((x) => x.st.status !== 'done') || ws[0];
         return `<button class="h2-d ${isT ? 'today' : ''}" data-a="day" data-id="${pick ? pick.w.id : ''}">${Store.WEEKDAYS[wd][0]}<b>${d.getDate()}</b><span class="m ${m}"></span></button>`;
       }).join('');
-      const thumbs = items.slice(0, 4).map((it) => { const e = Store.exercise(it.exId); const im = e && e.img && e.img[0]; return im ? `<div style="background-image:url('${im}')"></div>` : `<div class="no">${icon('dumbbell', 'sm')}</div>`; }).join('') + (items.length > 4 ? `<div class="more">+${items.length - 4}</div>` : '');
+      const thumbs = items.slice(0, 4).map((it) => { const e = Store.exercise(it.exId); const im = e && e.img && e.img[0]; return im ? `<div style="background-image:url('${UI.thumbSrc(im)}')"></div>` : `<div class="no">${icon('dumbbell', 'sm')}</div>`; }).join('') + (items.length > 4 ? `<div class="more">+${items.length - 4}</div>` : '');
       const lateL = list.filter((x) => x.st.status === 'late');
       const alert = lateL.length ? `<div class="card h2-alert press" data-a="agenda"><div class="ic">${icon('alert', 'sm')}</div><div class="t">${lateL.length} ${lateL.length === 1 ? 'treino atrasado' : 'treinos atrasados'}<small class="ellipsis">${lateL.map((x) => 'Treino ' + esc(x.w.letter) + ' · ' + esc(x.w.name)).join(', ')}</small></div><span class="h2-chip">Ver</span></div>` : '';
       return `<div class="content home2 hA">${top}<div class="h2-wk">${days}</div>

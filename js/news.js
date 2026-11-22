@@ -4,6 +4,10 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.52.1', date: '2026-11-22', items: [
+      { icon: 'dumbbell', t: 'Barra que enverga', d: 'Ao digitar a carga, o app mostra a barra inteira e quantos kg vão de cada lado. Quanto mais peso, mais ela enverga.', main: true },
+      { icon: 'sparkle', t: 'Miniaturas maiores', d: 'As ilustrações novas aparecem maiores nas listas de exercícios.' },
+    ] },
     { v: '0.52.0', date: '2026-11-22', items: [
       { icon: 'trophy', t: 'Pontos fracos', d: 'O app olha suas últimas 6 semanas, mostra o que está para trás e reforça no seu plano. Em Planos › Criar novo plano.', main: true },
       { icon: 'plus', t: 'Fortalecer região', d: 'Joelho, ombro, lombar, pescoço e mais: exercícios baseados em diretrizes de fisioterapia, como bloco opcional no treino. Se uma região doer 2 vezes, o app sugere.' },

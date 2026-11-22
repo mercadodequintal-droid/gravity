@@ -28,16 +28,36 @@
 
   // ---------- anilhas ----------
   const PCOLOR = { 25: '#c8574b', 20: '#4c7dd9', 15: '#d9b25f', 10: '#5aa469', 5: '#e8e2d4', 2.5: '#8a8478', 1.25: '#6a655c' };
-  // Desenho das anilhas de um lado da barra + texto, para a carga digitada.
+  // Folha de carga (v0.53): "barra que enverga" — a barra inteira, uma carga de cada lado
+  // que cresce com o peso, e a barra entortando um pouco. Texto: só o total de cada lado.
+  let bendK = 0;
+  function bendSVG(k) {
+    const bend = k * 24, h = 40 + k * 80, w = 14 + k * 24, y = 64, L = 50, R = 290, ly = y + bend * 0.62;
+    return `<path d="M10 ${y + bend * 1.2} Q170 ${y - bend} 330 ${y + bend * 1.2}" stroke="#a9a293" stroke-width="7" fill="none" stroke-linecap="round"/>
+      <rect x="${L - w / 2}" y="${ly - h / 2}" width="${w}" height="${h}" rx="6" fill="url(#bendG)" transform="rotate(${-bend * 0.5} ${L} ${ly})"/>
+      <rect x="${R - w / 2}" y="${ly - h / 2}" width="${w}" height="${h}" rx="6" fill="url(#bendG)" transform="rotate(${bend * 0.5} ${R} ${ly})"/>`;
+  }
+  function bendTo(from, to) {
+    const t0 = performance.now();
+    const still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    (function f(t) {
+      const g = document.getElementById('bendBody'); if (!g) return;
+      const p = still ? 1 : Math.min(1, (t - t0) / 600);
+      const e = p < 1 ? 1 - Math.pow(1 - p, 3) * Math.cos(p * 9) : 1; // leve balanço no fim
+      g.innerHTML = bendSVG(from + (to - from) * e);
+      if (p < 1) requestAnimationFrame(f);
+    })(t0);
+  }
   function platesHTML(total) {
     const bar = Number(S().settings.bar) || 20;
     if (!(total > 0)) return '';
-    const p = Analytics.plates(total, bar);
     if (total <= bar) return `<div class="plates"><div class="small muted">Só a barra (${nf(bar)} kg)</div></div>`;
-    const draw = p.side.map((w) => `<i style="height:${28 + w * 1.6}px;background:${PCOLOR[w]}" title="${nf(w)}"></i>`).join('');
-    return `<div class="plates"><div class="plates-bar"><span class="sleeve"></span>${draw}<span class="collar"></span></div>
-      <div class="small"><b style="color:var(--gold-2)">Por lado:</b> ${p.side.map((w) => nf(w, 2)).join(' + ') || '—'} <span class="faint">· barra ${nf(bar)} kg</span></div>
-      ${p.resto ? `<div class="tiny" style="color:var(--amber)">Faltam ${nf(p.resto)} kg que não fecham com as anilhas comuns.</div>` : ''}</div>`;
+    const side = (total - bar) / 2, k = Math.min(1, side / 100);
+    const from = document.getElementById('bendBody') ? bendK : 0; // na folha já aberta, anima do valor anterior
+    bendK = k;
+    setTimeout(() => bendTo(from, k), 0);
+    return `<div class="plates"><svg class="bend-svg" viewBox="0 0 340 150" aria-hidden="true"><defs><linearGradient id="bendG" x1="0" x2="0" y1="0" y2="1"><stop offset="0" style="stop-color:var(--gold-2)"/><stop offset=".5" style="stop-color:var(--gold)"/><stop offset="1" style="stop-color:var(--gold-3)"/></linearGradient></defs><g id="bendBody">${bendSVG(from)}</g></svg>
+      <div class="small"><b class="num" style="color:var(--gold-2)">${nf(side, 2)} kg</b> de cada lado <span class="faint">· barra ${nf(bar)} kg</span></div></div>`;
   }
 
   // ---------- aquecimento (v0.45: % da carga e anilhas desenhadas por lado) ----------

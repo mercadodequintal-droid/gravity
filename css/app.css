@@ -525,6 +525,7 @@ input[type="date"].input { color-scheme: dark; }
 .set.warm .val small { color: var(--amber); }
 .set.warm .n { border-color: rgba(208, 128, 62, 0.6); color: var(--amber); }
 .plates { margin-top: 14px; padding: 12px; border-radius: 14px; border: 1px solid var(--line); background: rgba(var(--fg-rgb), 0.02); }
+.bend-svg { display: block; width: 100%; height: 120px; margin-bottom: 6px; }
 .plates-bar { display: flex; align-items: center; gap: 3px; height: 72px; margin-bottom: 8px; }
 .plates-bar .sleeve { width: 46px; height: 8px; background: #8a8478; border-radius: 3px; }
 .plates-bar i { width: 13px; border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(var(--shadow-rgb), 0.35); }

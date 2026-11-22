@@ -66,8 +66,10 @@
   }
   function thumb(ex) {
     if (!ex.img || !ex.img.length) return `<div class="thumb noimg">${icon('dumbbell')}</div>`;
-    return `<div class="thumb"><img src="${ex.img[0]}" alt="" loading="lazy"></div>`;
+    return `<div class="thumb"><img src="${thumbSrc(ex.img[0])}" alt="" loading="lazy"></div>`;
   }
+  // Ilustrações abertas (OA_*): nas miniaturas usa a versão recortada justa na figura (v0.52.1).
+  function thumbSrc(src) { return String(src).replace(/(img\/OA_\w+)_0\.jpg$/, '$1_t.jpg'); }
   // Anel de progresso; cor "gold" (ou var(--lime)) usa gradiente dourado com brilho.
   let ringId = 0;
   function ring(size, stroke, ratio, color, inner) {
@@ -612,5 +614,5 @@
       actions: { ok: closeSheet },
     });
   }
-  window.UI = { build, installHint, sortable, moveIn, editable, savedFlash, replace, onSwipe, countdown, prBurst, icon, esc, nf, kg, secs, restLabel, clock, volume, shortDate, MONTHS, imgHTML, thumb, ring, Native, beep, toast, R, push, pop, popTo, switchTab, refresh, rerender, top, sheet, sheetRefresh, closeSheet, confirmSheet, numberSheet, Rest, bind, setNav };
+  window.UI = { thumbSrc, build, installHint, sortable, moveIn, editable, savedFlash, replace, onSwipe, countdown, prBurst, icon, esc, nf, kg, secs, restLabel, clock, volume, shortDate, MONTHS, imgHTML, thumb, ring, Native, beep, toast, R, push, pop, popTo, switchTab, refresh, rerender, top, sheet, sheetRefresh, closeSheet, confirmSheet, numberSheet, Rest, bind, setNav };
 })();
