@@ -56,6 +56,8 @@
     ['Perguntar como você está hoje', 'check-in sono energia dor', 'treino', 'checkin'],
     ['Perguntar como foi a série', 'esforco rir limite pesado tranquilo', 'treino', 'askRir'],
     ['Minha academia', 'academia aparelhos maquinas', 'treino', 'gym'],
+    ['Extrato de Desculpas', 'desculpas faltas falta motivo extrato stories', 'treino', 'excAsk'],
+    ['Quanto pago para treinar', 'mensalidade academia wellhub gympass totalpass valor custo preco', 'treino', 'excPay'],
     ['Tema', 'tema cor aparencia dourado sangue do inimigo vermelho pai de planta verde azul luana atelier', 'aparencia', 'theme'],
     ['Abertura animada', 'abertura scouter splash entrada', 'aparencia', 'splash'],
     ['Voz no treino', 'voz fala avisos', 'voz', 'voice'],
@@ -153,7 +155,11 @@
         ${cap('Semana')}${box(`<div class="switch-row" data-row="weekStart"><div class="grow"><div>Semana começa</div><div class="small muted">Para a agenda, a sequência e os gráficos</div></div><div class="seg" style="width:170px"><button class="${st().weekStart === 1 ? 'on' : ''}" data-a="ws" data-v="1">Segunda</button><button class="${st().weekStart === 0 ? 'on' : ''}" data-a="ws" data-v="0">Domingo</button></div></div>`)}
         ${cap('Experiência do treino')}${box(sw('Perguntar como você está hoje', 'Sono, energia e dor antes do treino · dia ruim alivia o treino', 'checkin')
           + sw('Perguntar como foi a série', 'No limite, pesado ou tranquilo · ajuda a sugerir a carga', 'askRir'))}
-        ${cap('Academia')}${box(link('gym', 'dumbbell', 'Minha academia', 'Aparelhos que a sua academia tem · o app só sugere esses', 'gym'))}`,
+        ${cap('Academia')}${box(link('gym', 'dumbbell', 'Minha academia', 'Aparelhos que a sua academia tem · o app só sugere esses', 'gym'))}
+        ${window.Excuse && Excuse.st() ? cap('Extrato de Desculpas') + box(sw('Perguntar o motivo quando eu faltar', 'No dia seguinte a um treino perdido, na tela inicial', 'excAsk')
+          + sw('Extrato no começo de cada mês', 'Stories do mês anterior para compartilhar', 'excMonthly')
+          + link('excPay', 'weight', 'Quanto pago para treinar', Excuse.paySum() + ' · mensalidade, Wellhub (Gympass), TotalPass…', 'excPay')
+          + `<div class="switch-row" data-row="excTone"><div class="grow"><div>Tom das frases</div><div class="small muted">Cobrança (zoeira) ou gentil</div></div><div class="seg" style="width:190px">${[['cobranca', 'Cobrança'], ['gentil', 'Gentil']].map(([v, l]) => `<button class="${(Excuse.st().tone || 'cobranca') === v ? 'on' : ''}" data-a="excTone" data-v="${v}">${l}</button>`).join('')}</div></div>`) : ''}`,
       aparencia: () => {
         const t = Theme.current();
         return `<div class="card cf-theme-now"><div><span>Tema atual</span><b>${esc(t.nome)}</b><small>${esc(t.desc)}</small></div>
@@ -192,6 +198,8 @@
         rangeMode: (ds) => { st().rangeMode = ds.v; Store.save(); UI.savedFlash(); refresh(); },
         ws: (ds) => { st().weekStart = Number(ds.v); Store.save(); refresh(); UI.savedFlash(); },
         gym: () => push(Screens.GymSetup()),
+        excPay: () => Excuse.paySheet(),
+        excTone: (ds) => { Excuse.setTone(ds.v); UI.savedFlash(); refresh(); },
         theme: (ds) => { Theme.apply(ds.v); Store.save(); Native.vibrate(8); UI.savedFlash(); refresh(); },
         rtime: (ds, el) => { if (el.value) { st().reminderTime = el.value; Store.save(); Screens.syncNative(); toast('Lembrete às ' + el.value); refresh(); } },
         band: bandSheet,

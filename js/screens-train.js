@@ -158,7 +158,7 @@
         // Tela inicial (v0.37): o "Painel" em blocos (B), que nasceu no tema Azul, vale para todos os temas.
         const hs = 'B';
         if (window.Rehab) Rehab.sync();
-        const rhCard = (window.Rehab ? Rehab.homeCard() : '') + (window.Weak ? Weak.homeCard() : '');
+        const rhCard = (window.Excuse ? Excuse.homeCard() : '') + (window.Rehab ? Rehab.homeCard() : '') + (window.Weak ? Weak.homeCard() : '');
         if (hs) return head + homeStyled(hs, { S, p, list, range, t, dow, cta, done, partial, late, pct, setsW, vol, mins, level, upd: Updater.card(), extra: rhCard + backupCard + deloadCard });
         return head + `<div class="content">${who}${Updater.card()}${overall}${backupCard}${deloadCard}${quoteCard}${sched}${Screens.muscleCard()}${Screens.strengthCard()}${streakCard}${mission}
           <div class="section-title"><h2>Esta semana</h2><button class="link" data-a="progress">Ver evolução</button></div>${tiles}</div>`;
@@ -195,6 +195,7 @@
         rhYes: (ds) => Rehab.includeFromPain(ds.r),
         rhNo: (ds) => { Rehab.snooze(ds.r); UI.refresh(); },
         wkSeen: () => { Weak.seen(); UI.refresh(); },
+        ex: (ds, el) => Excuse.act(ds, el),
         wkOpen: () => { Weak.seen(); push(Weak.WeakScreen()); },
         open: (ds) => push(WorkoutScreen(ds.id)),
         agenda: () => agendaSheet(),

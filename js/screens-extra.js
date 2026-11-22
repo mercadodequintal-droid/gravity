@@ -126,13 +126,14 @@
           <div class="section-title"><h2>Músculos</h2><span class="small muted">séries no mês</span></div>
           <div class="card">${top.slice(0, 4).map((x) => `<div class="kv"><span>${esc(x.nome)}</span><b class="num">${nf(x.sets)}</b></div>`).join('')}
             ${M.muscles.length > 4 ? `<div class="small muted" style="margin-top:8px">Menos treinados: ${esc(M.muscles.slice(-3).reverse().map((x) => x.nome + ' (' + nf(x.sets) + ')').join(', '))}</div>` : ''}</div>
-          <button class="btn lime block" style="margin-top:18px" data-a="share">${icon('share', 'sm')}Compartilhar imagem do mês</button>`}</div>`;
+          <button class="btn lime block" style="margin-top:18px" data-a="share">${icon('share', 'sm')}Compartilhar imagem do mês</button>`}${window.Excuse ? Excuse.monthCard(y, m) : ''}</div>`;
       },
       actions: {
         back: pop,
         prev: () => { m--; if (m < 0) { m = 11; y--; } refresh(); },
         next: () => { if (y > now.getFullYear() || (y === now.getFullYear() && m >= now.getMonth())) return; m++; if (m > 11) { m = 0; y++; } refresh(); },
         share: () => shareMonth(y, m),
+        ex: (ds, el) => Excuse.act(ds, el),
       },
     };
   }

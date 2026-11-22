@@ -4,6 +4,10 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.53.0', date: '2026-11-22', items: [
+      { icon: 'trophy', t: 'Extrato de Desculpas', d: 'Faltou no treino? O app pergunta o motivo no dia seguinte. No começo do mês, chega o seu extrato em stories para compartilhar: desculpa favorita, custo por treino e veredito.', main: true },
+      { icon: 'weight', t: 'Quanto custa cada treino', d: 'Informe a mensalidade, Wellhub (Gympass) ou TotalPass e veja quanto saiu cada treino no Resumo do mês. Em Configurações › Treino.' },
+    ] },
     { v: '0.52.1', date: '2026-11-22', items: [
       { icon: 'dumbbell', t: 'Barra que enverga', d: 'Ao digitar a carga, o app mostra a barra inteira e quantos kg vão de cada lado. Quanto mais peso, mais ela enverga.', main: true },
       { icon: 'sparkle', t: 'Miniaturas maiores', d: 'As ilustrações novas aparecem maiores nas listas de exercícios.' },
