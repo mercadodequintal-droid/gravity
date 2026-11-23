@@ -4,6 +4,11 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.54.0', date: '2026-11-23', items: [
+      { icon: 'camera', t: 'Fotos de progresso', d: 'Galeria por posição, escolha a foto “antes”, apague várias de uma vez, mude data e posição e gere a imagem antes e depois para postar (dá para esconder o rosto).', main: true, go: 'body' },
+      { icon: 'alert', t: 'Necrotério Muscular', d: 'Em Músculos › Necrotério: o boneco afina nos músculos esquecidos. Toque na ficha e ressuscite com um exercício no próximo treino.' },
+      { icon: 'download', t: 'Fotos no backup', d: 'Mais espaço para as fotos e opção de incluí-las no backup em Configurações › Seus dados.' },
+    ] },
     { v: '0.53.1', date: '2026-11-23', items: [
       { icon: 'dumbbell', t: 'Carga com − e +', d: 'Na hora de digitar a carga, use − e + (segure para ir mais rápido) e veja a barra crescer e envergar.', main: true },
       { icon: 'check', t: 'Nada escondido', d: 'O cronômetro de descanso e o aviso de treino não cobrem mais os botões no fim das telas.' },
@@ -234,6 +239,7 @@
     sports: () => { UI.switchTab('plans', true); setTimeout(() => UI.push(Screens.SportList()), 250); },
     muscles: () => { UI.switchTab('home', true); setTimeout(() => UI.push(Screens.MuscleMap()), 250); },
     month: () => { UI.switchTab('progress', true); setTimeout(() => UI.push(Screens.MonthSummary()), 250); },
+    body: () => { UI.switchTab('progress', true); setTimeout(() => UI.push(Screens.Body()), 250); },
     compare: () => { UI.switchTab('progress', true); setTimeout(() => { const b = document.querySelector('.screen [data-a="body"]'); if (b) b.click(); setTimeout(() => spotlight('[data-a="compare"]', 'Comparar fotos'), 500); }, 250); },
     power: () => { UI.switchTab('home', true); setTimeout(() => spotlight('.pw-card', 'Seu nível de poder'), 250); },
     settingsUpdate: () => Screens.settingsGo('app', 'checkUpdate', 'Verificar atualizações'),

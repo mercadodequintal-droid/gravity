@@ -142,7 +142,7 @@
   // Instalação nova começa zerada: sem plano e sem histórico (os modelos ficam em Planos → Modelos prontos).
   // Quem atualiza o app mantém tudo, porque load() só chama fresh() quando não há dados salvos.
   function fresh() {
-    const settings = { name: '', restDefault: 60, restStep: 15, incKg: 2, weekStart: 1, sound: true, vibrate: true, suggest: true, colorPhotos: false, splash: true, bar: 20, askRir: true, reminder: false, reminderTime: '18:00', checkin: true, autoBackup: true, updateCheck: true, restSwap: 0 };
+    const settings = { necro: true, name: '', restDefault: 60, restStep: 15, incKg: 2, weekStart: 1, sound: true, vibrate: true, suggest: true, colorPhotos: false, splash: true, bar: 20, askRir: true, reminder: false, reminderTime: '18:00', checkin: true, autoBackup: true, updateCheck: true, restSwap: 0 };
     return { v: 1, settings, customExercises: [], exMeta: {}, plans: [], activePlanId: null, sessions: [], activeSessionId: null };
   }
 
@@ -154,24 +154,68 @@
     S.exMeta = S.exMeta || {};
     S.body = S.body || { entries: [] };
     S.medals = S.medals || null;
+    loadPhotos();
     return S;
   }
-  // Fotos de progresso ficam numa chave separada (são grandes e não entram no backup em texto).
-  const PHOTO_KEY = 'meutreino.fotos';
-  let photoCache = null;
-  function photos() {
-    if (!photoCache) { try { photoCache = JSON.parse(localStorage.getItem(PHOTO_KEY)) || []; } catch (e) { photoCache = []; } }
-    return photoCache;
+  // Fotos de progresso (v0.54): guardadas no IndexedDB (espaço bem maior que o localStorage, onde ficavam até a
+  // v0.53 e de onde são migradas). Em memória ficam em photoCache; salvar grava o array inteiro de forma assíncrona.
+  // Cada foto: { id, date, data, pose: Frente|Lado|Costas|Livre, ref?: true = "antes" escolhido da posição }.
+  const PHOTO_KEY = 'meutreino.fotos', POSES = ['Frente', 'Lado', 'Costas', 'Livre'];
+  let photoCache = null, useIDB = !!window.indexedDB, photoLoad = null;
+  function idb() {
+    return new Promise((res, rej) => { const r = indexedDB.open('gravity-fotos', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
   }
+  const idbGet = () => idb().then((db) => new Promise((res, rej) => { const q = db.transaction('kv', 'readonly').objectStore('kv').get('photos'); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }));
+  const idbPut = (v) => idb().then((db) => new Promise((res, rej) => { const tx = db.transaction('kv', 'readwrite'); tx.objectStore('kv').put(v, 'photos'); tx.oncomplete = () => res(true); tx.onerror = () => rej(tx.error); }));
+  function loadPhotos() {
+    if (photoLoad) return photoLoad;
+    let ls = []; try { ls = JSON.parse(localStorage.getItem(PHOTO_KEY)) || []; } catch (e) { ls = []; }
+    photoCache = ls;
+    if (!useIDB) { photoLoad = Promise.resolve(); return photoLoad; }
+    photoLoad = idbGet().then((v) => {
+      const list = Array.isArray(v) ? v : [], ids = new Set(list.map((f) => f.id));
+      ls.forEach((f) => { if (!ids.has(f.id)) list.push(f); });
+      const changed = list.length !== ls.length || ls.length;
+      photoCache = list;
+      return (ls.length ? idbPut(list) : Promise.resolve()).then(() => {
+        try { localStorage.removeItem(PHOTO_KEY); } catch (e) { /* ignora */ }
+        if (changed && window.UI && UI.refresh) { try { UI.refresh(); } catch (e) { /* ignora */ } }
+      });
+    }).catch(() => { useIDB = false; });
+    return photoLoad;
+  }
+  function photos() { if (!photoCache) loadPhotos(); return photoCache; }
   function savePhotos() {
+    if (useIDB) { idbPut(photoCache || []).catch(() => { if (window.UI) UI.toast('Não foi possível salvar as fotos'); }); return true; }
     try { localStorage.setItem(PHOTO_KEY, JSON.stringify(photoCache || [])); return true; } catch (e) { return false; }
   }
-  function addPhoto(data, pose) {
-    photos().push({ id: uid('f'), date: iso(today()), data, pose: pose || 'Frente' });
+  function addPhoto(data, pose, date) {
+    photos().push({ id: uid('f'), date: date || iso(today()), data, pose: pose || 'Frente' });
     if (!savePhotos()) { photoCache.pop(); return false; }
     return true;
   }
   function deletePhoto(id) { photoCache = photos().filter((f) => f.id !== id); savePhotos(); }
+  function deletePhotos(ids) { const set = new Set(ids); photoCache = photos().filter((f) => !set.has(f.id)); savePhotos(); }
+  function updatePhoto(id, patch) {
+    const f = photos().find((x) => x.id === id); if (!f) return;
+    if (patch.pose && patch.pose !== f.pose) delete f.ref; // trocar de posição tira o "antes"
+    Object.assign(f, patch); savePhotos();
+  }
+  function setPhotoRef(id) {
+    const f = photos().find((x) => x.id === id); if (!f) return;
+    photos().forEach((x) => { if (x.pose === f.pose) delete x.ref; });
+    f.ref = true; savePhotos();
+  }
+  const byDate = (a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+  function photosOf(pose) { return photos().filter((f) => !pose || f.pose === pose).sort(byDate); }
+  // "Antes" da posição: a escolhida pela pessoa ou, sem escolha, a mais antiga.
+  function photoRef(pose) { const l = photosOf(pose); return l.find((f) => f.ref) || l[0] || null; }
+  // Peso do dia da foto: o registro daquele dia ou o mais próximo antes dele (até 14 dias).
+  function weightOn(date) {
+    const e = (S.body && S.body.entries || []).filter((x) => x.peso != null && x.date <= date).sort(byDate).pop();
+    if (!e) return null;
+    return (parseISO(date) - parseISO(e.date)) / 864e5 <= 14 ? e.peso : null;
+  }
 
   let saveTimer = null;
   function save(now) {
@@ -766,7 +810,9 @@
     return lines.join('\n');
   }
 
-  function exportBackup() { return JSON.stringify(S); }
+  // full = backup feito pela pessoa (arquivo): inclui as fotos se ela ligou em Configurações › Seus dados.
+  // A sincronização da conta (cloud.js) usa sem fotos.
+  function exportBackup(full) { return JSON.stringify(full && S.settings.backupPhotos && photos().length ? Object.assign({}, S, { photos: photos() }) : S); }
   // Backup semanal. Android: grava sozinho em Downloads/Gravity. Navegador (iPhone): só avisa
   // (backupDue) para a tela inicial lembrar. Fotos de progresso não entram no backup.
   const WEEK = 7 * 864e5;
@@ -781,7 +827,7 @@
     const A = window.Android;
     if (!A || !A.saveBackup || !backupDue()) return '';
     let where = '';
-    try { where = A.saveBackup('gravity-backup-' + iso(today()) + '.json', exportBackup()); } catch (e) { /* tenta na próxima */ }
+    try { where = A.saveBackup('gravity-backup-' + iso(today()) + '.json', exportBackup(true)); } catch (e) { /* tenta na próxima */ }
     if (where) { S.settings.lastBackup = Date.now(); S.settings.lastBackupWhere = where; save(true); }
     return where;
   }
@@ -790,6 +836,7 @@
   function importBackup(text) {
     const data = JSON.parse(text);
     if (!data || data.v !== 1 || !Array.isArray(data.plans)) throw new Error('Arquivo de backup inválido.');
+    if (Array.isArray(data.photos)) { photoCache = data.photos; savePhotos(); delete data.photos; }
     S = data; save(true);
   }
   function reset() { S = fresh(); save(true); photoCache = []; savePhotos(); }
@@ -822,6 +869,7 @@
 
   window.Store = {
     load, save, get state() { return S; }, uid, PAIN_SPOTS, PAIN_LEVELS, addPain, painsFor, painAlert, snoozePain, sessionNeed, quickPlan, applyQuick, restFor, swapBase, swapFor, swapExtra, swapLog, isUni, sideR, sideL, setSides, checkinLevel, applyCheckin, lightSession, isCardio, isBodyweight, bodyWeight, loadOf, repRange, rangeMode, applyRange, deloadActive, deloadProposal, startDeload, endDeload, snoozeDeload, stallOf, snoozeStall, stalledExercises, DELOAD,
+    POSES, deletePhotos, updatePhoto, setPhotoRef, photosOf, photoRef, weightOn, photosReady: () => loadPhotos(),
     gymDependent, available, setAvailable, WEEKDAYS, WEEKDAYS_LONG, GROUPS, TEMPLATES, DAY,
     iso, parseISO, today, addDays, weekStartOf, weekRange, weeksBack, weekStreak,
     allExercises, exercise, findExerciseByName, videoUrl,

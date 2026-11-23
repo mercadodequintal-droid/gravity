@@ -56,6 +56,7 @@
     ['Perguntar como você está hoje', 'check-in sono energia dor', 'treino', 'checkin'],
     ['Perguntar como foi a série', 'esforco rir limite pesado tranquilo', 'treino', 'askRir'],
     ['Minha academia', 'academia aparelhos maquinas', 'treino', 'gym'],
+    ['Necrotério muscular', 'necroterio musculos esquecidos abandono', 'treino', 'necro'],
     ['Extrato de Desculpas', 'desculpas faltas falta motivo extrato stories', 'treino', 'excAsk'],
     ['Quanto pago para treinar', 'mensalidade academia wellhub gympass totalpass valor custo preco', 'treino', 'excPay'],
     ['Tema', 'tema cor aparencia dourado sangue do inimigo vermelho pai de planta verde azul luana atelier', 'aparencia', 'theme'],
@@ -74,6 +75,7 @@
     ['Backup automático semanal', 'backup copia automatico', 'dados', 'autoBackup'],
     ['Fazer backup', 'backup exportar salvar copia drive', 'dados', 'export'],
     ['Restaurar backup', 'restaurar importar', 'dados', 'import'],
+    ['Incluir fotos no backup', 'fotos progresso backup copia', 'dados', 'backupPhotos'],
     ['Dados de exemplo', 'exemplo demo teste graficos', 'dados', 'demo'],
     ['Apagar tudo', 'apagar resetar limpar', 'menu', 'reset'],
     ['Perfil', 'perfil nome foto', 'perfil', ''],
@@ -154,7 +156,8 @@
             <div class="seg" style="width:100%;margin-top:8px">${[['ask', 'Perguntar'], ['auto', 'Automática'], ['off', 'Desligada']].map(([v, l]) => `<button class="${(st().rangeMode || 'ask') === v ? 'on' : ''}" data-a="rangeMode" data-v="${v}">${l}</button>`).join('')}</div></div>`)}
         ${cap('Semana')}${box(`<div class="switch-row" data-row="weekStart"><div class="grow"><div>Semana começa</div><div class="small muted">Para a agenda, a sequência e os gráficos</div></div><div class="seg" style="width:170px"><button class="${st().weekStart === 1 ? 'on' : ''}" data-a="ws" data-v="1">Segunda</button><button class="${st().weekStart === 0 ? 'on' : ''}" data-a="ws" data-v="0">Domingo</button></div></div>`)}
         ${cap('Experiência do treino')}${box(sw('Perguntar como você está hoje', 'Sono, energia e dor antes do treino · dia ruim alivia o treino', 'checkin')
-          + sw('Perguntar como foi a série', 'No limite, pesado ou tranquilo · ajuda a sugerir a carga', 'askRir'))}
+          + sw('Perguntar como foi a série', 'No limite, pesado ou tranquilo · ajuda a sugerir a carga', 'askRir')
+          + sw('Necrotério muscular na tela inicial', 'Avisa quando um músculo fica 14 dias ou mais sem treino', 'necro'))}
         ${cap('Academia')}${box(link('gym', 'dumbbell', 'Minha academia', 'Aparelhos que a sua academia tem · o app só sugere esses', 'gym'))}
         ${window.Excuse && Excuse.st() ? cap('Extrato de Desculpas') + box(sw('Perguntar o motivo quando eu faltar', 'No dia seguinte a um treino perdido, na tela inicial', 'excAsk')
           + sw('Extrato no começo de cada mês', 'Stories do mês anterior para compartilhar', 'excMonthly')
@@ -187,7 +190,7 @@
           ${cap('Informações')}${box(link('about', 'info', 'Sobre o Gravity', 'Versão de teste · Android e iPhone') + link('terms', 'note', 'Termos de uso', 'Versão ' + ((window.LEGAL && LEGAL.version) || '1.0')) + link('priv', 'note', 'Política de privacidade', 'Como seus dados são usados') + link('credits', 'camera', 'Créditos das imagens', 'Bancos de imagens abertos'))}`,
       dados: () => `<div class="card cf-app-now"><span class="ic-big">${icon('download')}</span><div class="grow"><b>${st().lastBackup ? 'Backup feito' : 'Sem backup ainda'}</b><small>${st().lastBackup ? 'Último: ' + dateBR(st().lastBackup) : 'Salve uma cópia dos seus treinos'}</small></div><button class="btn lime sm" data-a="export">Fazer backup</button></div>
           ${cap('Proteção')}${box(sw('Backup automático semanal', window.Android ? 'Salva toda semana em Downloads/Gravity (guarda os 4 últimos)' : 'Lembra toda semana de salvar o backup', 'autoBackup'))}
-          ${cap('Backup')}${box(link('export', 'download', 'Fazer backup', 'Envie para o Drive, WhatsApp ou e-mail', 'export') + link('import', 'upload', 'Restaurar backup', 'Substitui os dados atuais', 'import'))}
+          ${cap('Backup')}${box(link('export', 'download', 'Fazer backup', 'Envie para o Drive, WhatsApp ou e-mail', 'export') + link('import', 'upload', 'Restaurar backup', 'Substitui os dados atuais', 'import') + sw('Incluir fotos de progresso no backup', 'O arquivo fica maior. As fotos não vão para a sincronização da conta', 'backupPhotos'))}
           ${cap('Teste')}${box(link('demo', 'sparkle', S().sessions.some((s) => s.demo) ? 'Remover dados de exemplo' : 'Criar dados de exemplo', 'Para ver os gráficos funcionando', 'demo'))}
           <div class="small muted cf-note">${icon('info', 'sm')} Seus treinos ficam neste aparelho. Faça backup para não perder nada.</div>`,
     };
@@ -211,7 +214,7 @@
         news: () => push(News.History()),
         tips: () => push(TipsFx.Collection()),
         about: () => sheet({ render: () => `<h3>Sobre o Gravity</h3><div class="desc">Versão ${News.VERSION} · versão de teste para Android e iPhone.<br><br>Seus treinos ficam só neste aparelho, sem cadastro.<br><br>Fotos dos exercícios: Free Exercise DB (domínio público).</div><button class="btn lime block" style="margin-top:16px" data-a="ok">Fechar</button>`, actions: { ok: closeSheet } }),
-        export: () => { Native.share('Backup Gravity', Store.exportBackup(), 'gravity-backup-' + Store.iso(Store.today()) + '.json'); Store.backupDone(); refresh(); },
+        export: () => { Native.share('Backup Gravity', Store.exportBackup(true), 'gravity-backup-' + Store.iso(Store.today()) + '.json'); Store.backupDone(); refresh(); },
         import: () => pickFile((text) => {
           confirmSheet('Restaurar backup?', 'Todos os dados atuais serão substituídos pelos do arquivo.', 'Restaurar', () => {
             try { Store.importBackup(text); toast('Backup restaurado'); UI.switchTab('home', true); } catch (err) { toast(err.message || 'Arquivo inválido'); }
@@ -458,7 +461,7 @@
         acc: () => push(Account()),
         terms: () => push(LegalDoc('termos')),
         priv: () => push(LegalDoc('privacidade')),
-        exp: () => { Native.share('Backup Gravity', Store.exportBackup(), 'gravity-backup-' + Store.iso(Store.today()) + '.json'); Store.backupDone(); },
+        exp: () => { Native.share('Backup Gravity', Store.exportBackup(true), 'gravity-backup-' + Store.iso(Store.today()) + '.json'); Store.backupDone(); },
       },
     };
   }

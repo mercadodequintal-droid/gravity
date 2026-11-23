@@ -159,7 +159,7 @@
         const hs = 'B';
         if (window.Rehab) Rehab.sync();
         const exTop = window.Excuse ? Excuse.homeCard() : ''; // v0.53.1: cartão da falta logo abaixo do treino do dia
-        const rhCard = (window.Rehab ? Rehab.homeCard() : '') + (window.Weak ? Weak.homeCard() : '');
+        const rhCard = (window.Rehab ? Rehab.homeCard() : '') + (window.Weak ? Weak.homeCard() : '') + (window.Necro ? Necro.homeCard() : '');
         if (hs) return head + homeStyled(hs, { S, p, list, range, t, dow, cta, done, partial, late, pct, setsW, vol, mins, level, upd: Updater.card(), extraTop: exTop, extra: rhCard + backupCard + deloadCard });
         return head + `<div class="content">${who}${Updater.card()}${overall}${backupCard}${deloadCard}${quoteCard}${sched}${Screens.muscleCard()}${Screens.strengthCard()}${streakCard}${mission}
           <div class="section-title"><h2>Esta semana</h2><button class="link" data-a="progress">Ver evolução</button></div>${tiles}</div>`;
@@ -187,7 +187,7 @@
         pwOpen: () => push(Screens.Records()),
         updNow: () => Updater.install(),
         updLater: () => Updater.later(),
-        bkNow: () => { Native.share('Backup Gravity', Store.exportBackup(), 'gravity-backup-' + Store.iso(Store.today()) + '.json'); Store.backupDone(); UI.refresh(); },
+        bkNow: () => { Native.share('Backup Gravity', Store.exportBackup(true), 'gravity-backup-' + Store.iso(Store.today()) + '.json'); Store.backupDone(); UI.refresh(); },
         bkLater: () => { Store.snoozeBackup(); toast('Lembro de novo em 2 dias'); UI.refresh(); },
         pwWeight: () => Screens.measureSheet(() => UI.refresh()),
         deloadYes: () => { Store.startDeload(); toast('Semana leve ativada por 7 dias'); UI.refresh(); },
@@ -197,6 +197,8 @@
         rhNo: (ds) => { Rehab.snooze(ds.r); UI.refresh(); },
         wkSeen: () => { Weak.seen(); UI.refresh(); },
         ex: (ds, el) => Excuse.act(ds, el),
+        ncX: () => { Necro.seen(); UI.refresh(); },
+        ncOpen: () => { Necro.seen(); push(Screens.MuscleMap('necro')); },
         wkOpen: () => { Weak.seen(); push(Weak.WeakScreen()); },
         open: (ds) => push(WorkoutScreen(ds.id)),
         agenda: () => agendaSheet(),
@@ -1134,10 +1136,11 @@
         note: (ds, el) => { note = el.value; },
         no: closeSheet,
         ok: () => {
+          const rez = window.Necro ? Necro.revived(s) : []; // músculos em óbito que este treino ressuscitou
           Store.finishSession(s, feel, note); Rest.stop(); closeSheet();
           Object.keys(rhVal).forEach((r) => Rehab.score(r, rhVal[r]));
           popTo(1);
-          setTimeout(() => celebrate(s), 380);
+          setTimeout(() => celebrate(s, rez), 380);
         },
       },
     });
@@ -1153,7 +1156,7 @@
 
   // v0.45: comemoração em tela cheia. Selo grande, 3 números, destaques curtos (recordes antes → agora,
   // no máximo uma conquista e "e mais N") e Compartilhar como botão principal.
-  function celebrate(s) {
+  function celebrate(s, rez) {
     const pr = Store.sessionProgress(s);
     const recs = Store.sessionRecords(s);
     const medals = Analytics.newMedals();
@@ -1183,7 +1186,7 @@
         <div class="row"><button class="link gold" data-fm="fbYes">Enviar sugestão</button><button class="link" data-fm="fbNo">Agora não</button></div></div></div>` : ''}`;
     document.body.appendChild(el);
     requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
-    const close = () => { if (!el.parentNode) return false; el.classList.remove('show'); setTimeout(() => el.remove(), 320); UI.overlayBack = null; if (window.News) setTimeout(() => News.afterWorkout(), 350); return true; };
+    const close = () => { if (!el.parentNode) return false; el.classList.remove('show'); setTimeout(() => el.remove(), 320); UI.overlayBack = null; if (rez && rez.length) setTimeout(() => Necro.celebrate(rez), 350); else if (window.News) setTimeout(() => News.afterWorkout(), 350); return true; };
     UI.overlayBack = close;
     el.addEventListener('click', (e) => {
       const b = e.target.closest('[data-fm]'); if (!b) return;

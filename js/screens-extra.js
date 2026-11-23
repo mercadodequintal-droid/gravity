@@ -183,11 +183,12 @@
 
   // ---------- comparar fotos de progresso ----------
   // Duas datas da mesma posição, uma sobre a outra; arrastar a linha revela o antes e o depois.
-  function PhotoCompare() {
+  // v0.54: abre com a posição e as duas fotos escolhidas (pose null = quaisquer duas, de posições diferentes).
+  function PhotoCompare(pose0, A0, B0) {
     const all = () => Store.photos().slice().sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
-    const poses = () => ['Frente', 'Lado', 'Costas'].filter((p) => all().filter((f) => f.pose === p).length >= 2);
-    let pose = poses()[0] || 'Frente', A = null, B = null, pct = 50, mode = 'slide';
-    const list = () => all().filter((f) => f.pose === pose);
+    const poses = () => Store.POSES.filter((p) => all().filter((f) => f.pose === p).length >= 2);
+    let pose = pose0 === undefined ? (poses()[0] || 'Frente') : pose0, A = A0 || null, B = B0 || null, pct = 50, mode = 'slide';
+    const list = () => all().filter((f) => !pose || f.pose === pose);
     const pick = () => { const l = list(); if (!l.find((f) => f.id === A)) A = l[0] && l[0].id; if (!l.find((f) => f.id === B)) B = l[l.length - 1] && l[l.length - 1].id; };
     const get = (id) => all().find((f) => f.id === id);
     const dt = (f) => (f ? f.date.split('-').reverse().join('/') : '');
@@ -203,12 +204,13 @@
           ? `<div class="cmp" data-cmp><img src="${b.data}" alt=""><img class="top" src="${a.data}" alt="" style="clip-path:inset(0 ${100 - pct}% 0 0)"><div class="cmp-line" style="left:${pct}%"><span>${icon('back', 'sm')}${icon('next', 'sm')}</span></div><em class="l">Antes · ${dt(a)}</em><em class="r">Depois · ${dt(b)}</em></div>`
           : `<div class="ba"><div><img src="${a.data}" alt=""><span>Antes · ${dt(a)}</span></div><div><img src="${b.data}" alt=""><span>Depois · ${dt(b)}</span></div></div>`;
         return topbar('Comparar fotos') + `<div class="content">
-          ${ps.length > 1 ? `<div class="seg" style="margin-bottom:12px">${ps.map((p) => `<button class="${pose === p ? 'on' : ''}" data-a="pose" data-p="${p}">${p}</button>`).join('')}</div>` : ''}
+          ${ps.length > 1 && pose ? `<div class="seg" style="margin-bottom:12px">${ps.map((p) => `<button class="${pose === p ? 'on' : ''}" data-a="pose" data-p="${p}">${p}</button>`).join('')}</div>` : ''}
           <div class="seg" style="margin-bottom:12px"><button class="${mode === 'slide' ? 'on' : ''}" data-a="mode" data-m="slide">Deslizar</button><button class="${mode === 'side' ? 'on' : ''}" data-a="mode" data-m="side">Lado a lado</button></div>
           ${view}
           <div class="small muted" style="text-align:center;margin:8px 0 4px">${days()} dias entre as fotos${mode === 'slide' ? ' · arraste a linha' : ''}</div>
           <div class="caps" style="margin:14px 2px 6px">Antes</div>${chips(A, 'A')}
-          <div class="caps" style="margin:14px 2px 6px">Depois</div>${chips(B, 'B')}</div>`;
+          <div class="caps" style="margin:14px 2px 6px">Depois</div>${chips(B, 'B')}
+          <button class="btn lime block" style="margin-top:16px" data-a="share">${icon('share', 'sm')}Imagem antes e depois</button></div>`;
       },
       after(el) {
         const box = el.querySelector('[data-cmp]'); if (!box) return;
@@ -222,6 +224,7 @@
       actions: {
         back: pop,
         pose: (ds) => { pose = ds.p; A = B = null; refresh(); },
+        share: () => { const a = get(A), b = get(B); if (a && b) shareBA(a, b); },
         mode: (ds) => { mode = ds.m; refresh(); },
         pick: (ds) => { if (ds.k === 'A') A = ds.id; else B = ds.id; refresh(); },
       },
@@ -236,8 +239,8 @@
       <div class="legend" style="margin-top:10px"><span><i style="background:${VCOL.pouco}"></i>Pouco</span><span><i style="background:${VCOL.ideal}"></i>Ideal</span><span><i style="background:${VCOL.alto}"></i>Alto</span></div></div></div></div>`;
   }
 
-  function MuscleMap() {
-    let mode = 'volume';
+  function MuscleMap(mode0) {
+    let mode = mode0 || 'volume';
     return {
       hideNav: true,
       render() {
@@ -248,8 +251,10 @@
           ? st.map((r) => `<div class="hbar mrow press" data-a="meta" data-id="${r.id}"><span class="ellipsis">${esc(r.nome)}${r.custom ? ' <i class="meta-dot"></i>' : ''}</span><div class="track band"><span class="zone" style="left:${r.alvo[0] / 24 * 100}%;width:${(r.alvo[1] - r.alvo[0]) / 24 * 100}%"></span><i style="width:${Math.min(100, r.n / 24 * 100)}%;background:${VCOL[r.st]}"></i></div><span class="v num">${nf(r.n)}<small>/${r.alvo[0]}</small></span></div>`).join('')
           : Analytics.REGIONS.map((g) => { const v = rec[g.id]; return `<div class="hbar mrow"><span class="ellipsis">${esc(g.nome)}</span><div class="track"><i style="width:${Math.round(v * 100)}%;background:${recColor(v)}"></i></div><span class="v num">${Math.round(v * 100)}%</span></div>`; }).join('');
         const tired = Analytics.REGIONS.filter((g) => rec[g.id] < 0.6).map((g) => g.nome);
+        const segs = `<div class="seg"><button class="${mode === 'volume' ? 'on' : ''}" data-a="mode" data-m="volume">Volume</button><button class="${mode === 'rec' ? 'on' : ''}" data-a="mode" data-m="rec">Recuperação</button>${window.Necro ? `<button class="${mode === 'necro' ? 'on' : ''}" data-a="mode" data-m="necro">Necrotério</button>` : ''}</div>`;
+        if (mode === 'necro') return topbar('Músculos') + `<div class="content">${segs}${Necro.tabHTML()}</div>`;
         return topbar('Músculos') + `<div class="content">
-          <div class="seg"><button class="${mode === 'volume' ? 'on' : ''}" data-a="mode" data-m="volume">Volume da semana</button><button class="${mode === 'rec' ? 'on' : ''}" data-a="mode" data-m="rec">Recuperação</button></div>
+          ${segs}
           <div class="card" style="margin-top:12px;text-align:center"><div class="seg body-switch mb-switch"><button class="${MyBody.active() ? '' : 'on'}" data-a="bodyView" data-v="boneco">Boneco</button><button class="${MyBody.active() ? 'on' : ''}" data-a="bodyView" data-v="foto">Minha foto</button></div>${MyBody.active() ? '' : AnatomyReal.genderSwitch()}${bodySVG(color, 300)}${MyBody.active() ? `<button class="link small gold" style="margin:4px 0 8px" data-a="myBody">Trocar ou ajustar a foto</button>` : ''}
             <div class="legend" style="justify-content:center">${mode === 'volume'
               ? `<span><i style="background:#5c6067"></i>Nada</span><span><i style="background:${VCOL.pouco}"></i>Abaixo</span><span><i style="background:${VCOL.ideal}"></i>Ideal</span><span><i style="background:${VCOL.alto}"></i>Acima</span>`
@@ -260,7 +265,7 @@
           ${mode === 'volume' ? `<div class="section-title"><h2>Equilíbrio</h2></div>${balanceCard()}` : ''}
           <div class="tiny faint" style="margin-top:14px">${mode === 'volume' ? 'Faixas baseadas em recomendações comuns de hipertrofia (cerca de 10 a 20 séries semanais para músculos grandes).' : 'Estimativa: cada músculo precisa de 48 h + 4 h por série feita, até 96 h.'}</div></div>`;
       },
-      actions: { bodyView: (ds) => { if (ds.v === 'foto') { if (MyBody.has()) { MyBody.setView('foto'); refresh(); } else MyBody.setup(refresh); } else { MyBody.setView('boneco'); refresh(); } }, myBody: () => MyBody.setup(refresh), back: pop, meta: (ds) => metaSheet(ds.id, refresh), mode: (ds) => { mode = ds.m; refresh(); }, bodyType: (ds) => { AnatomyReal.setGender(ds.v); Native.vibrate(8); refresh(); } },
+      actions: { nc: (ds) => Necro.tagSheet(ds.r), bodyView: (ds) => { if (ds.v === 'foto') { if (MyBody.has()) { MyBody.setView('foto'); refresh(); } else MyBody.setup(refresh); } else { MyBody.setView('boneco'); refresh(); } }, myBody: () => MyBody.setup(refresh), back: pop, meta: (ds) => metaSheet(ds.id, refresh), mode: (ds) => { mode = ds.m; refresh(); }, bodyType: (ds) => { AnatomyReal.setGender(ds.v); Native.vibrate(8); refresh(); } },
     };
   }
 
@@ -282,7 +287,7 @@
   }
   function pickImage(cb) {
     const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*'; inp.style.display = 'none';
-    inp.onchange = () => { const f = inp.files && inp.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => cb(r.result); r.readAsDataURL(f); inp.remove(); };
+    inp.onchange = () => { const f = inp.files && inp.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => cb(r.result, f); r.readAsDataURL(f); inp.remove(); };
     document.body.appendChild(inp); inp.click();
   }
   // v0.46: registrar peso e medidas usa a folha nova do Corpo.
@@ -361,7 +366,7 @@
   // Silhueta de referência (primeira foto da posição).
   const SIL = { Frente: '<svg viewBox="0 0 100 220" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="1.6" stroke-dasharray="4 4"><circle cx="50" cy="20" r="14"/><path d="M30 44h40l10 54-8 2-6-36-2 58 6 90h-12l-8-80-8 80h-12l6-90-2-58-6 36-8-2z"/></svg>',
     Lado: '<svg viewBox="0 0 100 220" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="1.6" stroke-dasharray="4 4"><circle cx="50" cy="20" r="14"/><path d="M42 44h18l6 60-6 2-2 30 4 80h-12l-4-80-4 80h-12l6-80-2-30-4-2z"/></svg>' };
-  SIL.Costas = SIL.Frente;
+  SIL.Costas = SIL.Frente; SIL.Livre = '<svg viewBox="0 0 100 220" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="1.6" stroke-dasharray="4 4"><rect x="14" y="30" width="72" height="160" rx="10"/><circle cx="50" cy="90" r="16"/></svg>';
   // Câmera com guia: a última foto da mesma posição aparece apagada por cima, para repetir o enquadramento.
   function cameraGuide(pose, done) {
     const prev = Store.photos().filter((f) => f.pose === pose).sort((a, b) => (a.date < b.date ? -1 : 1)).pop();
@@ -407,13 +412,18 @@
     const sil = (p) => `<span class="cp-sil">${SIL[p]}</span>`;
     sheet({
       render: () => `<h3>Foto de progresso</h3><div class="desc">Escolha a posição. Na câmera, a foto anterior aparece de leve para você repetir o mesmo enquadramento.</div>
-        <div class="cp-pose">${['Frente', 'Lado', 'Costas'].map((p) => `<button class="${p === pose ? 'on' : ''}" data-a="p" data-v="${p}">${sil(p)}${p}</button>`).join('')}</div>
-        <div class="small muted" style="margin:10px 2px 0">${icon('sparkle', 'sm')} Mesmo lugar, mesma luz, mesma hora. As fotos ficam só no celular e não vão para o backup.</div>
+        <div class="cp-pose four">${Store.POSES.map((p) => `<button class="${p === pose ? 'on' : ''}" data-a="p" data-v="${p}">${sil(p)}${p}</button>`).join('')}</div>
+        <div class="small muted" style="margin:10px 2px 0">${icon('sparkle', 'sm')} Mesmo lugar, mesma luz, mesma hora. As fotos ficam só no celular (e no backup, se você ligar em Configurações › Seus dados).</div>
         <div class="fs-btns"><button class="btn ghost" data-a="gal">${icon('upload', 'sm')}Galeria</button><button class="btn lime" data-a="cam">${icon('camera', 'sm')}Câmera</button></div>`,
       actions: {
         p: (ds) => { pose = ds.v; sheetRefresh(); },
         cam: () => { closeSheet(); setTimeout(() => cameraGuide(pose, done), 300); },
-        gal: () => { closeSheet(); pickImage((data) => shrink(data, 900, (small) => { if (Store.addPhoto(small, pose)) { toast('Foto salva'); done && done(); } else toast('Sem espaço para mais fotos. Apague algumas antigas.'); })); },
+        // v0.54: foto da galeria entra com a data do arquivo (dá para corrigir depois).
+        gal: () => { closeSheet(); pickImage((data, file) => shrink(data, 900, (small) => {
+          const fd = file && file.lastModified ? Store.iso(new Date(file.lastModified)) : null, today = Store.iso(Store.today());
+          const date = fd && fd <= today ? fd : today;
+          if (Store.addPhoto(small, pose, date)) { toast(date !== today ? 'Foto salva com a data dela: ' + shortDate(date) + ' (dá para mudar)' : 'Foto salva'); done && done(); } else toast('Sem espaço para mais fotos. Apague algumas antigas.');
+        })); },
       },
     });
   }
@@ -436,6 +446,119 @@
       actions: { back: pop, m: (ds) => { k = ds.k; UI.refresh(); } },
     };
   }
+  // ====================== v0.54 · FOTOS DE PROGRESSO (aprovado em 23/11, item 27) ======================
+  let bodyPose = 'Frente';
+  const ddmm = (d) => d.split('-').reverse().join('/');
+  const wTxt = (f) => { const w = Store.weightOn(f.date); return w != null ? ' · ' + nf(w, 1) + ' kg' : ''; };
+  // Cartão do Corpo: "antes" (escolhido ou o mais antigo) × mais recente, por posição.
+  function photoCard() {
+    const has = Store.POSES.filter((p) => Store.photosOf(p).length);
+    if (!has.includes(bodyPose)) bodyPose = has[0] || 'Frente';
+    const l = Store.photosOf(bodyPose), ref = Store.photoRef(bodyPose), last = l[l.length - 1];
+    const pair = ref && last && ref.id !== last.id ? [ref, last] : ref ? [ref] : [];
+    return `<div class="cp-ph">${pair.map((f, i) => `<button class="press" data-a="view" data-id="${f.id}" style="background-image:url('${f.data}')">${i === 0 && pair.length > 1 ? '<i class="ph-ref">Antes</i>' : ''}<em>${shortDate(f.date)}${wTxt(f)}</em></button>`).join('')}</div>
+      ${has.length > 1 || bodyPose === 'Livre' ? `<div class="seg ph-seg">${Store.POSES.map((p) => `<button class="${p === bodyPose ? 'on' : ''}" data-a="bpose" data-p="${p}" ${Store.photosOf(p).length ? '' : 'disabled style="opacity:.35"'}>${p}</button>`).join('')}</div>` : ''}`;
+  }
+  // Folha de uma foto: grande + opções.
+  function photoMenu(id, done) {
+    const f = () => Store.photos().find((x) => x.id === id);
+    if (!f()) return;
+    const back = () => { closeSheet(); setTimeout(() => done && done(), 280); };
+    sheet({
+      render: () => { const x = f(); if (!x) return ''; const isRef = (Store.photoRef(x.pose) || {}).id === x.id;
+        return `<img src="${x.data}" alt="" class="ph-big">
+        <div class="ph-meta">${ddmm(x.date)} · ${esc(x.pose)}${wTxt(x)}</div>
+        <button class="menu-item" data-a="ref" ${isRef ? 'disabled' : ''}><span class="ic">${icon('star', 'sm')}</span><span class="grow">${isRef ? 'Esta é a foto “antes”' : 'Usar como “antes”'}<div class="small muted">Referência da posição ${esc(x.pose)}</div></span></button>
+        <button class="menu-item" data-a="pose"><span class="ic">${icon('repeat', 'sm')}</span><span class="grow">Trocar a posição<div class="small muted">${esc(x.pose)}</div></span>${icon('next', 'sm')}</button>
+        <label class="menu-item"><span class="ic">${icon('calendar', 'sm')}</span><span class="grow">Mudar a data<div class="small muted">${ddmm(x.date)}</div></span><input type="date" class="ph-date" data-ch="date" value="${x.date}" max="${Store.iso(Store.today())}"></label>
+        <button class="menu-item" data-a="rep"><span class="ic">${icon('camera', 'sm')}</span><span class="grow">Substituir esta foto<div class="small muted">Galeria · mantém a data e a posição</div></span>${icon('next', 'sm')}</button>
+        <button class="menu-item danger" data-a="del"><span class="ic">${icon('trash', 'sm')}</span><span class="grow">Apagar</span></button>`; },
+      actions: {
+        ref: () => { Store.setPhotoRef(id); toast('Agora esta é a foto “antes” de ' + f().pose.toLowerCase()); sheetRefresh(); done && done(); },
+        pose: () => sheet({
+          render: () => `<h3>Posição da foto</h3><div class="cp-pose four">${Store.POSES.map((p) => `<button class="${p === f().pose ? 'on' : ''}" data-a="p" data-v="${p}"><span class="cp-sil">${SIL[p]}</span>${p}</button>`).join('')}</div>`,
+          actions: { p: (ds) => { Store.updatePhoto(id, { pose: ds.v }); bodyPose = ds.v; toast('Posição: ' + ds.v); closeSheet(); setTimeout(() => { done && done(); photoMenu(id, done); }, 300); } },
+        }),
+        date: (ds, el) => { if (el.value) { Store.updatePhoto(id, { date: el.value }); toast('Data: ' + ddmm(el.value)); sheetRefresh(); done && done(); } },
+        rep: () => pickImage((data) => shrink(data, 900, (small) => { Store.updatePhoto(id, { data: small }); toast('Foto substituída'); sheetRefresh(); done && done(); })),
+        del: () => { closeSheet(); setTimeout(() => confirmSheet('Apagar esta foto?', 'A foto de ' + ddmm(f().date) + ' (' + f().pose.toLowerCase() + ') será apagada deste celular.', 'Apagar', () => { Store.deletePhoto(id); toast('Foto apagada'); done && done(); }, true), 300); },
+      },
+    });
+  }
+  // Galeria: todas as fotos por posição, com seleção para apagar várias ou comparar duas.
+  function PhotoGallery(pose0) {
+    let tab = pose0 || 'Todas', sel = null;
+    const list = () => Store.photosOf(tab === 'Todas' ? null : tab).slice().reverse();
+    return {
+      hideNav: true,
+      render() {
+        const L = list(), n = sel ? sel.size : 0;
+        const right = Store.photos().length ? `<button class="link ph-selbtn" data-a="selmode">${sel ? 'Cancelar' : 'Selecionar'}</button>` : '';
+        return topbar('Fotos', right) + `<div class="content pg-c">
+          <div class="seg ph-seg">${['Todas'].concat(Store.POSES).map((p) => `<button class="${p === tab ? 'on' : ''}" data-a="tab" data-p="${p}">${p}</button>`).join('')}</div>
+          ${L.length ? `<div class="photo-grid ph-grid">${L.map((f) => { const r = (Store.photoRef(f.pose) || {}).id === f.id && Store.photosOf(f.pose).length > 1; return `<button class="${sel && sel.has(f.id) ? 'sel' : ''}" data-a="tap" data-id="${f.id}"><img src="${f.data}" alt="" loading="lazy">${r ? '<i class="ph-ref">Antes</i>' : ''}${sel ? '<b class="ph-ck">' + (sel.has(f.id) ? icon('check', 'sm') : '') + '</b>' : ''}<span>${shortDate(f.date)}${tab === 'Todas' ? ' · ' + esc(f.pose) : ''}</span></button>`; }).join('')}</div>`
+            : `<div class="card small muted" style="margin-top:12px">Nenhuma foto ${tab === 'Todas' ? 'ainda' : 'nesta posição'}.</div>`}
+          ${sel ? `<div class="fs-btns ph-bar"><button class="btn ghost fs-rm" data-a="delsel" ${n ? '' : 'disabled'}>${icon('trash', 'sm')}Apagar${n ? ' (' + n + ')' : ''}</button><button class="btn lime" data-a="cmpsel" ${n === 2 ? '' : 'disabled'}>${icon('layers', 'sm')}Comparar${n === 2 ? '' : ' (2)'}</button></div>`
+            : `<div class="fs-btns ph-bar"><button class="btn ghost" data-a="cmp">${icon('layers', 'sm')}Comparar</button><button class="btn lime" data-a="new">${icon('camera', 'sm')}Nova foto</button></div>`}</div>`;
+      },
+      actions: {
+        back: pop,
+        tab: (ds) => { tab = ds.p; if (sel) sel.clear(); refresh(); },
+        selmode: () => { sel = sel ? null : new Set(); refresh(); },
+        tap: (ds) => { if (sel) { if (sel.has(ds.id)) sel.delete(ds.id); else sel.add(ds.id); Native.vibrate(5); refresh(); } else photoMenu(ds.id, refresh); },
+        delsel: () => { const ids = [...sel]; confirmSheet('Apagar ' + ids.length + (ids.length === 1 ? ' foto?' : ' fotos?'), 'Elas serão apagadas deste celular.', 'Apagar', () => { Store.deletePhotos(ids); sel = null; toast(ids.length === 1 ? 'Foto apagada' : ids.length + ' fotos apagadas'); refresh(); }, true); },
+        cmpsel: () => { const [a, b] = [...sel].map((id) => Store.photos().find((x) => x.id === id)).sort((x, y) => (x.date < y.date ? -1 : 1)); sel = null; push(PhotoCompare(null, a.id, b.id)); },
+        cmp: () => { const p = tab === 'Todas' ? null : tab, r = Store.photoRef(p), l = Store.photosOf(p); push(PhotoCompare(p, r && r.id, l.length > 1 ? l[l.length - 1].id : null)); },
+        new: () => photoSheet(refresh),
+      },
+    };
+  }
+  // Imagem "antes e depois" para compartilhar (1080x1350), com opções de rosto, peso/medidas e datas.
+  function shareBA(a, b) {
+    const o = { face: true, nums: true, dates: false };
+    const load = (src) => new Promise((res) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = src; });
+    const draw = async () => {
+      try { await document.fonts.ready; } catch (e) { /* segue */ }
+      const [ia, ib] = await Promise.all([load(a.data), load(b.data)]);
+      const W = 1080, H = 1350, c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
+      const cs = getComputedStyle(document.documentElement), GOLD = cs.getPropertyValue('--gold').trim() || '#d9b25f', GOLD2 = cs.getPropertyValue('--gold-2').trim() || '#f3d48c';
+      g.fillStyle = '#0a0a0b'; g.fillRect(0, 0, W, H);
+      const top = 150, ph = 960, pw = 516;
+      [[ia, 16, a], [ib, W - 16 - pw, b]].forEach(([im, x, f]) => {
+        g.save(); g.beginPath(); g.roundRect ? g.roundRect(x, top, pw, ph, 24) : g.rect(x, top, pw, ph); g.clip();
+        if (im) { const s = Math.max(pw / im.width, ph / im.height), w = im.width * s, h = im.height * s; g.drawImage(im, x + (pw - w) / 2, top, w, h);
+          if (o.face) { // borra a faixa de cima (onde costuma ficar o rosto)
+            const fh = ph * 0.2; g.filter = 'blur(28px)'; g.drawImage(c, x, top, pw, fh, x, top, pw, fh); g.filter = 'none'; g.fillStyle = 'rgba(10,10,11,.35)'; g.fillRect(x, top, pw, fh); } }
+        g.restore();
+        g.fillStyle = 'rgba(0,0,0,.6)'; g.fillRect(x, top + ph - 70, pw, 70);
+        g.fillStyle = '#fff'; g.font = '600 34px Oswald, sans-serif'; g.textAlign = 'left';
+        g.fillText((f === a ? 'ANTES' : 'DEPOIS') + (o.dates ? ' · ' + ddmm(f.date) : ''), x + 22, top + ph - 24);
+      });
+      g.fillStyle = GOLD; g.font = '500 40px Oswald, sans-serif'; g.textAlign = 'center'; g.fillText('G R A V I T Y', W / 2, 95);
+      const days = Math.round((Store.parseISO(b.date) - Store.parseISO(a.date)) / 864e5);
+      const wa = Store.weightOn(a.date), wb = Store.weightOn(b.date);
+      const parts = [days + ' dias'];
+      if (o.nums && wa != null && wb != null && wa !== wb) parts.push((wb - wa > 0 ? '+' : '−') + nf(Math.abs(wb - wa), 1) + ' kg');
+      if (o.nums) { const cin = (d) => { const e = S().body.entries.filter((x) => x.cintura != null && x.date <= d).pop(); return e ? e.cintura : null; }; const ca = cin(a.date), cb = cin(b.date); if (ca != null && cb != null && ca !== cb) parts.push('cintura ' + (cb - ca > 0 ? '+' : '−') + nf(Math.abs(cb - ca), 1) + ' cm'); }
+      g.fillStyle = GOLD2; g.font = '600 52px Oswald, sans-serif'; g.fillText(parts.join('   ·   '), W / 2, top + ph + 95);
+      g.fillStyle = '#8d877b'; g.font = '500 26px Montserrat, sans-serif'; g.fillText('gravityapp.com.br', W / 2, H - 28);
+      return c.toDataURL('image/jpeg', 0.9);
+    };
+    let url = '';
+    const paint = () => draw().then((u) => { url = u; const im = document.getElementById('baPrev'); if (im) im.src = u; });
+    sheet({
+      render: () => `<h3>Antes e depois</h3><img id="baPrev" class="ba-prev" alt="">
+        ${[['face', 'Esconder o rosto', 'Borra a parte de cima das fotos'], ['nums', 'Mostrar peso e medidas', 'Diferença de peso e cintura, se houver'], ['dates', 'Mostrar datas', '']].map(([k, t, s]) => `<div class="switch-row" data-a="opt" data-k="${k}"><div class="grow"><div>${t}</div>${s ? `<div class="small muted">${s}</div>` : ''}</div><div class="switch ${o[k] ? 'on' : ''}"></div></div>`).join('')}
+        <div class="fs-btns"><button class="btn ghost" data-a="no">Fechar</button><button class="btn lime" data-a="go">${icon('share', 'sm')}Compartilhar</button></div>`,
+      after: () => paint(),
+      actions: {
+        opt: (ds) => { o[ds.k] = !o[ds.k]; sheetRefresh(); },
+        no: closeSheet,
+        go: () => { if (url) Native.shareImage(url, 'gravity-antes-depois.jpg'); },
+      },
+    });
+  }
+
   function Body() {
     const again = () => UI.refresh();
     return {
@@ -460,10 +583,9 @@
             : `<button class="ed-box cp-w press" data-a="add"><div class="l">Peso</div><div class="small muted" style="padding:10px 0">Toque para registrar o peso.</div></button>`}
           <div class="pg-cap">Medidas · variação do mês<button class="cp-ob" data-a="meas">${icon('plus', 'sm')}Registrar</button></div>
           ${meas.length ? `<div class="cp-g">${meas.map(([k, n, un]) => { const d = monthDelta(k), good = d == null ? null : GOOD_DOWN[k] ? d < 0 : d > 0; return `<button class="press" data-a="metric" data-k="${k}"><span class="l">${n}</span><b class="num">${nf(lastOf(k)[k], 1)} ${un}</b>${d != null && d !== 0 ? `<small class="${good ? 'gd' : 'bd'}">${d > 0 ? '+' : '−'}${nf(Math.abs(d), 1)}</small>` : '<small>&nbsp;</small>'}</button>`; }).join('')}</div>` : '<div class="small muted" style="padding:4px 2px">Nenhuma medida ainda. Registre junto com o peso.</div>'}
-          <div class="pg-cap">Fotos<button class="cp-ob" data-a="photo">${icon('camera', 'sm')}Nova foto</button></div>
-          ${ba.length ? `<button class="cp-ph press" data-a="${ba.length >= 2 ? 'compare' : 'view'}" data-id="${ba[0].id}">${ba.map((f) => `<span style="background-image:url('${f.data}')"><em>${shortDate(f.date)} · ${esc(f.pose)}</em></span>`).join('')}</button>
-            ${photos.length > 2 ? `<div class="photo-grid" style="margin-top:10px">${photos.slice().reverse().map((f) => `<button data-a="view" data-id="${f.id}"><img src="${f.data}" alt=""><span>${shortDate(f.date)} · ${esc(f.pose)}</span></button>`).join('')}</div>` : ''}`
-            : '<div class="small muted" style="padding:4px 2px">Tire uma foto de frente, de lado e de costas, sempre no mesmo lugar e luz. A primeira e a última aparecem lado a lado aqui.</div>'}</div>`;
+          <div class="pg-cap">Fotos${photos.length ? `<button class="cp-ob" data-a="gallery">Ver todas (${photos.length})</button>` : ''}</div>
+          ${photos.length ? photoCard() : '<div class="small muted" style="padding:4px 2px">Tire uma foto de frente, de lado e de costas, sempre no mesmo lugar e luz. A foto “antes” e a mais recente aparecem lado a lado aqui.</div>'}
+          <div class="fs-btns" style="margin-top:10px">${photos.length >= 2 ? `<button class="btn ghost" data-a="compare">${icon('layers', 'sm')}Comparar</button>` : '<span></span>'}<button class="btn lime" data-a="photo">${icon('camera', 'sm')}Nova foto</button></div></div>`;
       },
       actions: {
         back: pop,
@@ -472,14 +594,10 @@
         goal: (ds, el, e) => { if (e) e.stopPropagation(); goalSheet(again); },
         metric: (ds, el, e) => { if (e && e.target.closest('[data-a="goal"]')) return; push(BodyMetric(ds.k)); },
         photo: () => photoSheet(again),
-        compare: () => push(PhotoCompare()),
-        view: (ds) => {
-          const f = Store.photos().find((x) => x.id === ds.id); if (!f) return;
-          sheet({
-            render: () => `<img src="${f.data}" alt="" style="width:100%;border-radius:12px"><div class="small muted" style="margin:8px 2px">${shortDate(f.date)} · ${esc(f.pose)}</div><div class="fs-btns"><button class="btn ghost fs-rm" data-a="del">${icon('trash', 'sm')}Apagar</button><button class="btn lime" data-a="no">Fechar</button></div>`,
-            actions: { no: closeSheet, del: () => { Store.deletePhoto(f.id); closeSheet(); again(); } },
-          });
-        },
+        compare: () => { const r = Store.photoRef(bodyPose), l = Store.photosOf(bodyPose); push(PhotoCompare(bodyPose, r && r.id, l.length > 1 ? l[l.length - 1].id : null)); },
+        gallery: () => push(PhotoGallery(bodyPose)),
+        bpose: (ds) => { bodyPose = ds.p; refresh(); },
+        view: (ds) => photoMenu(ds.id, again),
       },
     };
   }
@@ -685,5 +803,5 @@
     Native.widget(JSON.stringify({ line1, line2, done, total }));
   }
 
-  Object.assign(window.Screens, { volumeData, VCOL, balanceCard, balanceWarnHTML, balanceAlertsHTML, volumeAlertsHTML, metaSheet, MonthSummary, shareMonth, PhotoCompare, strengthCard, syncNative, MuscleMap, muscleCard, bodySVG, Records, History, recordsTable, Body, Medals, calendarCard, shareSession, measureSheet });
+  Object.assign(window.Screens, { volumeData, VCOL, balanceCard, balanceWarnHTML, balanceAlertsHTML, volumeAlertsHTML, metaSheet, MonthSummary, shareMonth, PhotoCompare, PhotoGallery, strengthCard, syncNative, MuscleMap, muscleCard, bodySVG, Records, History, recordsTable, Body, Medals, calendarCard, shareSession, measureSheet });
 })();

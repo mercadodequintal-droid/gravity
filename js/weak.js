@@ -203,5 +203,5 @@
     return { side: left ? 'esquerdo' : 'direito', pct };
   }
 
-  window.Weak = { analyze, propose, WeakScreen, homeCard, seen, weakSide };
+  window.Weak = { candidates, analyze, propose, WeakScreen, homeCard, seen, weakSide };
 })();
