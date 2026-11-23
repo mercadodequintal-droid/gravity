@@ -1,14 +1,17 @@
 {
- "versionCode": 74,
- "versionName": "0.53.0",
- "date": "2026-11-22",
- "apk": "download/Gravity-v0.53.0.apk",
+ "versionCode": 75,
+ "versionName": "0.53.1",
+ "date": "2026-11-23",
+ "apk": "download/Gravity-v0.53.1.apk",
  "notes": [
   {
-   "t": "Extrato de Desculpas"
+   "t": "Carga com − e +"
   },
   {
-   "t": "Quanto custa cada treino"
+   "t": "Nada escondido"
+  },
+  {
+   "t": "Plano concluído"
   }
  ]
 }

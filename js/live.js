@@ -77,6 +77,7 @@
     const show = !!a && !inPlayer();
     document.body.classList.toggle('live-out', show);
     bar.classList.toggle('show', show);
+    if (UI.floatSync) UI.floatSync();
     if (!show) return;
     const p = progress(a), R = UI.Rest;
     const resting = R.end && !R.over;

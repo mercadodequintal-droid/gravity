@@ -125,9 +125,9 @@
         const sched = `<div class="card sched appear"><div class="row" style="margin-bottom:8px"><div class="caps grow">Agenda da semana</div><button class="small muted" data-a="editPlan">Editar</button></div>${rows}</div>`;
 
         // Sequência e plano (missão)
-        const streak = weekStreak(p);
+        const streak = Store.weekStreak().cur;
         const drop = `<svg class="drop" viewBox="0 0 100 100"><defs><radialGradient id="dg" cx=".38" cy=".62" r=".7"><stop offset="0" stop-color="var(--gold-2)"/><stop offset=".35" stop-color="var(--gold)"/><stop offset=".75" stop-color="var(--gold-3)"/><stop offset="1" stop-color="#2a1f0c"/></radialGradient><radialGradient id="dgl" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="var(--gold)" stop-opacity=".45"/><stop offset="1" stop-color="var(--gold)" stop-opacity="0"/></radialGradient></defs><circle cx="50" cy="62" r="46" fill="url(#dgl)"/><path d="M50 12C40 34 28 46 28 62a22 22 0 0 0 44 0C72 46 60 34 50 12z" fill="url(#dg)"/><ellipse cx="42" cy="58" rx="5" ry="9" fill="#fff8e0" opacity=".55"/></svg>`;
-        const streakCard = `<div class="card streak appear"><div><div class="caps">Sequência</div><div class="v num">${streak}</div><div class="u">${streak === 1 ? 'semana completa' : 'semanas completas'}</div></div>${drop}</div>`;
+        const streakCard = `<div class="card streak appear"><div><div class="caps">Sequência</div><div class="v num">${streak}</div><div class="u">${streak === 1 ? 'semana com treino' : 'semanas com treino'}</div></div>${drop}</div>`;
         const total = Math.max(1, p.weeks), cur = Math.max(0, Math.min(total, wk.n));
         const ppct = Math.round((Math.max(0, cur - 1) + pct / 100) / total * 100);
         const steps = [];
@@ -158,8 +158,9 @@
         // Tela inicial (v0.37): o "Painel" em blocos (B), que nasceu no tema Azul, vale para todos os temas.
         const hs = 'B';
         if (window.Rehab) Rehab.sync();
-        const rhCard = (window.Excuse ? Excuse.homeCard() : '') + (window.Rehab ? Rehab.homeCard() : '') + (window.Weak ? Weak.homeCard() : '');
-        if (hs) return head + homeStyled(hs, { S, p, list, range, t, dow, cta, done, partial, late, pct, setsW, vol, mins, level, upd: Updater.card(), extra: rhCard + backupCard + deloadCard });
+        const exTop = window.Excuse ? Excuse.homeCard() : ''; // v0.53.1: cartão da falta logo abaixo do treino do dia
+        const rhCard = (window.Rehab ? Rehab.homeCard() : '') + (window.Weak ? Weak.homeCard() : '');
+        if (hs) return head + homeStyled(hs, { S, p, list, range, t, dow, cta, done, partial, late, pct, setsW, vol, mins, level, upd: Updater.card(), extraTop: exTop, extra: rhCard + backupCard + deloadCard });
         return head + `<div class="content">${who}${Updater.card()}${overall}${backupCard}${deloadCard}${quoteCard}${sched}${Screens.muscleCard()}${Screens.strengthCard()}${streakCard}${mission}
           <div class="section-title"><h2>Esta semana</h2><button class="link" data-a="progress">Ver evolução</button></div>${tiles}</div>`;
       },
@@ -258,7 +259,7 @@
       const alert = lateL.length ? `<div class="card h2-alert press" data-a="agenda"><div class="ic">${icon('alert', 'sm')}</div><div class="t">${lateL.length} ${lateL.length === 1 ? 'treino atrasado' : 'treinos atrasados'}<small class="ellipsis">${lateL.map((x) => 'Treino ' + esc(x.w.letter) + ' · ' + esc(x.w.name)).join(', ')}</small></div><span class="h2-chip">Ver</span></div>` : '';
       return `<div class="content home2 hA">${top}<div class="h2-wk">${days}</div>
         <div class="h2-hero appear">${photo}<div class="in"><span class="h2-tag">● ${tag}</span><h2>${title}</h2>${meta}${items.length ? `<div class="h2-th">${thumbs}</div>` : ''}${btn()}</div></div>
-        ${alert}${c.extra}
+        ${c.extraTop || ''}${alert}${c.extra}
         <div class="card h2-trio press" data-a="progress"><div><b class="num">${volume(vol)}</b><small>Volume</small></div><div><b class="num">${setsW}</b><small>Séries</small></div><div><b class="num">${power}</b><small>Nível de poder</small></div></div></div>`;
     }
     // B: painel em blocos
@@ -271,7 +272,7 @@
         <div class="h2-cnt"><span><i style="background:#2FB36B"></i>${done}/${list.length}</span><span><i style="background:var(--amber)"></i>${partial}</span><span><i style="background:var(--red)"></i>${late}</span></div></div>
       <div class="card h2-tile h2-next">${photo}<div class="in"><span class="h2-tag">${tag}</span><h3>${title}</h3>${w ? `<div class="h2-meta"><span>${items.length} ex</span><span>~${estMinutes(w)} min</span></div>` : ''}${btn('sm')}</div></div>
       <div class="card h2-tile press" data-a="pwOpen"><div class="caps">Nível de poder</div><svg class="h2-gauge" viewBox="0 0 140 78"><path d="M10 70 A60 60 0 0 1 130 70" stroke="rgba(var(--fg-rgb),.08)" stroke-width="8" fill="none" stroke-linecap="round"/><path d="M10 70 A60 60 0 0 1 130 70" stroke="var(--gold)" stroke-width="8" fill="none" stroke-linecap="round" stroke-dasharray="${(g * gaugeLen).toFixed(1)} 400"/><text x="70" y="64" text-anchor="middle" fill="var(--text)" font-family="Oswald" font-size="26">${power}</text></svg><div class="h2-sub">${st.power != null ? 'de 9.001 · ' + esc(st.level) : 'Registre os básicos'}</div></div>
-      <div class="card h2-tile wide press" data-a="muscles"><div class="h2-mus"><div class="h2-body">${(() => { const mp = Screens.volumeData().map; return Screens.bodySVG((k) => Screens.VCOL[(mp[k] || {}).st || 'zero'], 104); })()}</div><div class="h2-bars"><div class="caps">Músculos da semana</div>${bars}</div></div></div>
+      ${c.extraTop ? `<div class="h2-full">${c.extraTop}</div>` : ''}<div class="card h2-tile wide press" data-a="muscles"><div class="h2-mus"><div class="h2-body">${(() => { const mp = Screens.volumeData().map; return Screens.bodySVG((k) => Screens.VCOL[(mp[k] || {}).st || 'zero'], 104); })()}</div><div class="h2-bars"><div class="caps">Músculos da semana</div>${bars}</div></div></div>
       <div class="h2-row3"><div class="card h2-tile mini press" data-a="progress"><div class="ic">${icon('weight', 'sm')}</div><b class="num">${volume(vol)}</b><small>Volume da semana</small></div>
       <div class="card h2-tile mini press" data-a="progress"><div class="ic">${icon('clock', 'sm')}</div><b class="num">${mins} min</b><small>Tempo treinando</small></div>
       <div class="card h2-tile mini press h2-lvl3" data-a="medals"><div class="ic">${icon('trophy', 'sm')}</div><b class="num">Nível ${level}</b><small>Conquistas</small></div></div>
@@ -968,7 +969,7 @@
           // Peso do corpo: digita o peso extra (ou a ajuda, se a carga já é negativa); o sinal é mantido.
           if (Store.isBodyweight(ex)) { const sign = Number(x.kg) < 0 ? -1 : 1; numberSheet((sign < 0 ? 'Ajuda' : 'Peso extra') + ' · ' + (x.sub ? x.label : 'série ' + x.n), Math.abs(Number(x.kg) || 0), 0.5, (v) => adjust(ds.set, 'kg', 0, sign * Math.abs(v)), 'kg'); return; }
           const bar = /barra|smith/i.test(ex.equip || '');
-          numberSheet('Carga · ' + (x.sub ? x.label : 'série ' + x.n), x.kg, 0.5, (v) => adjust(ds.set, 'kg', 0, v), 'kg', (v) => (bar ? Tools.platesHTML(v) : '') + Tools.pctChips(ex.id));
+          numberSheet('Carga · ' + (x.sub ? x.label : 'série ' + x.n), x.kg, 0.5, (v) => adjust(ds.set, 'kg', 0, v), 'kg', (v) => (bar ? Tools.platesHTML(v) : '') + Tools.pctChips(ex.id), { inc: Number(Store.state.settings.incKg) || 2.5, update: bar ? Tools.platesUpdate : null });
         },
         rEdit: (ds) => {
           const { x, it } = findSet(ds.set);

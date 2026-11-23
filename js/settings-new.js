@@ -246,13 +246,7 @@
   const EXP = ['Iniciante', 'Intermediário', 'Avançado'];
   const prof = () => { const s = st(); if (!s.profile) s.profile = {}; return s.profile; };
   const completed = () => S().sessions.filter((s) => { const p = Store.sessionProgress(s); return p.total && p.complete >= p.total; });
-  function streaks() {
-    const p = Store.activePlan(); if (!p || !p.workouts.length) return { cur: 0, best: 0 };
-    const weeks = Store.weeksBack(52), full = weeks.map((w) => p.workouts.every((wo) => Store.workoutStatus(wo, w).status === 'done'));
-    let cur = full[full.length - 1] ? 1 : 0; for (let i = full.length - 2; i >= 0 && full[i]; i--) cur++;
-    let best = 0, run = 0; full.forEach((f) => { run = f ? run + 1 : 0; best = Math.max(best, run); });
-    return { cur, best };
-  }
+  function streaks() { return Store.weekStreak(); } // regra única (v0.53.1): semanas seguidas com treino
   function lastRecord() {
     const ss = S().sessions.filter((s) => s.sets.some((x) => x.done)).sort((a, b) => b.start - a.start);
     for (const s of ss) { const r = Store.sessionRecords(s); if (r.length) return Object.assign({ date: s.date }, r[0]); }
@@ -281,7 +275,7 @@
           ${cap('Marcos')}
           <div class="pf-marks">
             <div class="card">${icon('star', 'sm')}<small>Conquista</small><b>${medal ? esc(medal.nome) : 'Nenhuma ainda'}</b></div>
-            <div class="card">${icon('trophy', 'sm')}<small>Recorde recente</small><b>${rec && recEx ? esc(recEx.nome.split(' ').slice(0, 2).join(' ')) + ' ' + nf(rec.kg) + ' kg' : 'Nenhum ainda'}</b></div>
+            <div class="card">${icon('trophy', 'sm')}<small>Recorde recente</small>${rec && recEx ? `<b class="num">${nf(rec.kg)} kg</b><span class="pf-ex">${esc(recEx.nome)}</span>` : '<b>Nenhum ainda</b>'}</div>
             <div class="card">${icon('flame', 'sm')}<small>Melhor sequência</small><b>${sk.best} ${sk.best === 1 ? 'semana' : 'semanas'}</b></div>
           </div>
           ${cap('Conta Gravity')}

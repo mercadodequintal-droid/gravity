@@ -318,21 +318,50 @@
   }
   // Pede um número exato (toque no valor de carga/repetições).
   // extra(valor) → html mostrado abaixo do campo e atualizado ao digitar (ex.: anilhas).
-  function numberSheet(title, value, step, onOk, unit, extra) {
+  // opt (v0.53.1): { inc: passo dos botões −/+ (segurar acelera), update(v): atualiza o "extra" sem recriar }
+  function numberSheet(title, value, step, onOk, unit, extra, opt) {
+    opt = opt || {};
+    const box = () => document.getElementById('numExtra');
+    const show = (v) => { const b = box(); if (!b || !extra) return; if (opt.update && opt.update(v)) return; b.innerHTML = extra(v); };
+    const bump = (dir) => {
+      const i = document.getElementById('numIn'); if (!i) return;
+      const cur = parseFloat(String(i.value).replace(',', '.')) || 0;
+      const v = Math.max(0, Math.round((cur + dir * opt.inc) * 100) / 100);
+      i.value = v; show(v); Native.vibrate(5);
+    };
+    let hold = 0, holdT = 0;
+    const stopHold = () => { clearTimeout(holdT); clearInterval(hold); hold = 0; };
     sheet({
-      render: () => `<h3>${esc(title)}</h3><div class="desc">Digite o valor exato${unit ? ' em ' + unit : ''}.</div>
+      render: () => `<h3>${esc(title)}</h3><div class="desc">${opt.inc ? 'Use − e + (segure para ir mais rápido) ou digite' : 'Digite'} o valor exato${unit ? ' em ' + unit : ''}.</div>
+        <div class="num-row">${opt.inc ? `<button class="num-step" data-dir="-1" aria-label="Diminuir">${icon('minus')}</button>` : ''}
         <input class="input num" id="numIn" type="number" inputmode="decimal" step="${step || 1}" value="${value}" data-in="numIn" style="font-size:26px;height:64px;text-align:center;font-weight:700">
+        ${opt.inc ? `<button class="num-step" data-dir="1" aria-label="Aumentar">${icon('plus')}</button>` : ''}</div>
         ${extra ? `<div id="numExtra">${extra(Number(value))}</div>` : ''}
         <div class="btn-row" style="margin-top:16px"><button class="btn ghost" data-a="no">Cancelar</button><button class="btn lime" data-a="ok">Salvar</button></div>`,
-      after: (el) => { const i = el.querySelector('#numIn'); setTimeout(() => { i.focus(); i.select(); }, 350); },
+      after: (el) => {
+        const i = el.querySelector('#numIn');
+        if (!opt.inc) setTimeout(() => { i.focus(); i.select(); }, 350);
+        el.querySelectorAll('.num-step').forEach((b) => {
+          const dir = Number(b.dataset.dir);
+          b.addEventListener('pointerdown', (e) => { e.preventDefault(); stopHold(); bump(dir); holdT = setTimeout(() => { hold = setInterval(() => bump(dir), 90); }, 380); });
+          ['pointerup', 'pointerleave', 'pointercancel'].forEach((t) => b.addEventListener(t, stopHold));
+        });
+      },
       actions: {
         no: closeSheet,
-        numIn: (ds, el) => { const box = document.getElementById('numExtra'); if (box && extra) box.innerHTML = extra(parseFloat(String(el.value).replace(',', '.'))); },
+        numIn: (ds, el) => show(parseFloat(String(el.value).replace(',', '.'))),
         // Atalhos dentro do "extra" (ex.: % do 1RM): tocar preenche o valor.
-        numSet: (ds) => { const i = document.getElementById('numIn'); i.value = ds.v; const box = document.getElementById('numExtra'); if (box && extra) box.innerHTML = extra(Number(ds.v)); Native.vibrate(6); },
-        ok: (ds, el) => { const v = parseFloat(String(document.getElementById('numIn').value).replace(',', '.')); closeSheet(); if (!isNaN(v)) onOk(v); },
+        numSet: (ds) => { const i = document.getElementById('numIn'); i.value = ds.v; show(Number(ds.v)); Native.vibrate(6); },
+        ok: (ds, el) => { stopHold(); const v = parseFloat(String(document.getElementById('numIn').value).replace(',', '.')); closeSheet(); if (!isNaN(v)) onOk(v); },
       },
     });
+  }
+
+  // v0.53.1 (item 23, opção A): enquanto o descanso ou o aviso de treino em andamento aparecem, as telas ganham
+  // espaço extra no fim (body.float-on), para nenhum botão ficar escondido embaixo deles.
+  function floatSync() {
+    const on = !!document.querySelector('.rest-pill.show, .live-bar.show');
+    document.body.classList.toggle('float-on', on);
   }
 
   // ---------- timer de descanso ----------
@@ -351,13 +380,13 @@
       if (this.native) { try { A.restStart(this.end, this.label, !!Store.state.settings.sound, !!Store.state.settings.vibrate); } catch (e) { this.native = false; } }
       else if (A && A.restStop) { try { A.restStop(); } catch (e) { /* ignora */ } }
       clearTimeout(this.hideT);
-      this.el.classList.remove('over'); this.el.classList.add('show');
+      this.el.classList.remove('over'); this.el.classList.add('show'); floatSync();
       this.loop();
     },
     add(d) { if (!this.end) return; if (this.swap && d > 0) this.swapExt = true; if (this.native && !this.over) { try { A.restAdd(d * 1000); } catch (e) { /* ignora */ } } this.end += d * 1000; this.dur = Math.max(5, this.dur + d); if (this.over && this.end > Date.now()) { this.over = false; this.el.classList.remove('over'); } this.paint(); sheetDef && sheetDef.rest && sheetRefresh(); },
     // Guarda, uma vez por troca, se a pessoa pediu mais tempo (para sugerir aumentar o padrão).
     logSwap() { if (this.swap && this.end) { this.swap = false; try { Store.swapLog(this.swapExt); } catch (e) { /* ignora */ } } },
-    stop() { this.logSwap(); this.hideAsk(); if (this.native && A) { try { A.restStop(); } catch (e) { /* ignora */ } } this.native = false; this.end = 0; clearInterval(this.tick); this.tick = null; this.el.classList.remove('show', 'over'); if (sheetDef && sheetDef.rest) closeSheet(); },
+    stop() { this.logSwap(); this.hideAsk(); if (this.native && A) { try { A.restStop(); } catch (e) { /* ignora */ } } this.native = false; this.end = 0; clearInterval(this.tick); this.tick = null; this.el.classList.remove('show', 'over'); floatSync(); if (sheetDef && sheetDef.rest) closeSheet(); },
     askEffort(opts, cb) {
       if (!this.askEl) return false;
       this.askCb = cb; clearTimeout(this.askT);
@@ -377,7 +406,7 @@
       if (e > Date.now() + 500 && (!this.end || this.over || !this.native)) {
         clearTimeout(this.hideT);
         this.native = true; this.over = false; this.cd = {}; this.end = e; this.label = this.label || 'próxima série'; this.dur = Math.max(5, Math.round((e - Date.now()) / 1000));
-        this.el.classList.remove('over'); this.el.classList.add('show'); this.loop();
+        this.el.classList.remove('over'); this.el.classList.add('show'); floatSync(); this.loop();
         return;
       }
       if (!this.native || !this.end || this.over) return;
@@ -614,5 +643,5 @@
       actions: { ok: closeSheet },
     });
   }
-  window.UI = { thumbSrc, build, installHint, sortable, moveIn, editable, savedFlash, replace, onSwipe, countdown, prBurst, icon, esc, nf, kg, secs, restLabel, clock, volume, shortDate, MONTHS, imgHTML, thumb, ring, Native, beep, toast, R, push, pop, popTo, switchTab, refresh, rerender, top, sheet, sheetRefresh, closeSheet, confirmSheet, numberSheet, Rest, bind, setNav };
+  window.UI = { floatSync, thumbSrc, build, installHint, sortable, moveIn, editable, savedFlash, replace, onSwipe, countdown, prBurst, icon, esc, nf, kg, secs, restLabel, clock, volume, shortDate, MONTHS, imgHTML, thumb, ring, Native, beep, toast, R, push, pop, popTo, switchTab, refresh, rerender, top, sheet, sheetRefresh, closeSheet, confirmSheet, numberSheet, Rest, bind, setNav };
 })();

@@ -667,6 +667,14 @@
     return out;
   }
 
+  // Sequência (v0.53.1, regra única em todo o app): semanas seguidas com pelo menos um treino. A semana atual
+  // só soma se já tiver treino; sem treino ainda, não quebra a sequência.
+  function weekStreak() {
+    const has = weeksBack(104).map((w) => S.sessions.some((s) => s.sets.some((x) => x.done) && s.date >= w.startISO && s.date <= w.endISO));
+    let cur = 0; for (let i = has.length - 1; i >= 0; i--) { if (has[i]) cur++; else if (i < has.length - 1) break; }
+    let best = 0, run = 0; has.forEach((h) => { run = h ? run + 1 : 0; best = Math.max(best, run); });
+    return { cur, best: Math.max(best, cur), last6: has.slice(-6) };
+  }
   function weeksBack(n) {
     const cur = weekRange();
     const out = [];
@@ -815,7 +823,7 @@
   window.Store = {
     load, save, get state() { return S; }, uid, PAIN_SPOTS, PAIN_LEVELS, addPain, painsFor, painAlert, snoozePain, sessionNeed, quickPlan, applyQuick, restFor, swapBase, swapFor, swapExtra, swapLog, isUni, sideR, sideL, setSides, checkinLevel, applyCheckin, lightSession, isCardio, isBodyweight, bodyWeight, loadOf, repRange, rangeMode, applyRange, deloadActive, deloadProposal, startDeload, endDeload, snoozeDeload, stallOf, snoozeStall, stalledExercises, DELOAD,
     gymDependent, available, setAvailable, WEEKDAYS, WEEKDAYS_LONG, GROUPS, TEMPLATES, DAY,
-    iso, parseISO, today, addDays, weekStartOf, weekRange, weeksBack,
+    iso, parseISO, today, addDays, weekStartOf, weekRange, weeksBack, weekStreak,
     allExercises, exercise, findExerciseByName, videoUrl,
     activePlan, plan, findWorkout, planWeek, planFromTemplate,
     itemProgress, sessionProgress, workoutStatus,

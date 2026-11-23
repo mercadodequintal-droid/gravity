@@ -4,6 +4,11 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.53.1', date: '2026-11-23', items: [
+      { icon: 'dumbbell', t: 'Carga com − e +', d: 'Na hora de digitar a carga, use − e + (segure para ir mais rápido) e veja a barra crescer e envergar.', main: true },
+      { icon: 'check', t: 'Nada escondido', d: 'O cronômetro de descanso e o aviso de treino não cobrem mais os botões no fim das telas.' },
+      { icon: 'trophy', t: 'Plano concluído', d: 'Quando o plano termina, um cartão oferece repetir ou criar o próximo. E a sequência de semanas agora é a mesma em todo o app.' },
+    ] },
     { v: '0.53.0', date: '2026-11-22', items: [
       { icon: 'trophy', t: 'Extrato de Desculpas', d: 'Faltou no treino? O app pergunta o motivo no dia seguinte. No começo do mês, chega o seu extrato em stories para compartilhar: desculpa favorita, custo por treino e veredito.', main: true },
       { icon: 'weight', t: 'Quanto custa cada treino', d: 'Informe a mensalidade, Wellhub (Gympass) ou TotalPass e veja quanto saiu cada treino no Resumo do mês. Em Configurações › Treino.' },

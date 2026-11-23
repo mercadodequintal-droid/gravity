@@ -500,6 +500,8 @@
           <div class="pl-hero"><span class="pl-tag fill">Plano ativo</span><div class="nm">${esc(act.name)}</div><div class="sb">${esc(act.goal || '')}${act.goal ? ' · ' : ''}${act.workouts.length} treino${act.workouts.length === 1 ? '' : 's'}</div>
             <div class="pl-prog"><i style="width:${pct}%"></i></div><div class="sb pl-wk">${weekTxt}</div>
             <div class="pl-acts"><button class="btn ghost sm press" data-a="edit" data-id="${act.id}">${icon('edit', 'sm')}Editar plano</button><button class="btn ghost sm press pl-share" data-a="share" aria-label="Compartilhar plano">${icon('share', 'sm')}</button></div></div>
+          ${wk.n > wk.total ? `<div class="card pl-done appear"><div class="row" style="align-items:flex-start"><span class="dl-ic">${icon('trophy', 'sm')}</span><div class="grow"><b>Plano concluído!</b><small>${wk.total} ${wk.total === 1 ? 'semana' : 'semanas'} de ${esc(act.name)}. Repita o mesmo plano (as cargas seguem de onde você parou) ou monte o próximo.</small></div></div>
+            <div class="btn-row" style="margin-top:12px"><button class="btn ghost sm" data-a="again" data-id="${act.id}">Repetir plano</button><button class="btn lime sm" data-a="create">Criar o próximo</button></div></div>` : ''}
           <div class="pl-cap"><span>Treinos do plano</span>${act.workouts.length > 1 ? '<button class="link" data-a="edit" data-id="' + act.id + '">Reordenar</button>' : ''}</div>
           ${rows || '<div class="card small muted">Nenhum treino ainda. Toque em Editar plano para adicionar.</div>'}
           ${Screens.balanceWarnHTML(act) ? `<div style="margin-top:4px">${Screens.balanceWarnHTML(act)}</div>` : ''}
@@ -508,6 +510,7 @@
       },
       actions: {
         edit: (ds) => push(PlanEditor(ds.id)),
+        again: (ds) => { const p = Store.plan(ds.id); if (!p) return; p.startDate = Store.iso(Store.weekStartOf(Store.today(), S().settings.weekStart)); Store.save(); toast('Plano reiniciado: semana 1 de ' + p.weeks + '. As cargas seguem de onde você parou.'); refresh(); },
         w: (ds) => push(WorkoutEditor(Store.activePlan().id, ds.id)),
         share: () => { const p = Store.activePlan(); Native.share('Plano ' + p.name, Store.exportPlanCSV(p), p.name.replace(/[^\w\- ]+/g, '') + '.csv'); },
         create: () => createSheet(),
@@ -908,10 +911,7 @@
         const vol = ss.reduce((a, s) => a + Store.sessionVolume(s), 0);
         const fin = ss.filter((s) => s.end), avg = fin.length ? Math.round(fin.reduce((a, s) => a + Store.sessionDuration(s), 0) / fin.length) : 0;
         // Semanas seguidas com pelo menos um treino (contando a atual só se já tiver treino).
-        const wk = Store.weeksBack(52).reverse();
-        let streak = 0;
-        for (let i = 0; i < wk.length; i++) { const has = S().sessions.some((s) => done(s) && s.date >= wk[i].startISO && s.date <= wk[i].endISO); if (has) streak++; else if (i > 0) break; }
-        const last6 = Store.weeksBack(6).map((w) => S().sessions.some((s) => done(s) && s.date >= w.startISO && s.date <= w.endISO));
+        const WS = Store.weekStreak(), streak = WS.cur, last6 = WS.last6;
         // Recordes no período: quantos e o maior salto.
         const recs = [];
         ss.slice().sort((a, b) => a.start - b.start).forEach((s) => Store.sessionRecords(s).forEach((r) => recs.push(r)));
@@ -920,10 +920,10 @@
         return head + `<div class="content pg-c">
           <div class="pg-seg">${[[4, '4 sem'], [8, '8 sem'], [12, '3 meses'], [52, '1 ano']].map(([n, l]) => `<button class="${period === n ? 'on' : ''}" data-a="period" data-n="${n}">${l}</button>`).join('')}</div>
           <div class="pg-n2"><div><b class="num">${ss.length}</b><small>treinos${prev.length || diff ? ' · ' + (diff >= 0 ? '↑ ' : '↓ ') + Math.abs(diff) + ' vs. antes' : ''}</small></div><div><b class="num">${volume(vol)}</b><small>volume levantado</small></div>
-            <div><b class="num">${streak}<small> sem</small></b><small>seguidas treinando</small></div><div><b class="num">${avg}<small> min</small></b><small>duração média</small></div></div>
+            <div><b class="num">${streak}<small> sem</small></b><small>seguidas com treino</small></div><div><b class="num">${avg}<small> min</small></b><small>duração média</small></div></div>
           <div class="pg-cap">Destaques</div>
           <div class="pg-d2"><button class="pg-gold press" data-a="records"><span class="k">Recordes no período</span><b class="num">${recs.length}</b><small>${big ? 'o maior: ' + esc(Store.exercise(big.exId).nome) + '<br>' + kg(big.prev) + ' → ' + kg(big.kg) : 'Bata uma marca para ver aqui'}</small><span class="big">${icon('trophy')}</span></button>
-            <button class="pg-card press" data-a="hist"><span class="k">Sequência</span><b class="num">${streak} ${streak === 1 ? 'semana' : 'semanas'}</b><small>treinando sem falhar</small><span class="bars">${last6.map((x) => `<i class="${x ? 'on' : ''}"></i>`).join('')}</span></button></div>
+            <button class="pg-card press" data-a="hist"><span class="k">Sequência</span><b class="num">${streak} ${streak === 1 ? 'semana' : 'semanas'}</b><small>seguidas com treino</small><span class="bars">${last6.map((x) => `<i class="${x ? 'on' : ''}"></i>`).join('')}</span></button></div>
           <div class="pg-cap">Explorar</div>${explore(recs.length, ss.length)}</div>`;
       },
       actions: {
