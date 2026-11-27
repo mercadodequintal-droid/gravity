@@ -75,6 +75,8 @@
     ['Backup automático semanal', 'backup copia automatico', 'dados', 'autoBackup'],
     ['Fazer backup', 'backup exportar salvar copia drive', 'dados', 'export'],
     ['Restaurar backup', 'restaurar importar', 'dados', 'import'],
+    ['Compartilhar dados de treino', 'compartilhar dados treino painel privacidade', 'dados', 'shareTrain'],
+    ['Compartilhar dados de saúde', 'compartilhar saude peso dor privacidade consentimento', 'dados', 'shareHealth'],
     ['Incluir fotos no backup', 'fotos progresso backup copia', 'dados', 'backupPhotos'],
     ['Dados de exemplo', 'exemplo demo teste graficos', 'dados', 'demo'],
     ['Apagar tudo', 'apagar resetar limpar', 'menu', 'reset'],
@@ -157,6 +159,7 @@
         ${cap('Semana')}${box(`<div class="switch-row" data-row="weekStart"><div class="grow"><div>Semana começa</div><div class="small muted">Para a agenda, a sequência e os gráficos</div></div><div class="seg" style="width:170px"><button class="${st().weekStart === 1 ? 'on' : ''}" data-a="ws" data-v="1">Segunda</button><button class="${st().weekStart === 0 ? 'on' : ''}" data-a="ws" data-v="0">Domingo</button></div></div>`)}
         ${cap('Experiência do treino')}${box(sw('Perguntar como você está hoje', 'Sono, energia e dor antes do treino · dia ruim alivia o treino', 'checkin')
           + sw('Perguntar como foi a série', 'No limite, pesado ou tranquilo · ajuda a sugerir a carga', 'askRir')
+          + sw('Perguntar ao mudar o número de séries', 'No fim do exercício: só dessa vez ou fixar no plano', 'askSets')
           + sw('Necrotério muscular na tela inicial', 'Avisa quando um músculo fica 14 dias ou mais sem treino', 'necro'))}
         ${cap('Academia')}${box(link('gym', 'dumbbell', 'Minha academia', 'Aparelhos que a sua academia tem · o app só sugere esses', 'gym'))}
         ${window.Excuse && Excuse.st() ? cap('Extrato de Desculpas') + box(sw('Perguntar o motivo quando eu faltar', 'No dia seguinte a um treino perdido, na tela inicial', 'excAsk')
@@ -191,6 +194,7 @@
       dados: () => `<div class="card cf-app-now"><span class="ic-big">${icon('download')}</span><div class="grow"><b>${st().lastBackup ? 'Backup feito' : 'Sem backup ainda'}</b><small>${st().lastBackup ? 'Último: ' + dateBR(st().lastBackup) : 'Salve uma cópia dos seus treinos'}</small></div><button class="btn lime sm" data-a="export">Fazer backup</button></div>
           ${cap('Proteção')}${box(sw('Backup automático semanal', window.Android ? 'Salva toda semana em Downloads/Gravity (guarda os 4 últimos)' : 'Lembra toda semana de salvar o backup', 'autoBackup'))}
           ${cap('Backup')}${box(link('export', 'download', 'Fazer backup', 'Envie para o Drive, WhatsApp ou e-mail', 'export') + link('import', 'upload', 'Restaurar backup', 'Substitui os dados atuais', 'import') + sw('Incluir fotos de progresso no backup', 'O arquivo fica maior. As fotos não vão para a sincronização da conta', 'backupPhotos'))}
+${cap('Compartilhar com o Gravity')}${box(`<div class="switch-row" data-a="shT" data-row="shareTrain"><div class="grow"><div>Compartilhar dados de treino</div><div class="small muted">Treinos, exercícios, recordes, funções e horários · com a Conta Gravity</div></div><div class="switch ${S().settings.shareTrain !== false ? 'on' : ''}"></div></div><div class="switch-row" data-a="shH" data-row="shareHealth"><div class="grow"><div>Compartilhar dados de saúde</div><div class="small muted">Peso, medidas, dores, fisioterapia, sono e energia, quanto paga · ao desligar, o que foi enviado é apagado</div></div><div class="switch ${S().settings.shareHealth ? 'on' : ''}"></div></div>`)}
           ${cap('Teste')}${box(link('demo', 'sparkle', S().sessions.some((s) => s.demo) ? 'Remover dados de exemplo' : 'Criar dados de exemplo', 'Para ver os gráficos funcionando', 'demo'))}
           <div class="small muted cf-note">${icon('info', 'sm')} Seus treinos ficam neste aparelho. Faça backup para não perder nada.</div>`,
     };
@@ -199,6 +203,8 @@
       render: () => topbar(CAT[cat]) + `<div class="content cf-c">${pages[cat]()}</div>`,
       actions: Object.assign({}, common, {
         rangeMode: (ds) => { st().rangeMode = ds.v; Store.save(); UI.savedFlash(); refresh(); },
+        shT: () => { Insights.setShare(st().shareTrain === false, !!st().shareHealth); UI.savedFlash(); refresh(); },
+        shH: () => { Insights.setShare(st().shareTrain !== false, !st().shareHealth); toast(st().shareHealth ? 'Dados de saúde compartilhados' : 'Saúde desligada · dados enviados serão apagados'); refresh(); },
         ws: (ds) => { st().weekStart = Number(ds.v); Store.save(); refresh(); UI.savedFlash(); },
         gym: () => push(Screens.GymSetup()),
         excPay: () => Excuse.paySheet(),
@@ -448,12 +454,13 @@
       render: () => { const u = Cloud.user() || (Cloud.state().uid ? {} : null), c = Cloud.state();
         return topbar('Dados e privacidade') + `<div class="content cf-c">
         <div class="card cf-app-now"><span class="ic-big">${icon('download')}</span><div class="grow"><b>${u && c.on ? 'Celular + nuvem' : 'Armazenamento local'}</b><small>${u && c.on ? 'Cópia na nuvem · última: ' + when(c.lastSync) : 'Nenhum dado enviado'}</small></div></div>
-        <div class="card cf-box cf-priv">${icon('info', 'sm')}<div><b>Seus treinos e dados do corpo são privados.</b><small>Ficam neste aparelho. Só vão para a nuvem se você entrar na Conta Gravity e ligar a sincronização, e só a sua conta tem acesso a eles.</small></div></div>
+        <div class="card cf-box cf-priv">${icon('info', 'sm')}<div><b>Seus treinos e dados do corpo são privados.</b><small>Ficam neste aparelho. Só vão para a nuvem se você entrar na Conta Gravity e ligar a sincronização. O responsável pelo app vê um resumo de uso e, só se você ligar abaixo, os dados de saúde.</small></div></div>
         ${cap('Sincronização')}${box(`<button class="menu-item" data-a="acc"><span class="ic">${icon('repeat', 'sm')}</span><span class="grow">Treinos, planos e medidas<div class="small muted">${u ? (c.on ? 'Sincronizando com a nuvem' : 'Desligada') : 'Entre na Conta Gravity para ligar'}</div></span>${icon('next', 'sm')}</button>`
-          + soon('camera', 'Fotos de progresso', 'Nunca sobem para a nuvem'))}
+          + soon('camera', 'Fotos de progresso', 'Nunca sobem para a nuvem nem para o painel'))}
         ${cap('Controle dos dados')}${box(`<button class="menu-item" data-a="exp"><span class="ic">${icon('download', 'sm')}</span><span class="grow">Baixar meus dados<div class="small muted">Arquivo com todos os seus dados (backup)</div></span>${icon('next', 'sm')}</button>`
           + soon('repeat', 'Gerenciar aparelhos', 'Em breve')
           + `<button class="menu-item ${u ? 'danger' : 'is-off'}" data-a="acc" ${u ? '' : 'aria-disabled="true"'}><span class="ic">${icon('trash', 'sm')}</span><span class="grow">Excluir conta<div class="small muted">${u ? 'Em Conta Gravity' : 'Disponível com a Conta Gravity'}</div></span>${icon('next', 'sm')}</button>`)}
+        ${cap('Compartilhar com o Gravity')}${box(`<div class="switch-row" data-a="shT"><div class="grow"><div>Dados de treino</div><div class="small muted">Treinos, exercícios, recordes, funções e horários</div></div><div class="switch ${S().settings.shareTrain !== false ? 'on' : ''}"></div></div><div class="switch-row" data-a="shH"><div class="grow"><div>Dados de saúde</div><div class="small muted">Peso, medidas, dores, fisioterapia, sono e energia, quanto paga</div></div><div class="switch ${S().settings.shareHealth ? 'on' : ''}"></div></div>`)}
         ${cap('Consentimento')}${box(link('terms', 'note', 'Termos de uso', 'Versão ' + ((window.LEGAL && LEGAL.version) || '1.0')) + link('priv', 'note', 'Política de privacidade', c.consentAt ? 'Aceita em ' + new Date(c.consentAt).toLocaleDateString('pt-BR') : 'Como seus dados são usados'))}
         </div>`; },
       actions: {
@@ -461,6 +468,8 @@
         acc: () => push(Account()),
         terms: () => push(LegalDoc('termos')),
         priv: () => push(LegalDoc('privacidade')),
+        shT: () => { Insights.setShare(S().settings.shareTrain === false, !!S().settings.shareHealth); UI.savedFlash(); refresh(); },
+        shH: () => { Insights.setShare(S().settings.shareTrain !== false, !S().settings.shareHealth); toast(S().settings.shareHealth ? 'Dados de saúde compartilhados' : 'Saúde desligada · dados enviados serão apagados'); refresh(); },
         exp: () => { Native.share('Backup Gravity', Store.exportBackup(true), 'gravity-backup-' + Store.iso(Store.today()) + '.json'); Store.backupDone(); },
       },
     };
@@ -485,5 +494,5 @@
   // Atalho usado por Novidades e Você sabia?: abre Configurações, a subtela e destaca a linha.
   function settingsGo(cat, row, label) { push(Settings()); setTimeout(() => go(cat, row, label), 320); }
 
-  Object.assign(window.Screens, { Settings, SettingsPage: Page, ProfileScreen: Profile2, EditProfile, settingsGo });
+  Object.assign(window.Screens, { LegalDoc, Settings, SettingsPage: Page, ProfileScreen: Profile2, EditProfile, settingsGo });
 })();

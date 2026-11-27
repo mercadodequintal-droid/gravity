@@ -158,6 +158,7 @@
         // Tela inicial (v0.37): o "Painel" em blocos (B), que nasceu no tema Azul, vale para todos os temas.
         const hs = 'B';
         if (window.Rehab) Rehab.sync();
+        if (window.Insights) Insights.maybeAsk();
         const exTop = window.Excuse ? Excuse.homeCard() : ''; // v0.53.1: cartão da falta logo abaixo do treino do dia
         const rhCard = (window.Rehab ? Rehab.homeCard() : '') + (window.Weak ? Weak.homeCard() : '') + (window.Necro ? Necro.homeCard() : '');
         if (hs) return head + homeStyled(hs, { S, p, list, range, t, dow, cta, done, partial, late, pct, setsW, vol, mins, level, upd: Updater.card(), extraTop: exTop, extra: rhCard + backupCard + deloadCard });
@@ -683,9 +684,11 @@
         <div class="stepper"><button data-a="kgm" data-set="${x.id}">${icon('minus', 'sm')}</button><div class="val" data-a="kgEdit" data-set="${x.id}"><b class="num">${kgVal(x.kg)}</b>${x.upFrom != null && Number(x.kg) > x.upFrom ? `<small class="av-up">↑ ${nf(Number(x.kg) - x.upFrom)} kg</small>` : `<small>${kgSmall}</small>`}</div><button data-a="kgp" data-set="${x.id}">${icon('plus', 'sm')}</button></div>
         <div class="stepper"><button data-a="rm" data-set="${x.id}">${icon('minus', 'sm')}</button><div class="val ${sides ? 'uni' : ''}" data-a="rEdit" data-set="${x.id}"><b class="num">${val}</b><small>${sides && !x.rir && !x.target ? 'cada lado' : repSmall}</small></div><button data-a="rp" data-set="${x.id}">${icon('plus', 'sm')}</button></div>
         ${btn}</div>`;
+      // v0.54.1: deslizar a série para a esquerda mostra "Excluir".
+      const wrapped = `<div class="set-sw" data-sw="${x.id}"><button class="set-del" data-a="delSet" data-set="${x.id}">${icon('trash', 'sm')}<span>Excluir</span></button>${row}</div>`;
       // Pergunta rápida de esforço logo após concluir (some sozinha).
       const pick = rirFor && x.id === (rirAt || rirFor) ? `<div class="rir-pick"><span>Como foi essa série?</span><div class="rir-opts">${EFFORT.map((f) => `<button data-a="rir" data-set="${rirFor}" data-v="${f.v}"><b>${f.nome}</b><small>${f.desc}</small></button>`).join('')}</div></div>` : '';
-      return row + pick;
+      return wrapped + pick;
     }
 
     function pageHTML(i) {
@@ -766,9 +769,54 @@
       const sg = def.el.querySelector('.segs'); if (sg) sg.innerHTML = segs();
       const f = def.el.querySelector('.footer'); if (f) f.innerHTML = footerHTML();
     }
+    // v0.54.1: no fim do exercício, se o número de séries mudou em relação ao plano, pergunta se é só hoje
+    // ou se fica fixo no plano. Uma vez por exercício em cada treino; "não perguntar de novo" desliga.
+    function askSets(i) {
+      const { s, items } = ctx(), it = items[i]; if (!it || Store.state.settings.askSets === false) return;
+      s.setAsk = s.setAsk || {}; if (s.setAsk[it.id]) return;
+      const mine = s.sets.filter((x) => x.itemId === it.id && !x.sub), n = mine.length, plan = Number(it.sets) || 0;
+      if (!plan || n === plan || !mine.some((x) => x.done)) return;
+      s.setAsk[it.id] = true; Store.save();
+      const nome = Store.exercise(exIdOf(s, it)).nome;
+      let never = false;
+      setTimeout(() => { if (undoEl) { undoEl.remove(); undoEl = null; } }, 370);
+      setTimeout(() => sheet({
+        render: () => `<h3>Séries do ${esc(nome)}</h3><div class="desc">Hoje ${n === 1 ? 'ficou <b>1 série</b>' : 'ficaram <b>' + n + ' séries</b>'}; o plano tem <b>${plan}</b>. Como quer deixar?</div>
+          <div class="switch-row" data-a="nv"><div class="grow"><div>Não perguntar de novo</div><div class="small muted">Dá para religar em Configurações › Treino</div></div><div class="switch ${never ? 'on' : ''}"></div></div>
+          <div class="fs-btns"><button class="btn ghost" data-a="hoje">Só dessa vez</button><button class="btn lime" data-a="fix">Fixar ${n} no plano</button></div>`,
+        actions: {
+          nv: () => { never = !never; UI.sheetRefresh(); },
+          hoje: () => { if (never) { Store.state.settings.askSets = false; Store.save(); } closeSheet(); },
+          fix: () => { it.sets = n; if (never) Store.state.settings.askSets = false; Store.save(); closeSheet(); toast(nome + ': ' + n + ' séries no plano'); },
+        },
+      }), 380);
+    }
+    // Excluir série com "Desfazer" por alguns segundos.
+    let undoEl = null, undoT = 0;
+    function undoBar(txt, fn) {
+      if (undoEl) undoEl.remove(); clearTimeout(undoT);
+      undoEl = document.createElement('div'); undoEl.className = 'undo-bar';
+      undoEl.innerHTML = `<span>${esc(txt)}</span><button>Desfazer</button>`;
+      undoEl.querySelector('button').onclick = () => { fn(); undoEl.remove(); undoEl = null; };
+      document.body.appendChild(undoEl);
+      requestAnimationFrame(() => undoEl && undoEl.classList.add('show'));
+      undoT = setTimeout(() => { if (undoEl) { undoEl.remove(); undoEl = null; } }, 5000);
+    }
+    function delSet(id) {
+      const { s, x, i, it } = findSet(id); if (!x) return;
+      const mains = s.sets.filter((y) => y.itemId === it.id && !y.sub);
+      const run = () => {
+        const undo = Store.removeSet(s, id); Native.vibrate(15); updatePage(i); Live.tick();
+        undoBar(x.sub ? 'Série extra excluída' : 'Série ' + x.n + ' excluída', () => { Store.restoreSets(s, undo); updatePage(i); Live.tick(); });
+      };
+      if (!x.sub && mains.length <= 1) { toast('O exercício precisa de pelo menos 1 série. Use “Pular exercício”.'); updatePage(i); return; }
+      if (x.done) UI.confirmSheet('Excluir série feita?', 'A série ' + (x.sub ? 'extra' : x.n) + ' já foi marcada como feita (' + (Tools.loadText(x.kg, x.exId) || kg(x.kg)) + ' × ' + x.reps + '). Ela sai deste treino.', 'Excluir', run, true);
+      else run();
+    }
     function go(i, smooth) {
       const { items } = ctx();
       i = Math.max(0, Math.min(items.length - 1, i));
+      if (i !== idx) askSets(idx);
       const pager = def.el.querySelector('.pager');
       pager.scrollTo({ left: i * pager.clientWidth, behavior: smooth === false ? 'auto' : 'smooth' });
       if (i !== idx && Metro.running()) Metro.stop();
@@ -911,6 +959,28 @@
       after(el) {
         const pager = el.querySelector('.pager');
         requestAnimationFrame(() => { pager.scrollLeft = idx * pager.clientWidth; });
+        // v0.54.1: deslizar a série para a esquerda revela "Excluir" (a linha não troca de exercício ao deslizar).
+        let sw = null;
+        const closeAll = (except) => el.querySelectorAll('.set-sw.open').forEach((w) => { if (w !== except) { w.classList.remove('open'); w.querySelector('.set').style.transform = ''; setTimeout(() => w.classList.remove('sw-on'), 220); } });
+        pager.addEventListener('pointerdown', (e) => {
+          const w = e.target.closest('.set-sw'); if (!w || e.target.closest('.set-del')) return;
+          closeAll(w);
+          sw = { w, row: w.querySelector('.set'), x0: e.clientX, y0: e.clientY, dx: 0, on: false, open: w.classList.contains('open') };
+        });
+        pager.addEventListener('pointermove', (e) => {
+          if (!sw) return;
+          const dx = e.clientX - sw.x0, dy = e.clientY - sw.y0;
+          if (!sw.on) { if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { sw = null; return; } if (Math.abs(dx) > 10) { sw.on = true; sw.w.classList.add('sw-on'); sw.row.style.transition = 'none'; } else return; }
+          sw.dx = Math.max(-110, Math.min(0, dx + (sw.open ? -88 : 0)));
+          sw.row.style.transform = `translateX(${sw.dx}px)`;
+        });
+        const endSw = () => {
+          if (!sw) return; const { w, row, on } = sw; row.style.transition = '';
+          if (on) { const open = sw.dx < -44; w.classList.toggle('open', open); row.style.transform = open ? 'translateX(-88px)' : ''; if (!open) setTimeout(() => w.classList.remove('sw-on'), 220); w.dataset.justSwiped = '1'; setTimeout(() => { delete w.dataset.justSwiped; }, 250); }
+          sw = null;
+        };
+        pager.addEventListener('pointerup', endSw); pager.addEventListener('pointercancel', endSw);
+        pager.addEventListener('click', (e) => { const w = e.target.closest('.set-sw'); if (w && w.dataset.justSwiped) { e.stopPropagation(); e.preventDefault(); } }, true);
         pager.addEventListener('scroll', () => {
           clearTimeout(scrollT);
           scrollT = setTimeout(() => {
@@ -938,6 +1008,7 @@
           Metro.sheet(it, exId, (c, m) => Metro.start({ c, mode: m, exId, onTick: paintMetro }));
         },
         metroStop: () => Metro.stop(),
+        delSet: (ds) => delSet(ds.set),
         toggle: (ds) => {
           const { s, x, i, it } = findSet(ds.set);
           if (Metro.running()) Metro.stop();
@@ -947,6 +1018,7 @@
           if (!x.done) { x.rir = null; if (rirFor === x.id) rirFor = null; Store.save(); }
           updatePage(i);
           if (x.done) afterDone(x, i, it, wasComplete);
+          if (x.done && !wasComplete && Store.itemProgress(s, it).complete) askSets(i);
           Live.tick();
         },
         // Exercício por tempo: cronômetro de execução; ao terminar, a série é marcada sozinha.
@@ -1009,7 +1081,7 @@
         // v0.48: pular e finalizar o exercício.
         skipEx: (ds) => {
           const { s, items } = ctx(), i = Number(ds.i), it = items[i];
-          s.skipped = (s.skipped || []).filter((id) => id !== it.id).concat([it.id]); Store.save(); Native.vibrate(15);
+          s.skipped = (s.skipped || []).filter((id) => id !== it.id).concat([it.id]); if (window.Insights) Insights.count('skip', it.exId); Store.save(); Native.vibrate(15);
           toast('Exercício pulado'); updatePage(i);
           const nx = [...items.keys()].filter((k) => k > i).concat([...items.keys()].filter((k) => k < i)).find((k) => !fin(s, items[k]));
           if (nx != null) setTimeout(() => go(nx), 350);
@@ -1019,7 +1091,7 @@
           const { s, items } = ctx(), i = Number(ds.i), it = items[i];
           s.sets.filter((x) => x.itemId === it.id).forEach((x) => { if (!x.done) { x.done = true; x.at = Date.now(); } });
           s.skipped = (s.skipped || []).filter((id) => id !== it.id);
-          Store.save(); Native.vibrate(20); updatePage(i); toast('Exercício finalizado');
+          Store.save(); Native.vibrate(20); updatePage(i); toast('Exercício finalizado'); askSets(i);
           const nx = [...items.keys()].filter((k) => k > i).concat([...items.keys()].filter((k) => k < i)).find((k) => !fin(s, items[k]));
           if (nx != null) setTimeout(() => go(nx), 450);
         },
@@ -1149,7 +1221,7 @@
   function confirmDiscard(sid) {
     const s = Store.session(sid), done = s ? s.sets.filter((x) => x.done).length : 0;
     UI.confirmSheet('Cancelar treino?', `Nada deste treino fica salvo${done ? `: as <b>${done} séries</b> feitas, as notas e o tempo são apagados` : ''}. O treino volta a ficar pendente na semana.`, 'Cancelar treino', () => {
-      Store.deleteSession(sid); Rest.stop(); Live.tick(); Screens.syncNative();
+      if (window.Insights) Insights.count('cancel'); Store.deleteSession(sid); Rest.stop(); Live.tick(); Screens.syncNative();
       popTo(1); UI.switchTab('home', true); toast('Treino cancelado. Nada foi salvo.');
     }, true);
   }

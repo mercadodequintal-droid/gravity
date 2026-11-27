@@ -2433,3 +2433,16 @@ body.float-on .screen .content::after, body.float-on .screen .page::after { cont
 .nc-rez .k { font-size: 11px; letter-spacing: .2em; color: var(--gold); text-transform: uppercase; margin-top: 6px; }
 .nc-glow { filter: drop-shadow(0 0 14px rgba(var(--acc-rgb), .8)); }
 .nc-glow .bodymap { display: block; margin: 0 auto; }
+
+/* v0.54.1 · excluir série deslizando */
+.set-sw { position: relative; border-radius: 16px; overflow: hidden; }
+.set-sw + .set-sw { margin-top: 5px; }
+.set-sw > .set { position: relative; z-index: 1; background: var(--bg); transition: transform 200ms var(--ease); touch-action: pan-y; }
+.set-sw > .set.done { background: linear-gradient(rgba(var(--acc-rgb), .06), rgba(var(--acc-rgb), .06)), var(--bg); }
+.set-sw > .set + .set { margin-top: 0; }
+.set-del { position: absolute; right: 0; top: 0; bottom: 0; width: 88px; border-radius: 16px; background: #c8574b; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; font-weight: 600; }
+.undo-bar { position: fixed; left: 16px; right: 16px; bottom: calc(100px + var(--safe-b)); z-index: 60; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; border-radius: 14px; background: #222225; color: #eee; border: 1px solid var(--line-2); box-shadow: 0 10px 30px rgba(0,0,0,.5); transform: translateY(20px); opacity: 0; transition: all 220ms var(--ease); font-size: 13.5px; }
+.undo-bar.show { transform: none; opacity: 1; }
+.undo-bar button { color: var(--gold-2); font-weight: 700; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }
+.set-del { visibility: hidden; }
+.set-sw.sw-on .set-del, .set-sw.open .set-del { visibility: visible; }

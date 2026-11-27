@@ -1,17 +1,14 @@
 {
- "versionCode": 76,
- "versionName": "0.54.0",
- "date": "2026-11-23",
- "apk": "download/Gravity-v0.54.0.apk",
+ "versionCode": 77,
+ "versionName": "0.55.0",
+ "date": "2026-11-27",
+ "apk": "download/Gravity-v0.55.0.apk",
  "notes": [
   {
-   "t": "Fotos de progresso"
+   "t": "Excluir séries"
   },
   {
-   "t": "Necrotério Muscular"
-  },
-  {
-   "t": "Fotos no backup"
+   "t": "Você escolhe o que compartilhar"
   }
  ]
 }

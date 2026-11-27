@@ -142,7 +142,7 @@
   // Instalação nova começa zerada: sem plano e sem histórico (os modelos ficam em Planos → Modelos prontos).
   // Quem atualiza o app mantém tudo, porque load() só chama fresh() quando não há dados salvos.
   function fresh() {
-    const settings = { necro: true, name: '', restDefault: 60, restStep: 15, incKg: 2, weekStart: 1, sound: true, vibrate: true, suggest: true, colorPhotos: false, splash: true, bar: 20, askRir: true, reminder: false, reminderTime: '18:00', checkin: true, autoBackup: true, updateCheck: true, restSwap: 0 };
+    const settings = { askSets: true, necro: true, name: '', restDefault: 60, restStep: 15, incKg: 2, weekStart: 1, sound: true, vibrate: true, suggest: true, colorPhotos: false, splash: true, bar: 20, askRir: true, reminder: false, reminderTime: '18:00', checkin: true, autoBackup: true, updateCheck: true, restSwap: 0 };
     return { v: 1, settings, customExercises: [], exMeta: {}, plans: [], activePlanId: null, sessions: [], activeSessionId: null };
   }
 
@@ -574,11 +574,37 @@
     const x = { id: uid('x'), itemId: item.id, exId: item.exId, n: mains.length + 1, kg: lastMain ? lastMain.kg : Number(item.kg) || 0, reps: lastMain ? lastMain.reps : repsTarget(item.reps), done: false, at: null, rest: null };
     const idx = s.sets.indexOf(last);
     s.sets.splice(idx + 1, 0, x);
+    if (window.Insights) Insights.count('setAdd', item.exId);
     save();
     return x;
   }
+  // v0.54.1: exclui uma série desta sessão (e as séries extras presas a ela: drop, rest-pause…) e renumera.
+  // Devolve o que saiu, para poder desfazer.
+  function removeSet(s, setId) {
+    const x = s.sets.find((y) => y.id === setId); if (!x) return null;
+    const gone = x.sub ? [x] : s.sets.filter((y) => y.itemId === x.itemId && (y.id === x.id || (y.sub && !y.warm && y.n === x.n)));
+    const pos = s.sets.indexOf(gone[0]);
+    s.sets = s.sets.filter((y) => !gone.includes(y));
+    if (window.Insights) Insights.count('setDel', x.exId);
+    let n = 0; s.sets.filter((y) => y.itemId === x.itemId).forEach((y) => { if (!y.sub) { n++; const old = y.n; y.n = n; s.sets.filter((z) => z.itemId === x.itemId && z.sub && !z.warm && z.n === old && z !== y).forEach((z) => { z.n = n; }); } });
+    // Meta de séries deste treino acompanha a exclusão (senão o exercício nunca ficaria completo).
+    s.target = s.target || {};
+    const prevTarget = Object.prototype.hasOwnProperty.call(s.target, x.itemId) ? s.target[x.itemId] : undefined;
+    if (!x.sub) { const item = (findWorkout(s.workoutId) || {}).workout; const it = item && item.items.find((y) => y.id === x.itemId); const need = s.target[x.itemId] != null ? s.target[x.itemId] : it ? Number(it.sets) : n; s.target[x.itemId] = Math.min(need, n); }
+    save();
+    return { pos, gone, prevTarget, itemId: x.itemId };
+  }
+  function restoreSets(s, undo) {
+    if (!undo) return;
+    s.sets.splice(Math.min(undo.pos, s.sets.length), 0, ...undo.gone);
+    const itemId = undo.gone[0].itemId; let n = 0;
+    s.sets.filter((y) => y.itemId === itemId && !y.sub).forEach((y) => { n++; y.n = n; });
+    if (s.target) { if (undo.prevTarget === undefined) delete s.target[itemId]; else s.target[itemId] = undo.prevTarget; }
+    save();
+  }
   // Troca o exercício de um item nesta sessão (e, se pedido, também no plano).
   function swapExercise(s, item, newExId, permanent) {
+    if (window.Insights) Insights.count('swap', item.exId);
     s.swaps = s.swaps || {};
     s.swaps[item.id] = newExId;
     const isTime = exercise(newExId).tipo === 'tempo';
@@ -875,7 +901,7 @@
     allExercises, exercise, findExerciseByName, videoUrl,
     activePlan, plan, findWorkout, planWeek, planFromTemplate,
     itemProgress, sessionProgress, workoutStatus,
-    startSession, session, toggleSet, addSet, finishSession, swapExercise, exOf, addWarmups, MEASURES, addBody, photos, addPhoto, deletePhoto, deleteSession, lastSetsFor, repsTarget,
+    startSession, session, toggleSet, addSet, removeSet, restoreSets, finishSession, swapExercise, exOf, addWarmups, MEASURES, addBody, photos, addPhoto, deletePhoto, deleteSession, lastSetsFor, repsTarget,
     e1rm, sessionVolume, sessionDuration, activeMs, clockBase, lastActivity, resumeSession, exerciseHistory, loadSuggestion, sessionRecords,
     importPlanCSV, exportPlanCSV, exportBackup, backupDue, autoBackup, backupDone, snoozeBackup, importBackup, reset, seedDemo, clearDemo,
   };

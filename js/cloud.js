@@ -124,6 +124,8 @@
       features: { fracos: !!S.weak, fortalecer: Object.keys((S.rehab || {}).regions || {}).length, recordes: recs > 0, checkin: st.checkin !== false, voz: !!(window.Voice && Voice.cfg().on), fotos: (Store.photos ? Store.photos().length : 0) > 0, lembrete: !!st.reminder, tecnicas: done.some((x) => x.sets.some((y) => y.sub && y.done)) },
       profile: { age: age != null && age > 5 && age < 110 ? age : null, sex: st.bodyType || '', goal: pf.goal || (p && p.goal) || '', exp: pf.exp || '' },
       theme: st.theme || 'dourado',
+      // v0.55 (painel v2): uso e treino detalhados (js/insights.js).
+      x: window.Insights ? (() => { try { return Insights.train(); } catch (e) { return null; } })() : null,
     };
   }
   async function push(force) {
@@ -138,7 +140,12 @@
     batch.set(ref, { v: 1, parts: parts.length, size: text.length, updatedAt: Date.now(), app: News.VERSION, device: (window.Feedback && Feedback.device()) || '' });
     await batch.commit();
     // Resumo separado: se a regra do painel ainda não existir, não atrapalha a sincronização.
-    db.collection('stats').doc(user.uid).set(summary()).catch(() => {});
+    // v0.55: respeita as escolhas de compartilhamento (Configurações › Seus dados).
+    const set = Store.state.settings;
+    if (set.shareTrain !== false) db.collection('stats').doc(user.uid).set(summary()).catch(() => {});
+    else db.collection('stats').doc(user.uid).delete().catch(() => {});
+    if (set.shareHealth && window.Insights) { try { db.collection('health').doc(user.uid).set(Insights.health()).then(() => put({ healthSent: true })).catch(() => {}); } catch (e) { /* segue */ } }
+    else if (st().healthSent) db.collection('health').doc(user.uid).delete().then(() => put({ healthSent: false })).catch(() => {});
     put({ lastSync: Date.now(), lastHash: h });
     emit();
     return true;
@@ -160,6 +167,7 @@
     batch.delete(ref);
     await batch.commit();
     await db.collection('stats').doc(user.uid).delete().catch(() => {});
+    await db.collection('health').doc(user.uid).delete().catch(() => {});
   }
   // Excluir conta: apaga os dados da nuvem e a conta. Os dados no celular continuam.
   async function deleteAccount() {
@@ -194,6 +202,7 @@
   setTimeout(() => { const s = st(); if (s.uid && !offline()) load().then(() => { if (s.on && user) push().catch(() => {}); }).catch(() => {}); }, 4000);
 
   window.Cloud = {
+    consentChanged: () => { const s = st(); if (user && s.on && !offline()) push(true).catch(() => {}); },
     load, summary, signUp, signIn, reset, signOut, google, onGoogleToken, push, pull, cloudInfo, deleteAccount, msg,
     state: st, set: put, user: () => user, ready: () => ready, email: () => (user ? user.email : st().email),
     on: (f) => { subs.push(f); return () => { const i = subs.indexOf(f); if (i >= 0) subs.splice(i, 1); }; },

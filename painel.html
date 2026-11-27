@@ -20,58 +20,197 @@ table{width:100%;border-collapse:collapse;background:var(--card);border-radius:1
 
 .login{max-width:360px;margin:18vh auto;text-align:center}.login p{color:var(--t2)}.btn{display:block;width:100%;padding:15px;border:0;border-radius:12px;background:var(--gold);color:#161108;font-weight:600;font-size:15px;cursor:pointer;margin-top:16px}
 .top button{background:none;border:0;color:var(--t2);cursor:pointer;font:inherit}.flt span{cursor:pointer}
+
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-left:18px}.tabs span{padding:7px 13px;border-radius:9px;background:var(--card2);color:var(--t2);font-size:12.5px;cursor:pointer}.tabs span.on{background:var(--gold);color:#161108;font-weight:600}
+.fbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px}.fbar select{background:var(--card2);color:var(--t);border:0;border-radius:9px;padding:7px 10px;font:inherit;font-size:12.5px}.fbar small{color:var(--t3)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.box p.d{margin:-6px 0 10px;color:var(--t3);font-size:11.5px}.ins{margin-top:8px;color:var(--gold2);font-size:12px}
+.ret{display:grid;gap:3px;font-size:11px}.ret span{padding:5px 0;text-align:center;border-radius:4px}
+.spk{display:flex;align-items:flex-end;gap:2px;height:22px}.spk i{width:6px;background:var(--gold);border-radius:2px;min-height:2px}
+.hr{display:flex;align-items:flex-end;gap:2px;height:80px}.hr i{flex:1;background:var(--gold);border-radius:2px 2px 0 0;min-height:1px}
+tr.cl{cursor:pointer}tr.cl:hover td{background:rgba(245,197,24,.05)}
+.dr-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:20}.dr{position:fixed;right:0;top:0;bottom:0;width:min(480px,100%);background:var(--card);z-index:21;overflow:auto;padding:18px;border-left:1px solid rgba(245,197,24,.3)}
+.dr h2{font-family:Oswald;font-weight:500;margin:0;font-size:24px}.dr .sb{color:var(--t2);font-size:12px;margin:3px 0 12px}.dr h4{font-family:Oswald;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;font-size:12px;color:var(--t2);margin:16px 0 6px}
+.mini{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.mini div{background:var(--card2);border-radius:10px;padding:8px 10px}.mini small{display:block;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--t2);font-family:Oswald}.mini b{font-family:Oswald;font-weight:500;font-size:18px}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid #26262b;font-size:12.5px}.kv span{color:var(--t2)}.kv b{font-weight:600;text-align:right}
+.chips{display:flex;flex-wrap:wrap;gap:5px}.chips span{padding:4px 8px;border-radius:7px;background:var(--card2);font-size:11.5px}.chips span.on{background:rgba(245,197,24,.18);color:var(--gold2)}
+.hlth{display:inline-block;padding:2px 7px;border-radius:6px;font-size:10.5px;background:rgba(70,195,123,.15);color:var(--ok);font-weight:600}
+.x{position:absolute;right:14px;top:12px;background:none;border:0;color:var(--t2);font-size:22px;cursor:pointer}
+@media(max-width:900px){.g3,.g2,.g4{grid-template-columns:1fr}.tabs{margin-left:0}}
 </style></head><body>
 <div id="app"><div class="login"><h1 style="font-family:Oswald;letter-spacing:8px;color:var(--gold2)">GRAVITY</h1><p>Painel do dono. Entre com a sua conta Google.</p><button class="btn" id="in">Entrar com Google</button><p id="msg" style="color:var(--warn)"></p></div></div>
+<div id="drawer"></div>
 <script src="js/vendor/firebase/firebase-app-compat.js"></script>
 <script src="js/vendor/firebase/firebase-auth-compat.js"></script>
 <script src="js/vendor/firebase/firebase-firestore-compat.js"></script>
 <script>
-// Painel do dono (aprovado em 17/11). Lê stats/{uid} (resumo de uso que o app grava na sincronização).
-// A segurança é a regra do Firestore: só a conta do dono pode ler a coleção stats inteira.
+// Painel do dono v2 (aprovado em 27/11, item 29). Lê stats/{uid} (resumo de uso + "x": treino detalhado, js/insights.js
+// no app) e health/{uid} (saúde, corpo e pagamento — só de quem ligou "Compartilhar dados de saúde").
+// A segurança é a regra do Firestore: só a conta do dono lê as coleções inteiras (docs/COWORK-REGRA-PAINEL.md).
 firebase.initializeApp({ apiKey: 'AIzaSyCQ9vXmqoswdzpHjUy32XlH1rhjzhdo5Ww', authDomain: 'gravity-app-241d8.firebaseapp.com', projectId: 'gravity-app-241d8', appId: '1:966186252453:web:ba6b476625f56a13f8f54c' });
 const auth = firebase.auth(), db = firebase.firestore(); const $ = (s) => document.querySelector(s);
 const esc = (t) => String(t == null ? '' : t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const D = 864e5; let rows = [], filt = 'todos', q = '';
+const D = 864e5; let all = [], H = {}, me = null, tab = 'geral', q = '', fl = 'todos', F = { plan: '', dev: '', ver: '', sex: '', age: '' }, healthErr = '';
 document.getElementById('in').onclick = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch((e) => { $('#msg').textContent = 'Não deu certo: ' + (e.code || e.message); });
 auth.onAuthStateChanged(async (u) => {
-  if (!u) return;
-  try { const snap = await db.collection('stats').get(); rows = snap.docs.map((d) => Object.assign({ uid: d.id }, d.data())); render(u); }
-  catch (e) { document.getElementById('app').innerHTML = '<div class="login"><h1 style="font-family:Oswald;letter-spacing:6px;color:var(--gold2)">GRAVITY</h1><p>' + (e.code === 'permission-denied' ? 'Acesso negado para ' + esc(u.email) + '.' : 'Erro ao carregar: ' + esc(e.code || e.message)) + '</p><button class="btn" onclick="firebase.auth().signOut().then(()=>location.reload())">Sair</button></div>'; }
+  if (!u) return; me = u;
+  try { const snap = await db.collection('stats').get(); all = snap.docs.map((d) => Object.assign({ uid: d.id }, d.data())); }
+  catch (e) { document.getElementById('app').innerHTML = '<div class="login"><h1 style="font-family:Oswald;letter-spacing:6px;color:var(--gold2)">GRAVITY</h1><p>' + (e.code === 'permission-denied' ? 'Acesso negado para ' + esc(u.email) + '.' : 'Erro ao carregar: ' + esc(e.code || e.message)) + '</p></div>'; return; }
+  try { const hs = await db.collection('health').get(); hs.docs.forEach((d) => { H[d.id] = d.data(); }); } catch (e) { healthErr = e.code === 'permission-denied' ? 'Saúde: falta a regra do Firestore para a coleção health (ver docs/COWORK-REGRA-PAINEL.md).' : ''; }
+  render();
 });
+// ---------- utilidades ----------
 const status = (r) => { const now = Date.now(); if (r.createdAt && now - r.createdAt < 7 * D) return 'n'; if (!r.lastWorkout) return 'p'; const d = (now - r.lastWorkout) / D; return d <= 7 ? 'a' : d <= 14 ? 's' : 'p'; };
 const ST = { a: 'Ativo', n: 'Novo', s: 'Sumindo', p: 'Parado' };
 const when = (t) => { if (!t) return '—'; const d = Math.floor((Date.now() - t) / D); const hm = new Date(t).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); return d < 1 && new Date(t).toDateString() === new Date().toDateString() ? 'hoje, ' + hm : d < 2 ? 'ontem, ' + hm : 'há ' + d + ' dias'; };
-const pct = (n, t) => (t ? Math.round((n / t) * 100) : 0);
-const hb = (list) => list.map(([k, v, t]) => `<div class="hb"><span>${esc(k)}</span><i style="width:${Math.max(2, pct(v, t))}%"></i><em>${pct(v, t)}%</em></div>`).join('');
-const count = (f) => { const m = {}; rows.forEach((r) => { const k = f(r); if (k) m[k] = (m[k] || 0) + 1; }); return Object.entries(m).sort((a, b) => b[1] - a[1]); };
-function render(u) {
-  const now = Date.now(), N = rows.length;
-  const act = rows.filter((r) => r.lastWorkout && now - r.lastWorkout <= 7 * D);
-  const novos = rows.filter((r) => r.createdAt && now - r.createdAt < 7 * D);
-  const w7 = rows.reduce((a, r) => a + (r.w7 || 0), 0);
-  const avg = act.length ? (act.reduce((a, r) => a + (r.w7 || 0), 0) / act.length).toFixed(1).replace('.', ',') : '0';
-  const sum = rows.filter((r) => status(r) === 's').length, par = rows.filter((r) => status(r) === 'p').length;
-  const weeks = []; for (let i = 7; i >= 0; i--) { const end = now - i * 7 * D, start = end - 7 * D; weeks.push([new Date(start).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }), rows.filter((r) => r.createdAt >= start && r.createdAt < end).length]); }
+const dt = (t) => (t ? new Date(t).toLocaleDateString('pt-BR') : '—'), ddmm = (s) => (s ? s.split('-').reverse().slice(0, 2).join('/') : '—');
+const pct = (n, t) => (t ? Math.round((n / t) * 100) : 0), nf = (v, d) => (v == null || isNaN(v) ? '—' : Number(v).toLocaleString('pt-BR', { maximumFractionDigits: d == null ? 1 : d }));
+const avg = (l) => (l.length ? l.reduce((a, b) => a + b, 0) / l.length : null);
+const hb = (list, fmt) => list.map(([k, v, t, lab]) => `<div class="hb"><span>${esc(k)}</span><i style="width:${Math.max(2, t ? Math.min(100, (v / t) * 100) : 0)}%"></i><em>${lab != null ? esc(lab) : fmt ? fmt(v) : pct(v, t) + '%'}</em></div>`).join('') || '<div class="note">Sem dados ainda.</div>';
+const cnt = (L, f) => { const m = {}; L.forEach((r) => { [].concat(f(r) || []).forEach((k) => { if (k) m[k] = (m[k] || 0) + 1; }); }); return Object.entries(m).sort((a, b) => b[1] - a[1]); };
+const dev = (r) => (/iPhone|iPad/.test(r.device || '') ? 'iPhone' : /Android/.test(r.device || '') ? 'Android' : 'Navegador');
+const ageB = (a) => (!a ? '' : a < 25 ? 'até 24' : a < 35 ? '25–34' : a < 45 ? '35–44' : a < 60 ? '45–59' : '60+');
+const X = (r) => r.x || {};
+const active30 = (r) => r.lastWorkout && Date.now() - r.lastWorkout <= 30 * D, active7 = (r) => r.lastWorkout && Date.now() - r.lastWorkout <= 7 * D;
+const REASON = { cansaco: 'Cansaço', trabalho: 'Trabalho', chuva: 'Chuva', dor: 'Dor', compromisso: 'Compromisso', doente: 'Doente', preguica: 'Preguiça mesmo', cachorro: 'Cachorro comeu', outra: 'Outra (escrita)', skip: 'Sem desculpa' };
+const DOW = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+const KIND = { mensal: 'Mensalidade', wellhub: 'Wellhub', totalpass: 'TotalPass', outro: 'Outro' };
+function rows() {
+  return all.filter((r) => (fl === 'todos' || (fl === 'a7' ? active7(r) : fl === 'a30' ? active30(r) : status(r) === fl))
+    && (!F.plan || r.plan === F.plan) && (!F.dev || dev(r) === F.dev) && (!F.ver || r.app === F.ver) && (!F.sex || (r.profile || {}).sex === F.sex) && (!F.age || ageB((r.profile || {}).age) === F.age));
+}
+const opts = (k, list, lab) => `<select data-fk="${k}"><option value="">${lab}</option>${list.map((v) => `<option ${F[k] === v ? 'selected' : ''} value="${esc(v)}">${esc(v)}</option>`).join('')}</select>`;
+// ---------- telas ----------
+function geral(R) {
+  const now = Date.now(), N = R.length, a7 = R.filter(active7).length, a30 = R.filter(active30).length;
+  const wk = R.reduce((a, r) => a + ((X(r).weeks || []).slice(-1)[0] || r.w7 || 0), 0), wkPrev = R.reduce((a, r) => a + ((X(r).weeks || []).slice(-2)[0] || 0), 0);
+  const mins = avg(R.map((r) => X(r).avgMin).filter(Boolean)), sets = avg(R.map((r) => X(r).avgSets).filter(Boolean));
+  const canc = R.reduce((a, r) => a + ((X(r).counters || {}).cancel || 0), 0), tot = R.reduce((a, r) => a + (r.workouts || 0), 0);
+  const weeks = []; for (let i = 7; i >= 0; i--) { const end = now - i * 7 * D, start = end - 7 * D; weeks.push([new Date(start).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }), R.filter((r) => r.createdAt >= start && r.createdAt < end).length]); }
   const mx = Math.max(1, ...weeks.map((w) => w[1]));
-  const dev = count((r) => (/iPhone|iPad/.test(r.device) ? 'iPhone' : /Android/.test(r.device) ? 'Android' : 'Navegador'));
-  const ver = count((r) => r.app); const prov = count((r) => (r.provider === 'google' ? 'Google' : r.provider === 'email' ? 'E-mail' : ''));
-  const H = rows.reduce((a, r) => { const h = r.hours || {}; a.m += h.manha || 0; a.t += h.tarde || 0; a.n += h.noite || 0; return a; }, { m: 0, t: 0, n: 0 }), HT = H.m + H.t + H.n;
-  const plans = count((r) => r.plan).slice(0, 5); const F = (k) => rows.filter((r) => r.features && r.features[k]).length;
-  const prof = rows.filter((r) => r.profile && (r.profile.age || r.profile.goal || r.profile.exp)); const ages = prof.map((r) => r.profile.age).filter(Boolean);
-  const list = rows.filter((r) => (filt === 'todos' || status(r) === filt) && (!q || (r.name + ' ' + r.email).toLowerCase().includes(q))).sort((a, b) => (b.lastWorkout || 0) - (a.lastWorkout || 0));
-  document.getElementById('app').innerHTML = `<div class="top"><h1>GRAVITY</h1><span class="tag">Painel · só você vê</span><span class="me">${esc(u.email)} · <button onclick="firebase.auth().signOut().then(()=>location.reload())">Sair</button></span></div><div class="wrap">
-  <div class="note" style="margin:0 0 4px">Atualizado ${new Date().toLocaleString('pt-BR')} · ${N} usuários com o resumo (quem já abriu a versão nova do app)</div>
-  <div class="kpis"><div class="k"><small>Usuários</small><b>${N}</b><em>+${novos.length} em 7 dias</em></div><div class="k"><small>Ativos (7 dias)</small><b>${act.length}</b><em>${pct(act.length, N)}% dos usuários</em></div><div class="k"><small>Treinos na semana</small><b>${w7}</b><em>últimos 7 dias</em></div><div class="k"><small>Média por ativo</small><b>${avg}</b><em>treinos/semana</em></div><div class="k"><small>Sumindo</small><b>${sum}</b><em class="dn">7–14 dias sem treinar</em></div><div class="k"><small>Parados</small><b>${par}</b><em class="dn">mais de 14 dias</em></div></div>
-  <div class="cap">Crescimento e uso</div><div class="g3"><div class="box"><h3>Cadastros por semana</h3><div class="bars">${weeks.map(([d, v]) => `<div><b>${v}</b><i style="height:${Math.max(3, (v / mx) * 100)}%"></i><span>${d}</span></div>`).join('')}</div></div>
-  <div class="box"><h3>Aparelho</h3>${hb(dev.map(([k, v]) => [k, v, N]))}<h3 style="margin-top:18px">Versão do app</h3>${hb(ver.slice(0, 4).map(([k, v]) => [k, v, N]))}</div>
-  <div class="box"><h3>Quando treinam</h3>${hb([['Manhã', H.m, HT], ['Tarde', H.t, HT], ['Noite', H.n, HT]])}<h3 style="margin-top:18px">Entraram com</h3>${hb(prov.map(([k, v]) => [k, v, N]))}</div></div>
-  <div class="g3" style="margin-top:10px;grid-template-columns:1fr 1fr 1fr"><div class="box"><h3>Planos mais usados</h3>${hb(plans.map(([k, v]) => [k, v, N])) || '<div class="note">Sem dados ainda.</div>'}</div>
-  <div class="box"><h3>Funções usadas</h3>${hb([['Recordes', F('recordes'), N], ['Check-in', F('checkin'), N], ['Técnicas avançadas', F('tecnicas'), N], ['Voz', F('voz'), N], ['Lembrete', F('lembrete'), N], ['Fotos de progresso', F('fotos'), N], ['Pontos fracos', F('fracos'), N], ['Fortalecer região', F('fortalecer'), N]])}</div>
-  <div class="box"><h3>Perfil (quem preencheu)</h3>${ages.length ? `<div class="hb"><span>Idade média</span><s></s><em>${Math.round(ages.reduce((a, b) => a + b, 0) / ages.length)} anos</em></div><div class="hb"><span>60+</span><i style="width:${pct(ages.filter((a) => a >= 60).length, ages.length)}%"></i><em>${pct(ages.filter((a) => a >= 60).length, ages.length)}%</em></div>` : ''}${hb(count((r) => r.profile && r.profile.exp).slice(0, 3).map(([k, v]) => [k, v, prof.length || 1]))}<div class="note">Só de quem preencheu o perfil (${pct(prof.length, N)}%).</div></div></div>
-  <div class="cap">Usuários</div><div class="flt">${[['todos', 'Todos', N], ['a', 'Ativos', act.length], ['n', 'Novos', novos.length], ['s', 'Sumindo', sum], ['p', 'Parados', par]].map(([k, l, n]) => `<span class="${filt === k ? 'on' : ''}" data-f="${k}">${l} ${n}</span>`).join('')}<input id="q" placeholder="Buscar nome ou e-mail" value="${esc(q)}"></div>
-  <table><tr><th>Usuário</th><th>Situação</th><th>Último treino</th><th>Treinos</th><th class="hide-m">Plano</th><th class="hide-m">Aparelho</th><th class="hide-m">Cadastro</th></tr>${list.map((r) => { const s = status(r); return `<tr><td>${esc(r.name || '—')}<small>${esc(r.email)}</small></td><td><span class="st ${s}">${ST[s]}</span></td><td>${when(r.lastWorkout)}</td><td>${r.workouts || 0}<small>${String(r.perWeek || 0).replace('.', ',')}/sem</small></td><td class="hide-m">${esc(r.plan || '—')}${r.planWeeks ? `<small>semana ${r.planWeek} de ${r.planWeeks}</small>` : ''}</td><td class="hide-m">${esc(r.device || '—')}<small>v${esc(r.app || '?')}</small></td><td class="hide-m">${r.createdAt ? new Date(r.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '—'}</td></tr>`; }).join('')}</table>
-  <div class="note">Ativo: treinou nos últimos 7 dias · Sumindo: 7–14 dias · Parado: mais de 14 dias (ou nunca treinou) · Novo: cadastro há menos de 7 dias. O painel mostra só o resumo de uso; os treinos completos de cada pessoa não aparecem aqui.</div></div>`;
-  document.querySelectorAll('[data-f]').forEach((b) => (b.onclick = () => { filt = b.dataset.f; render(u); }));
-  const qi = document.getElementById('q'); qi.oninput = () => { q = qi.value.toLowerCase(); render(u); const n = document.getElementById('q'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); };
+  // retenção: grupo pela semana do cadastro; % com treino em cada semana seguinte (pelas 12 semanas do resumo)
+  const coh = {}; R.forEach((r) => { if (!r.createdAt || !X(r).weeks) return; const age = Math.floor((now - r.createdAt) / (7 * D)); if (age > 11) return; const k = new Date(now - (age + 1) * 7 * D).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }); coh[k] = coh[k] || { age, us: [] }; coh[k].us.push(X(r).weeks); });
+  const cols = 6, retH = Object.entries(coh).sort((a, b) => b[1].age - a[1].age).map(([k, c]) => `<span style="color:var(--t3)">${k}</span>` + Array.from({ length: cols }, (_, j) => { if (j > c.age) return '<span></span>'; const idx = 11 - c.age + j, p = pct(c.us.filter((w) => (w[idx] || 0) > 0).length, c.us.length); return `<span style="background:rgba(245,197,24,${0.15 + p / 130});${p > 70 ? 'color:#111' : ''}">${p}%</span>`; }).join('')).join('');
+  const dowT = [0, 1, 2, 3, 4, 5, 6].map((i) => R.reduce((a, r) => a + ((X(r).dow || [])[i] || 0), 0)), dowS = dowT.reduce((a, b) => a + b, 0);
+  const hrs = Array.from({ length: 24 }, (_, h) => R.reduce((a, r) => a + ((X(r).hours || [])[h] || 0), 0)), hm = Math.max(1, ...hrs);
+  return `<div class="kpis"><div class="k"><small>Usuários</small><b>${N}</b><em>+${R.filter((r) => r.createdAt && now - r.createdAt < 7 * D).length} em 7 dias</em></div><div class="k"><small>Ativos 7 dias</small><b>${a7}</b><em>${pct(a7, N)}%</em></div><div class="k"><small>Ativos 30 dias</small><b>${a30}</b><em>${pct(a30, N)}%</em></div>
+    <div class="k"><small>Treinos na semana</small><b>${wk}</b><em>${wkPrev ? (wk >= wkPrev ? '+' : '') + pct(wk - wkPrev, wkPrev) + '% vs. anterior' : '&nbsp;'}</em></div><div class="k"><small>Duração média</small><b>${mins ? Math.round(mins) + ' min' : '—'}</b><em>${sets ? nf(sets) + ' séries/treino' : '&nbsp;'}</em></div><div class="k"><small>Treinos cancelados</small><b>${canc}</b><em style="color:var(--bad)">${pct(canc, tot + canc)}% dos iniciados</em></div></div>
+  <div class="cap">Crescimento e retenção</div><div class="g3"><div class="box"><h3>Cadastros por semana</h3><div class="bars">${weeks.map(([d, v]) => `<div><b>${v}</b><i style="height:${Math.max(3, (v / mx) * 100)}%"></i><span>${d}</span></div>`).join('')}</div></div>
+   <div class="box"><h3>Retenção por semana de cadastro</h3><p class="d">% que treinou em cada semana depois do cadastro (S1 = semana do cadastro)</p><div class="ret" style="grid-template-columns:52px repeat(${cols},1fr)"><span></span>${Array.from({ length: cols }, (_, j) => `<span style="color:var(--t3)">S${j + 1}</span>`).join('')}${retH || '<span style="grid-column:1/-1;color:var(--t3)">Sem dados ainda</span>'}</div></div>
+   <div class="box"><h3>Dias da semana</h3>${hb(dowT.map((v, i) => [DOW[i], v, dowS]))}</div></div>
+  <div class="g2" style="margin-top:10px"><div class="box"><h3>Horário dos treinos</h3><div class="hr">${hrs.map((v) => `<i style="height:${(v / hm) * 100}%" title="${v}"></i>`).join('')}</div><div style="display:flex;justify-content:space-between;color:var(--t3);font-size:11px;margin-top:4px"><span>0h</span><span>6h</span><span>12h</span><span>18h</span><span>23h</span></div></div>
+   <div class="box"><h3>Aparelho · versão · login</h3>${hb(cnt(R, dev).map(([k, v]) => [k, v, N]))}${hb(cnt(R, (r) => r.app).slice(0, 4).map(([k, v]) => ['v' + k, v, N]))}${hb(cnt(R, (r) => (r.provider === 'google' ? 'Google' : r.provider === 'email' ? 'E-mail' : '')).map(([k, v]) => [k, v, N]))}</div></div>`;
+}
+function usuarios(R) {
+  const list = R.filter((r) => !q || ((r.name || '') + ' ' + (r.email || '')).toLowerCase().includes(q)).sort((a, b) => (b.lastWorkout || 0) - (a.lastWorkout || 0));
+  const spk = (w) => `<div class="spk">${(w || []).slice(-8).map((v) => `<i style="height:${Math.min(100, v * 20)}%"></i>`).join('')}</div>`;
+  return `<div class="flt">${[['todos', 'Todos'], ['a', 'Ativos'], ['n', 'Novos'], ['s', 'Sumindo'], ['p', 'Parados']].map(([k, l]) => `<span class="${fl === k ? 'on' : ''}" data-f="${k}">${l} ${k === 'todos' ? all.length : all.filter((r) => status(r) === k).length}</span>`).join('')}<input id="q" placeholder="Buscar nome ou e-mail" value="${esc(q)}"></div>
+  <table><tr><th>Usuário</th><th>Situação</th><th class="hide-m">8 semanas</th><th>Treinos</th><th class="hide-m">Sequência</th><th class="hide-m">Nível</th><th class="hide-m">Plano</th><th class="hide-m">Versão</th><th>Último treino</th></tr>${list.map((r) => { const s = status(r), x = X(r); return `<tr class="cl" data-u="${r.uid}"><td>${esc(r.name || '—')} ${H[r.uid] ? '<span class="hlth">saúde</span>' : ''}<small>${esc(r.email)}</small></td><td><span class="st ${s}">${ST[s]}</span></td><td class="hide-m">${spk(x.weeks)}</td><td>${r.workouts || 0}</td><td class="hide-m">${x.streak != null ? x.streak + ' sem' : '—'}</td><td class="hide-m">${x.level || '—'}</td><td class="hide-m">${esc(r.plan || '—')}${r.planWeeks ? ' · ' + r.planWeek + '/' + r.planWeeks : ''}</td><td class="hide-m">${esc(r.app || '')}</td><td>${when(r.lastWorkout)}</td></tr>`; }).join('')}</table>
+  <div class="note">Toque num usuário para ver a ficha completa. “saúde” = a pessoa autorizou compartilhar dados de saúde.</div>`;
+}
+function cruz(R) {
+  const box = (t, d, inner, ins) => `<div class="box"><h3>${t}</h3><p class="d">${d}</p>${inner}${ins ? `<div class="ins">${ins}</div>` : ''}</div>`;
+  const HR = R.filter((r) => H[r.uid]).map((r) => [r, H[r.uid]]);
+  // sono × recordes
+  const g = HR.reduce((a, [, h]) => { const c = h.checkin || {}; a.gn += (c.good || [])[0] || 0; a.gr += (c.good || [])[1] || 0; a.bn += (c.bad || [])[0] || 0; a.br += (c.bad || [])[1] || 0; return a; }, { gn: 0, gr: 0, bn: 0, br: 0 });
+  const rg = g.gn ? g.gr / g.gn : null, rb = g.bn ? g.br / g.bn : null;
+  // grupos com média
+  const grp = (key, val, filt) => { const m = {}; R.filter((r) => !filt || filt(r)).forEach((r) => { const k = key(r), v = val(r); if (!k || v == null) return; (m[k] = m[k] || []).push(v); }); return Object.entries(m).map(([k, l]) => [k, avg(l), l.length]).sort((a, b) => b[1] - a[1]); };
+  const bars = (L, fmt) => { const mx = Math.max(0.001, ...L.map((x) => Math.abs(x[1]))); return hb(L.map(([k, v, n]) => [k + ' (' + n + ')', Math.abs(v), mx, fmt(v)])); };
+  const hour = grp((r) => ({ manha: 'Manhã', tarde: 'Tarde', noite: 'Noite' })[X(r).hourBucket], (r) => X(r).streakBest);
+  const plan = grp((r) => r.plan, (r) => (active30(r) ? 100 : 0));
+  const feat = [['Extrato', (r) => (X(r).featuresX || {}).extrato], ['Fotos', (r) => (X(r).featuresX || {}).fotos > 0], ['Lembrete', (r) => (r.features || {}).lembrete], ['Check-in', (r) => (r.features || {}).checkin], ['Voz', (r) => (r.features || {}).voz], ['Excluir série', (r) => (X(r).featuresX || {}).excluirSerie], ['Necrotério (ligado)', (r) => (X(r).settings || {}).necro]]
+    .map(([k, f]) => { const y = R.filter((r) => f(r)), n = R.filter((r) => !f(r)); return [k, pct(y.filter(active30).length, y.length), y.length, pct(n.filter(active30).length, n.length)]; });
+  const pains = {}; HR.forEach(([, h]) => (h.pains || []).forEach(([k, v]) => { pains[k] = (pains[k] || 0) + v; })); const pl = Object.entries(pains).sort((a, b) => b[1] - a[1]).slice(0, 6), pm = Math.max(1, ...pl.map((x) => x[1]));
+  const dw = {}; R.forEach((r) => Object.entries(((X(r).excuses || {}).byDow) || {}).forEach(([d, m]) => Object.entries(m).forEach(([k, v]) => { dw[d] = dw[d] || {}; dw[d][k] = (dw[d][k] || 0) + v; })));
+  const dwl = Object.entries(dw).map(([d, m]) => { const t = Object.entries(m).sort((a, b) => b[1] - a[1])[0]; return [DOW[d], t[1], Object.values(m).reduce((a, b) => a + b, 0), REASON[t[0]] || t[0]]; });
+  const pay = grp((r) => H[r.uid] && H[r.uid].pay && KIND[H[r.uid].pay.kind], (r) => r.perWeek);
+  const goal = grp((r) => (r.profile || {}).goal, (r) => { const w = (H[r.uid] || {}).weight || []; return w.length >= 2 ? w[w.length - 1][1] - w[0][1] : null; });
+  const ageF = grp((r) => ageB((r.profile || {}).age), (r) => r.perWeek);
+  const eff = grp((r) => (X(r).effortLimit == null ? null : X(r).effortLimit >= 30 ? 'Treina no limite (≥30%)' : 'Mais tranquilo'), (r) => X(r).progression);
+  const theme = grp((r) => (X(r).settings || {}).theme || r.theme, (r) => (active30(r) ? 100 : 0));
+  return `<div class="g3">
+   ${box('Sono × recordes', 'Check-in de sono e recordes no mesmo treino (quem compartilha saúde)', hb([['Dormiu bem', rg || 0, Math.max(rg || 0, rb || 0) || 1, rg != null ? nf(rg, 2) + '/treino' : '—'], ['Dormiu mal', rb || 0, Math.max(rg || 0, rb || 0) || 1, rb != null ? nf(rb, 2) + '/treino' : '—']]), rg && rb ? (rg > rb ? 'Quem dorme bem bate ' + nf(rg / rb, 1) + '× mais recordes.' : 'Sem diferença clara ainda.') : '')}
+   ${box('Horário × constância', 'Melhor sequência (semanas) pelo horário habitual', bars(hour, (v) => nf(v) + ' sem'))}
+   ${box('Plano × retenção', '% ativos nos últimos 30 dias, por plano', bars(plan, (v) => Math.round(v) + '%'))}
+   ${box('Funções × retenção', 'Ativos em 30 dias: quem usa × quem não usa', hb(feat.map(([k, y, n, no]) => [k + ' (' + n + ')', y, 100, y + ' × ' + no + '%'])))}
+   ${box('Dor × exercício', 'Registros de dor nos últimos 90 dias (quem compartilha saúde)', hb(pl.map(([k, v]) => [k, v, pm, String(v)])))}
+   ${box('Desculpa × dia', 'Motivo mais comum em cada dia da semana', hb(dwl.map(([d, v, t, k]) => [d, v, t, k])))}
+   ${box('Pagamento × frequência', 'Treinos por semana pelo tipo de pagamento', bars(pay, (v) => nf(v) + '/sem'))}
+   ${box('Objetivo × peso', 'Variação de peso (primeiro → último registro)', bars(goal, (v) => (v > 0 ? '+' : '') + nf(v) + ' kg'))}
+   ${box('Idade × frequência', 'Treinos por semana por faixa de idade', bars(ageF, (v) => nf(v) + '/sem'))}
+   ${box('Esforço × progressão', 'Aumento de carga em 4 semanas nos exercícios mais feitos', bars(eff, (v) => (v > 0 ? '+' : '') + nf(v) + '%'))}
+   ${box('Tema × retenção', '% ativos em 30 dias por tema (curiosidade)', bars(theme, (v) => Math.round(v) + '%'))}
+   ${box('Necrotério', 'Músculos em óbito por usuário e ressurreições', hb([['Média de óbitos', avg(R.map((r) => (X(r).necro || {}).dead).filter((v) => v != null)) || 0, 14, nf(avg(R.map((r) => (X(r).necro || {}).dead).filter((v) => v != null)))], ['Ressuscitados (total)', R.reduce((a, r) => a + ((X(r).necro || {}).revived || 0), 0), Math.max(1, R.length), String(R.reduce((a, r) => a + ((X(r).necro || {}).revived || 0), 0))]]))}
+  </div><div class="note">Cruzamentos com poucos usuários variam muito; use como pista, não como conclusão. Os números entre parênteses são quantas pessoas entram em cada grupo.</div>`;
+}
+function saude(R) {
+  const HR = R.filter((r) => H[r.uid]).map((r) => [r, H[r.uid]]), N = R.length;
+  const pains = {}; HR.forEach(([, h]) => (h.pains || []).forEach(([k, v]) => { const reg = k.split(' · ')[0]; pains[reg] = (pains[reg] || 0) + v; }));
+  const pl = Object.entries(pains).sort((a, b) => b[1] - a[1]), pm = Math.max(1, ...pl.map((x) => x[1]));
+  const ck = HR.map(([, h]) => h.checkin || {}).filter((c) => c.n);
+  const reh = cnt(HR, ([, h]) => Object.keys(h.rehab || {}));
+  const wch = HR.map(([, h]) => { const w = h.weight || []; return w.length >= 2 ? w[w.length - 1][1] - w[0][1] : null; }).filter((v) => v != null);
+  const pays = HR.map(([, h]) => h.pay).filter((p) => p && p.v);
+  return `${healthErr ? `<div class="note" style="color:var(--warn);margin-bottom:10px">${esc(healthErr)}</div>` : ''}<div class="kpis"><div class="k"><small>Compartilham saúde</small><b>${HR.length}</b><em>${pct(HR.length, N)}% dos usuários</em></div><div class="k"><small>Sono médio</small><b>${ck.length ? nf(avg(ck.map((c) => c.sono)), 1) : '—'}</b><em>0 ruim · 2 bom</em></div><div class="k"><small>Energia média</small><b>${ck.length ? nf(avg(ck.map((c) => c.energia)), 1) : '—'}</b><em>0 baixa · 2 alta</em></div>
+   <div class="k"><small>Peso (média)</small><b>${wch.length ? (avg(wch) > 0 ? '+' : '') + nf(avg(wch)) + ' kg' : '—'}</b><em>${wch.length} com 2+ registros</em></div><div class="k"><small>Registros de dor</small><b>${HR.reduce((a, [, h]) => a + (h.painTotal || 0), 0)}</b><em>últimos 90 dias</em></div><div class="k"><small>Pagam (média)</small><b>${pays.length ? 'R$ ' + nf(avg(pays.map((p) => p.v)), 0) : '—'}</b><em>${pays.length ? 'R$ ' + nf(avg(pays.filter((p) => p.cpt).map((p) => p.cpt)) || 0, 2) + '/treino' : '&nbsp;'}</em></div></div>
+  <div class="g3" style="margin-top:10px"><div class="box"><h3>Dor por região</h3>${hb(pl.map(([k, v]) => [k, v, pm, String(v)]))}</div><div class="box"><h3>Fortalecer região (fisioterapia)</h3>${hb(reh.map(([k, v]) => [k, v, HR.length || 1]))}</div><div class="box"><h3>Pagamento</h3>${hb(cnt(pays, (p) => KIND[p.kind]).map(([k, v]) => [k, v, pays.length]))}</div></div>`;
+}
+function funcoes(R) {
+  const N = R.length, Fx = (f) => R.filter(f).length;
+  const list = [['Recordes', (r) => (r.features || {}).recordes], ['Check-in', (r) => (r.features || {}).checkin], ['Técnicas avançadas', (r) => (r.features || {}).tecnicas], ['Voz', (r) => (r.features || {}).voz], ['Lembrete', (r) => (r.features || {}).lembrete], ['Fotos de progresso', (r) => (X(r).featuresX || {}).fotos > 0 || (r.features || {}).fotos], ['Pontos fracos', (r) => (r.features || {}).fracos], ['Fortalecer região', (r) => (r.features || {}).fortalecer], ['Extrato de desculpas', (r) => (X(r).featuresX || {}).extrato], ['Valor pago informado', (r) => (X(r).featuresX || {}).pagamentoInformado], ['Excluir série', (r) => (X(r).featuresX || {}).excluirSerie], ['Adicionar série', (r) => (X(r).featuresX || {}).adicionarSerie], ['Trocar exercício', (r) => (X(r).featuresX || {}).trocar], ['Pular exercício', (r) => (X(r).featuresX || {}).pular], ['Testes físicos', (r) => (X(r).featuresX || {}).testes > 0], ['Plano de esporte', (r) => (X(r).featuresX || {}).esporte], ['Fotos no backup', (r) => (X(r).settings || {}).backupPhotos]];
+  const agg = (f) => { const m = {}; R.forEach((r) => (f(r) || []).forEach(([k, v]) => { m[k] = (m[k] || 0) + v; })); return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 8); };
+  const why = {}; R.forEach((r) => Object.entries(((X(r).excuses || {}).why) || {}).forEach(([k, v]) => { why[k] = (why[k] || 0) + v; })); const wt = Object.values(why).reduce((a, b) => a + b, 0);
+  const tx = agg((r) => X(r).topEx), ts = agg((r) => X(r).topSwap), tk = agg((r) => X(r).topSkip);
+  const mx = (L) => Math.max(1, ...L.map((x) => x[1]));
+  return `<div class="g3"><div class="box"><h3>Funções usadas</h3>${hb(list.map(([k, f]) => [k, Fx(f), N]))}</div>
+   <div class="box"><h3>Extrato de desculpas (todos)</h3>${hb(Object.entries(why).sort((a, b) => b[1] - a[1]).map(([k, v]) => [REASON[k] || k, v, wt]))}<h3 style="margin-top:16px">Ajustes</h3>${hb(cnt(R, (r) => (X(r).settings || {}).theme || r.theme).map(([k, v]) => ['Tema ' + k, v, N]))}${hb([['Voz ligada', Fx((r) => (X(r).settings || {}).voice), N], ['Lembrete', Fx((r) => (X(r).settings || {}).reminder), N], ['Pergunta esforço', Fx((r) => (X(r).settings || {}).askRir), N]])}</div>
+   <div class="box"><h3>Exercícios mais feitos</h3>${hb(tx.map(([k, v]) => [k, v, mx(tx), String(v)]))}<h3 style="margin-top:16px">Mais trocados</h3>${hb(ts.map(([k, v]) => [k, v, mx(ts), String(v)]))}<h3 style="margin-top:16px">Mais pulados</h3>${hb(tk.map(([k, v]) => [k, v, mx(tk), String(v)]))}</div></div>`;
+}
+// ---------- ficha individual ----------
+function ficha(uid) {
+  const r = all.find((x) => x.uid === uid); if (!r) return; const x = X(r), h = H[uid], c = x.counters || {}, p = r.profile || {}, s = status(r);
+  const kv = (k, v) => (v == null || v === '' ? '' : `<div class="kv"><span>${k}</span><b>${v}</b></div>`);
+  const wk = (x.weeks || []).slice(-8), wm = Math.max(1, ...wk);
+  const dows = (x.dow || []).map((v, i) => [DOW[i], v]).sort((a, b) => b[1] - a[1]);
+  const exl = Object.entries(((x.excuses || {}).why) || {}).sort((a, b) => b[1] - a[1]);
+  const fx = x.featuresX || {}, set = x.settings || {};
+  const chips = [['Extrato', fx.extrato], ['Fotos (' + (fx.fotos || 0) + ')', fx.fotos], ['Excluir série', fx.excluirSerie], ['Trocar', fx.trocar], ['Check-in', set.checkin], ['Voz', set.voice], ['Lembrete ' + (set.reminder || ''), set.reminder], ['Necrotério', set.necro], ['Tema ' + (set.theme || ''), true], ['Esporte', fx.esporte], ['Testes', fx.testes], ['Fortalecer região', (r.features || {}).fortalecer], ['Pontos fracos', (r.features || {}).fracos]];
+  let hs = '';
+  if (h) {
+    const w = h.weight || [], first = w[0], last = w[w.length - 1];
+    hs = `<h4>Corpo ${h.updatedAt ? '· ' + dt(h.updatedAt) : ''}</h4>${w.length >= 2 ? `<svg viewBox="0 0 400 50" style="width:100%;height:50px"><polyline fill="none" stroke="#f5c518" stroke-width="3" points="${(() => { const vs = w.map((e) => e[1]), mn = Math.min(...vs), mxx = Math.max(...vs); return w.map((e, i) => (i / (w.length - 1)) * 400 + ',' + (45 - ((e[1] - mn) / Math.max(0.1, mxx - mn)) * 40)).join(' '); })()}"/></svg>` : ''}
+      ${kv('Peso', first ? nf(first[1]) + (last !== first ? ' → ' + nf(last[1]) : '') + ' kg' + (h.goal ? ' (meta ' + nf(h.goal) + ')' : '') : '—')}
+      ${Object.entries(h.meas || {}).map(([k, m]) => kv(k[0].toUpperCase() + k.slice(1), nf(m[0]) + (m[1] !== m[0] ? ' → ' + nf(m[1]) : '') + ' cm')).join('')}
+      <h4>Dor e fisioterapia</h4>${kv('Dores (90 dias)', (h.pains || []).map(([k, v]) => esc(k) + ' ' + v + '×').join(', ') || 'nenhuma')}${Object.entries(h.rehab || {}).map(([k, v]) => kv('Fortalecer ' + k, 'fase ' + v.phase + (v.first != null ? ' · dor ' + v.first + ' → ' + v.last : ''))).join('')}
+      <h4>Check-in</h4>${h.checkin && h.checkin.n ? kv('Sono / energia / dor (0–2)', nf(h.checkin.sono) + ' / ' + nf(h.checkin.energia) + ' / ' + nf(h.checkin.dor)) + kv('Dias ruins (treino aliviado)', h.checkin.badDays) + kv('Recordes por treino: sono bom × ruim', ((h.checkin.good || [])[0] ? nf(h.checkin.good[1] / h.checkin.good[0], 2) : '—') + ' × ' + ((h.checkin.bad || [])[0] ? nf(h.checkin.bad[1] / h.checkin.bad[0], 2) : '—')) : kv('Check-in', 'sem registros')}
+      <h4>Dinheiro</h4>${kv('Pagamento', h.pay ? (h.pay.none ? 'não paga para treinar' : (KIND[h.pay.kind] || '') + ' · R$ ' + nf(h.pay.v, 2) + '/mês' + (h.pay.cpt ? ' · R$ ' + nf(h.pay.cpt, 2) + '/treino' : '')) : 'não informado')}`;
+  } else hs = `<div class="note">Saúde não compartilhada por esta pessoa.</div>`;
+  document.getElementById('drawer').innerHTML = `<div class="dr-bg" data-close></div><div class="dr"><button class="x" data-close>×</button><h2>${esc(r.name || '—')} ${h ? '<span class="hlth">saúde compartilhada</span>' : ''}</h2>
+    <div class="sb">${esc(r.email)} · cadastro ${dt(r.createdAt)} · ${r.provider === 'google' ? 'Google' : 'e-mail'} · ${esc(dev(r))} · v${esc(r.app || '')} · atualizado ${when(r.updatedAt)}<br><span class="st ${s}">${ST[s]}</span> · último treino ${when(r.lastWorkout)}</div>
+    <div class="mini"><div><small>Treinos</small><b>${r.workouts || 0}</b></div><div><small>Por semana</small><b>${nf(r.perWeek)}</b></div><div><small>Duração</small><b>${x.avgMin ? x.avgMin + ' min' : '—'}</b></div><div><small>Sequência</small><b>${x.streak != null ? x.streak + ' sem' : '—'}</b></div><div><small>Recordes</small><b>${x.records != null ? x.records : '—'}</b></div><div><small>Conquistas</small><b>${x.medals != null ? x.medals + '/' + x.medalsTotal : '—'}</b></div></div>
+    <h4>Treinos por semana</h4><div class="bars" style="height:90px">${wk.map((v, i) => `<div><b>${v}</b><i style="height:${Math.max(3, (v / wm) * 100)}%"></i><span>${i === wk.length - 1 ? 'esta' : '-' + (wk.length - 1 - i)}</span></div>`).join('')}</div>
+    <h4>Perfil</h4>${kv('Idade · sexo', [p.age ? p.age + ' anos' : '', p.sex === 'f' ? 'Feminino' : p.sex === 'm' ? 'Masculino' : ''].filter(Boolean).join(' · ') || '—')}${kv('Objetivo · experiência', [p.goal, p.exp].filter(Boolean).map(esc).join(' · ') || '—')}
+    <h4>Plano e treino</h4>${kv('Plano', esc(r.plan || '—') + (r.planWeeks ? ' · semana ' + r.planWeek + ' de ' + r.planWeeks : ''))}${kv('Dias por semana no plano', x.planDays)}${kv('Esporte', esc(x.sport || ''))}${kv('Exercícios mais feitos', (x.topEx || []).slice(0, 5).map(([k, v]) => esc(k) + ' (' + v + ')').join(', '))}${kv('Mais trocados', (x.topSwap || []).map(([k, v]) => esc(k) + ' (' + v + ')').join(', ') || '—')}${kv('Mais pulados', (x.topSkip || []).map(([k, v]) => esc(k) + ' (' + v + ')').join(', ') || '—')}
+    ${kv('Séries adicionadas / excluídas', '+' + (c.setAdd || 0) + ' / −' + (c.setDel || 0))}${kv('Treinos cancelados', c.cancel || 0)}${kv('Séries médias / volume médio', x.avgSets != null ? nf(x.avgSets) + ' séries · ' + nf(x.avgVol, 0) + ' kg' : '')}
+    <h4>Força</h4>${kv('Nível de poder', x.power != null ? nf(x.power, 0) : '—')}${kv('Nível de força', esc(x.strength || ''))}${kv('Cargas máximas estimadas (1RM)', (x.lifts || []).map((l) => esc(l.nome) + ' ' + l.e1rm).join(' · '))}${kv('Recorde recente', x.lastRecord ? esc(x.lastRecord.ex) + ' ' + nf(x.lastRecord.kg) + ' kg (' + ddmm(x.lastRecord.date) + ')' : '')}${kv('Séries no limite', x.effortLimit != null ? nf(x.effortLimit, 0) + '% (de ' + x.effortN + ' respostas)' : '')}${kv('Progressão de carga (4 semanas)', x.progression != null ? (x.progression > 0 ? '+' : '') + nf(x.progression) + '%' : '')}${kv('Pontos fracos', (x.weakPoints || []).map(esc).join(', '))}
+    <h4>Hábitos</h4>${kv('Horário', ({ manha: 'Manhã', tarde: 'Tarde', noite: 'Noite' })[x.hourBucket] || '')}${kv('Dia que mais treina', dows[0] && dows[0][1] ? dows[0][0] : '')}${kv('Desculpas', exl.map(([k, v]) => (REASON[k] || k) + ' ' + v).join(', ') || 'nenhuma')}${kv('Presença no mês', (x.excuses || {}).presence != null ? x.excuses.presence + '%' : '')}${kv('Necrotério', x.necro ? x.necro.dead + ' em óbito · ' + x.necro.grave + ' graves · ' + x.necro.revived + ' ressuscitados' : '')}
+    <h4>Funções e ajustes</h4><div class="chips">${chips.map(([k, on]) => `<span class="${on ? 'on' : ''}">${esc(k)}</span>`).join('')}</div>
+    ${hs}<div class="note">Nunca chegam aqui: fotos, observações e desculpas escritas pela pessoa.</div></div>`;
+  document.querySelectorAll('[data-close]').forEach((b) => (b.onclick = () => { document.getElementById('drawer').innerHTML = ''; }));
+}
+function render() {
+  const R = rows(), uniq = (f) => [...new Set(all.map(f).filter(Boolean))].sort();
+  const T = [['geral', 'Visão geral'], ['usuarios', 'Usuários'], ['cruz', 'Cruzamentos'], ['saude', 'Saúde'], ['funcoes', 'Funções']];
+  const body = tab === 'usuarios' ? usuarios(R) : tab === 'cruz' ? cruz(R) : tab === 'saude' ? saude(R) : tab === 'funcoes' ? funcoes(R) : geral(R);
+  document.getElementById('app').innerHTML = `<div class="top"><h1>GRAVITY</h1><span class="tag">Painel · só você vê</span><div class="tabs">${T.map(([k, l]) => `<span class="${tab === k ? 'on' : ''}" data-t="${k}">${l}</span>`).join('')}</div><span class="me">${esc(me.email)} · <button onclick="firebase.auth().signOut().then(()=>location.reload())">Sair</button></span></div><div class="wrap">
+   <div class="fbar"><select data-fl><option value="todos" ${fl === 'todos' ? 'selected' : ''}>Todos os usuários</option><option value="a7" ${fl === 'a7' ? 'selected' : ''}>Ativos 7 dias</option><option value="a30" ${fl === 'a30' ? 'selected' : ''}>Ativos 30 dias</option></select>${opts('plan', uniq((r) => r.plan), 'Plano')}${opts('dev', ['Android', 'iPhone', 'Navegador'], 'Aparelho')}${opts('ver', uniq((r) => r.app), 'Versão')}${opts('sex', ['m', 'f'], 'Sexo')}${opts('age', ['até 24', '25–34', '35–44', '45–59', '60+'], 'Idade')}<small>${R.length} de ${all.length} usuários · ${Object.keys(H).length} compartilham saúde · atualizado ${new Date().toLocaleString('pt-BR')}</small></div>
+   ${body}<div class="note">Os dados chegam quando o app sincroniza (versão 0.55 ou mais nova para os dados detalhados). Ativo: treinou nos últimos 7 dias · Sumindo: 7–14 dias · Parado: mais de 14 dias.</div></div>`;
+  document.querySelectorAll('[data-t]').forEach((b) => (b.onclick = () => { tab = b.dataset.t; render(); }));
+  document.querySelectorAll('[data-f]').forEach((b) => (b.onclick = () => { fl = b.dataset.f; render(); }));
+  document.querySelectorAll('[data-fk]').forEach((b) => (b.onchange = () => { F[b.dataset.fk] = b.value; render(); }));
+  const sf = document.querySelector('[data-fl]'); if (sf) sf.onchange = () => { fl = sf.value; render(); };
+  document.querySelectorAll('[data-u]').forEach((t) => (t.onclick = () => ficha(t.dataset.u)));
+  const qi = document.getElementById('q'); if (qi) qi.oninput = () => { q = qi.value.toLowerCase(); render(); const n = document.getElementById('q'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); };
 }
 </script></body></html>

@@ -151,6 +151,7 @@
   }
   function celebrate(list) {
     if (!list.length) return;
+    if (window.Insights) { Insights.count('revived', null, list.length); Store.save(); }
     const names = list.map((x) => x.nome), days = Math.max(...list.map((x) => x.days));
     const title = names.length === 1 ? names[0] + ' ' + rezWord(list[0].id) + '!' : names.length + ' músculos ressuscitados!';
     const el = document.createElement('div');

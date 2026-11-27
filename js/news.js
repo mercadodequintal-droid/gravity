@@ -4,6 +4,10 @@
 (function () {
   'use strict';
   const CHANGELOG = [
+    { v: '0.55.0', date: '2026-11-27', items: [
+      { icon: 'minus', t: 'Excluir séries', d: 'No treino, deslize a série para a esquerda para excluir (com desfazer). No fim do exercício, escolha se vale só hoje ou fica no plano.', main: true },
+      { icon: 'info', t: 'Você escolhe o que compartilhar', d: 'Em Configurações › Seus dados: compartilhar dados de treino e, só se quiser, dados de saúde para ajudar a melhorar o Gravity. Política de Privacidade 1.1.' },
+    ] },
     { v: '0.54.0', date: '2026-11-23', items: [
       { icon: 'camera', t: 'Fotos de progresso', d: 'Galeria por posição, escolha a foto “antes”, apague várias de uma vez, mude data e posição e gere a imagem antes e depois para postar (dá para esconder o rosto).', main: true, go: 'body' },
       { icon: 'alert', t: 'Necrotério Muscular', d: 'Em Músculos › Necrotério: o boneco afina nos músculos esquecidos. Toque na ficha e ressuscite com um exercício no próximo treino.' },
